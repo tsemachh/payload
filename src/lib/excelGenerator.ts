@@ -34,6 +34,7 @@ export async function generateParticipationsExcel(
       subject: SHARED_COLUMNS.SUBJECT,
       recommendation: SHARED_COLUMNS.ADVISOR_RECOMMENDATION,
       votingMethod: SHARED_COLUMNS.VOTING_METHOD,
+      vote: SHARED_COLUMNS.VOTE,
       meetingResults: SHARED_COLUMNS.MEETING_RESULTS,
       simpleMajority: SHARED_COLUMNS.REGULAR_MAJORITY,
       privilegedMajority: SHARED_COLUMNS.SPECIAL_MAJORITY,
@@ -76,7 +77,7 @@ export async function generateParticipationsExcel(
       }
       
       htmlColumns.push(
-        'votingMethod',       // 15. אופן ההצבעה
+        'vote',               // 15. אופן ההצבעה
         'meetingResults',     // 16. תוצאות האסיפה
         'simpleMajority',     // 17. רוב רגיל
         'privilegedMajority', // 18. רוב מיוחד
@@ -133,7 +134,7 @@ export async function generateParticipationsExcel(
         insertPosition = recommendationIndex
       } else {
         // Find the best position among agenda columns
-        const agendaColumnPositions = ['votingMethod', 'meetingResults', 'simpleMajority'].map(col => columnsToUse.indexOf(col)).filter(pos => pos !== -1)
+        const agendaColumnPositions = ['vote', 'meetingResults', 'simpleMajority'].map(col => columnsToUse.indexOf(col)).filter(pos => pos !== -1)
         insertPosition = agendaColumnPositions.length > 0 ? Math.min(...agendaColumnPositions) : columnsToUse.length
       }
       
@@ -148,10 +149,10 @@ export async function generateParticipationsExcel(
 
     // Separate meeting columns from agenda columns based on the actual selected columns
     const meetingColumns = validColumns.filter(col => 
-      !['subject', 'recommendation', 'votingMethod', 'meetingResults', 'simpleMajority', 'privilegedMajority', 'policyCompliance', 'conflictOfInterest', 'relatedParty', 'personalInterest', 'isFinancialCorporation'].includes(col)
+      !['subject', 'recommendation', 'vote', 'meetingResults', 'simpleMajority', 'privilegedMajority', 'policyCompliance', 'conflictOfInterest', 'relatedParty', 'personalInterest', 'isFinancialCorporation'].includes(col)
     )
     const agendaColumns = validColumns.filter(col => 
-      ['subject', 'recommendation', 'votingMethod', 'meetingResults', 'simpleMajority', 'privilegedMajority', 'policyCompliance', 'conflictOfInterest', 'relatedParty', 'personalInterest', 'isFinancialCorporation'].includes(col)
+      ['subject', 'recommendation', 'vote', 'meetingResults', 'simpleMajority', 'privilegedMajority', 'policyCompliance', 'conflictOfInterest', 'relatedParty', 'personalInterest', 'isFinancialCorporation'].includes(col)
     )
     const includeAgendaColumns = agendaColumns.length > 0
 
@@ -171,7 +172,7 @@ export async function generateParticipationsExcel(
       meetingType: 12,
       subject: 72, // Wide for agenda text
       recommendation: 14,
-      votingMethod: 13,
+      vote: 13,
       meetingResults: 13,
       simpleMajority: 13,
       privilegedMajority: 13,
@@ -332,7 +333,8 @@ export async function generateParticipationsExcel(
             const numberedAgendaText = baseAgendaText ? numberedPrefix + baseAgendaText : ''
 
             // Check if voteReason exists and is not empty
-            let voteContent = !isRemoved ? agenda.vote || '' : ''
+            let voteContent = !isRemoved ? (agenda.vote || '') : ''
+            
             if (!isRemoved && agenda.voteReason && agenda.voteReason.trim() !== '') {
               voteContent = `${voteContent} [${voteReasonCounter}]`
               voteReasons.push({ index: voteReasonCounter, reason: agenda.voteReason })
@@ -347,7 +349,7 @@ export async function generateParticipationsExcel(
                 : meeting.displayVotingRecommendation
                   ? agenda.recommendation?.votingRecommendation
                   : '',
-              votingMethod: voteContent,
+              vote: voteContent, // Use 'vote' to match HTML column name
               meetingResults: isRemoved
                 ? ''
                 : agenda.result
