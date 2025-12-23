@@ -139,6 +139,7 @@ export type FundWithHolding =
       ownedQuantity?: number | null;
       verifiedHoldings?: boolean | null;
       fromRelatedStock?: boolean | null;
+      holdingDate?: string | null;
       original?:
         | {
             stockId?: string | null;
@@ -1640,6 +1641,7 @@ export interface FundWithHoldingSelect<T extends boolean = true> {
   ownedQuantity?: T;
   verifiedHoldings?: T;
   fromRelatedStock?: T;
+  holdingDate?: T;
   original?:
     | T
     | {

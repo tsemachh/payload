@@ -128,7 +128,7 @@ export const Meetings: CollectionConfig = {
         { name: 'hasResearchDoc', width: '130px' },
         { name: 'votesStatus', width: '130px' },
         { name: 'votesReportStatus', width: '130px' },
-        {name:'researchDocumentsStatus',width:'130px'},
+        { name: 'researchDocumentsStatus', width: '130px' },
         { name: 'resultsConfirmationStatus', width: '130px' },
         { name: 'hasRelatedStocks', width: '130px' },
       ],
@@ -544,8 +544,8 @@ export const Meetings: CollectionConfig = {
                           where: {
                             and: [
                               { type: { equals: value } },
-                              { autoFillInMeetings: { equals: true } }
-                            ]
+                              { autoFillInMeetings: { equals: true } },
+                            ],
                           },
                           limit: 1,
                           depth: 0,
@@ -1178,7 +1178,6 @@ export const Meetings: CollectionConfig = {
                 hidden: true,
               },
             },
-
           ],
         },
         {
@@ -1249,6 +1248,18 @@ export const Meetings: CollectionConfig = {
                       type: 'checkbox',
                       defaultValue: false,
                       label: 'החזקה בנייר עוקב',
+                    },
+                    {
+                      name: 'holdingDate',
+                      type: 'date',
+                      label: 'תאריך החזקה',
+                      admin: {
+                        readOnly: true,
+                        date: {
+                          displayFormat: 'dd/MM/yyyy',
+                          pickerAppearance: 'default',
+                        },
+                      },
                     },
                     {
                       name: 'original',
