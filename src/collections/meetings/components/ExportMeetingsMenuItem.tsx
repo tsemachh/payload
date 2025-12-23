@@ -2,12 +2,10 @@
 
 import type React from "react"
 import { useState } from "react"
-import { FileSpreadsheet, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { useListQuery } from "@payloadcms/ui"
 import { toast } from "sonner"
 
-const ExportExcelButton: React.FC = () => {
+const ExportMeetingsMenuItem: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false)
   const { query } = useListQuery()
 
@@ -77,46 +75,22 @@ const ExportExcelButton: React.FC = () => {
   }
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: `170px`,
-        left: "61px",
-        zIndex: 1000,
-      }}
-    >
-      <Button
-        variant="default"
-        size="sm"
-        onClick={handleExport}
-        disabled={isExporting}
-        style={{ borderRadius: '7px' }}
-        className={`
-          flex items-center gap-2 h-8 px-3 py-2 
-          bg-gradient-to-r from-green-600 to-green-700 
-          hover:from-green-700 hover:to-green-800 
-          text-white font-medium
-          border-0 shadow-md hover:shadow-lg
-          transition-all duration-200 ease-in-out
-          transform hover:scale-105 active:scale-95
-          rounded-xl
-          ${isExporting ? 'opacity-80 cursor-not-allowed' : 'cursor-pointer'}
-        `}
-      >
-        {isExporting ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm font-medium">מייצא...</span>
-          </>
-        ) : (
-          <>
-            <FileSpreadsheet className="h-4 w-4" />
-            <span className="text-sm font-medium">ייצוא המלצות</span>
-          </>
-        )}
-      </Button>
-    </div>
+   <button
+  onClick={handleExport}
+  disabled={isExporting}
+  style={{
+    background: 'none',
+    border: 'none',
+    margin: 0,
+    color: 'inherit',
+    font: 'inherit',
+    textAlign: 'left',
+    cursor: isExporting ? 'default' : 'pointer',
+  }}
+>
+  {isExporting ? 'מייצא המלצות...' : 'ייצוא המלצות'}
+</button>
   )
 }
 
-export default ExportExcelButton
+export default ExportMeetingsMenuItem
