@@ -777,7 +777,7 @@ async function processMeetingsData(
           const parentCompany = fundToParentMap.get(fundId as string)
           const holdingsCompanyName = findSubCompanyNameById(parentCompany, fundId)
           const originalStockIds = match.original?.map((o) => {
-            return { stockId: o.stockId, quantity: o.quantity }
+            return { stockId: o.stockId, quantity: o.quantity, fundId }
           })
           return {
             id: fundId,

@@ -54,6 +54,9 @@ export const Holdings: CollectionConfig = {
           relationTo: 'companies',
           required: true,
           index: true,
+          admin: {
+            readOnly: true,
+          },
           filterOptions: () => ({
             type: {
               equals: 'fund',
@@ -83,6 +86,7 @@ export const Holdings: CollectionConfig = {
           required: true,
           index: true,
           admin: {
+            readOnly: true,
             date: {
               displayFormat: 'dd/MM/yyyy',
               pickerAppearance: 'default',
@@ -206,7 +210,7 @@ export const Holdings: CollectionConfig = {
       fields: ['fund', 'valueDate'],
     },
     {
-      fields: ['holdings.stock', 'fund', 'valueDate'],
+      fields: ['fund', 'valueDate', 'holdings.stock'],
     },
   ],
   endpoints: [
