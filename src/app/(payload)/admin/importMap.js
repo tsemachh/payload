@@ -23,6 +23,7 @@ import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '.
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_76cac0c7f70bb3de068333b13381d163 } from '../../../admincomponents/fields/arrayTable'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { default as default_dd3ee69567110c21e2d418a451dc5848 } from '../../../collections/meetings/components/MeetingsListTableHeader'
 import { default as default_6dd674b10194d045c09b533845410341 } from '../../../collections/meetings/components/NavCloser'
 import { default as default_b0fd6d42c10a2a9bdf03d06835428598 } from '../../../components/buttons/CustomPublishButton'
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
@@ -63,6 +64,7 @@ import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d
 import { GcsClientUploadHandler as GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934 } from '@payloadcms/storage-gcs/client'
 import { default as default_b7ce0dd15673c054966f89b2a35e3a65 } from '../../../admincomponents/custom-views/VotePage'
 import { default as default_f828cce1950382b69f94d117f188940f } from '@shefing/quickfilter/Dashboard'
+import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 
 export const importMap = {
   "/admincomponents/cell/TruncatedCell#default": default_5fbd841c8b14f3cf48187c39f54c5fc8,
@@ -90,6 +92,7 @@ export const importMap = {
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/admincomponents/fields/arrayTable#default": default_76cac0c7f70bb3de068333b13381d163,
   "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
+  "/collections/meetings/components/MeetingsListTableHeader#default": default_dd3ee69567110c21e2d418a451dc5848,
   "/collections/meetings/components/NavCloser#default": default_6dd674b10194d045c09b533845410341,
   "/components/buttons/CustomPublishButton#default": default_b0fd6d42c10a2a9bdf03d06835428598,
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
@@ -129,5 +132,6 @@ export const importMap = {
   "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/storage-gcs/client#GcsClientUploadHandler": GcsClientUploadHandler_06e62ca02c7c441053a9b643e5545934,
   "/admincomponents/custom-views/VotePage#default": default_b7ce0dd15673c054966f89b2a35e3a65,
-  "@shefing/quickfilter/Dashboard#default": default_f828cce1950382b69f94d117f188940f
+  "@shefing/quickfilter/Dashboard#default": default_f828cce1950382b69f94d117f188940f,
+  "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a
 }
