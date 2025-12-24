@@ -593,6 +593,12 @@ export default function VotingForm() {
 
       const invalidCompanies: string[] = []
 
+      // Check if we have dynamic questions
+      const hasDynamicQuestions =
+        meetingData?.relatedQuestions &&
+        meetingData.relatedQuestions.questions &&
+        meetingData.relatedQuestions.questions.length > 0
+
       // Check if all companies have draft votes
       for (const companyId of meetingCompanies) {
         const vote = allVotes.find(
@@ -605,15 +611,34 @@ export default function VotingForm() {
           continue
         }
 
-        // Validate general questions
-        if (vote.isInterested && !vote.interestedExplanation?.trim()) {
-          invalidCompanies.push(companyId)
-          continue
-        }
+        // Validate dynamic questions if they exist
+        if (hasDynamicQuestions) {
+          let hasDynamicQuestionError = false
+          const voteDynamicQuestions = vote.dynamicQuestions || []
 
-        if (vote.isSeniorOfficial && !vote.seniorOfficialExplanation?.trim()) {
-          invalidCompanies.push(companyId)
-          continue
+          for (const dq of voteDynamicQuestions) {
+            // If answer is true, explanation is required
+            if (dq.answer && !dq.explanation?.trim()) {
+              hasDynamicQuestionError = true
+              break
+            }
+          }
+
+          if (hasDynamicQuestionError) {
+            invalidCompanies.push(companyId)
+            continue
+          }
+        } else {
+          // Validate static general questions (old behavior)
+          if (vote.isInterested && !vote.interestedExplanation?.trim()) {
+            invalidCompanies.push(companyId)
+            continue
+          }
+
+          if (vote.isSeniorOfficial && !vote.seniorOfficialExplanation?.trim()) {
+            invalidCompanies.push(companyId)
+            continue
+          }
         }
 
         // Validate agenda items
@@ -621,17 +646,16 @@ export default function VotingForm() {
         for (const agenda of meetingData.agendas) {
           if (agenda.isRemovedFromAgenda) continue
 
-          const voteItem = (vote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
+          const voteItem = (vote.votes || []).find(
+            (v: unknown) => v.topicIndex == agenda.topicIndex,
+          )
 
           if (!voteItem?.voteDecision) {
             hasAgendaError = true
             break
           }
 
-          if (
-            voteItem.hasConflictOfInterest &&
-            !voteItem.conflictOfInterestExplanation?.trim()
-          ) {
+          if (voteItem.hasConflictOfInterest && !voteItem.conflictOfInterestExplanation?.trim()) {
             hasAgendaError = true
             break
           }
@@ -788,31 +812,26 @@ export default function VotingForm() {
       // Wait for blur handlers to complete and state to update
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      // First validate current company's form to show field-level errors
-      const currentErrors = validateForm()
-      if (currentErrors.length > 0) {
-        setValidationErrors(currentErrors)
-        // Scroll to the first error
-        const firstError = currentErrors[0]
-        const errorElement = document.querySelector(
-          `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
-        )
-        errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        setTimeout(() => {
-          toast({
-            title: '⚠️  נדרש מידע נוסף',
-            description: 'יש למלא את כל השדות החובה המסומנים בחברה הנוכחית',
-            duration: 3000,
-          })
-        }, 0)
-      }
-
-      // Validate ALL companies votes
+      // Validate ALL companies votes first
       const validationResult = await validateAllCompaniesVotes()
 
       if (!validationResult.isValid) {
         // Set companies with errors
         setCompaniesWithErrors(new Set(validationResult.invalidCompanies))
+
+        // If current company is in the invalid list, show field-level errors
+        if (validationResult.invalidCompanies.includes(companiesIDs[0])) {
+          const currentErrors = validateForm()
+          if (currentErrors.length > 0) {
+            setValidationErrors(currentErrors)
+            // Scroll to the first error
+            const firstError = currentErrors[0]
+            const errorElement = document.querySelector(
+              `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
+            )
+            errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }
 
         setTimeout(() => {
           toast({
@@ -866,8 +885,10 @@ export default function VotingForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       validateAllCompaniesVotes,
+      validateForm,
       meetingIdPayload,
       meetingCompanies,
+      companiesIDs,
       meetingData,
       toast,
       mutatePublish,
