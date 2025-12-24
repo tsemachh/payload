@@ -53,6 +53,7 @@ const generateHoldingsGapRoute = async (
  * Endpoint to get all notifications for the companies the user has
  * Path: /api/company-meeting-notifications/user-notifications
  * Method: GET
+ * Query params: ?limit=10&offset=0
  */
 const UserNotificationsEndpoint = async (req: PayloadRequest) => {
   try {
@@ -63,30 +64,19 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get pagination parameters from query string
+    const url = new URL(req.url || '', 'http://localhost')
+    const limit = parseInt(url.searchParams.get('limit') || '10', 10)
+    const offset = parseInt(url.searchParams.get('offset') || '0', 10)
+
     // Get user's companies
     const user = req.user
-
     const userCompanyIds = user?.companies?.map((c) => c?.companyId)
 
     // Calculate date one month before current date
     const currentDate = new Date()
     const monthBefore = new Date(currentDate)
     monthBefore.setMonth(currentDate.getMonth() - 1)
-
-    // Find notifications for the user's companies
-    const { docs: notifications } = await req.payload.find({
-      collection: 'company-meeting-notifications',
-      where: {
-        company: {
-          in: userCompanyIds,
-        },
-        createdAt: {
-          greater_than_equal: monthBefore.toISOString(),
-        },
-      },
-      depth: 0, // To get meeting data
-      limit: 0,
-    })
 
     // Notification type mapping
     const notificationTypeLabels: Record<string, string> = {
@@ -97,6 +87,45 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
       'meeting-updated': 'עודכנה אסיפה ',
       'holdings-gap': 'פערי החזקות',
     }
+
+    // 🚀 SIMPLE APPROACH: Two parallel queries
+    const [notificationsResult, unreadCountResult] = await Promise.all([
+      // Get paginated notifications
+      req.payload.find({
+        collection: 'company-meeting-notifications',
+        where: {
+          company: {
+            in: userCompanyIds,
+          },
+          createdAt: {
+            greater_than_equal: monthBefore.toISOString(),
+          },
+        },
+        depth: 0,
+        limit,
+        page: Math.floor(offset / limit) + 1,
+        sort: '-createdAt',
+      }),
+      
+      // Get total unread count (only on first page)
+      offset === 0 ? req.payload.count({
+        collection: 'company-meeting-notifications',
+        where: {
+          company: {
+            in: userCompanyIds,
+          },
+          createdAt: {
+            greater_than_equal: monthBefore.toISOString(),
+          },
+          readStatus: { not_equals: true },
+        },
+      }) : Promise.resolve({ totalDocs: 0 })
+    ])
+
+    const notifications = notificationsResult.docs
+    const totalDocs = notificationsResult.totalDocs
+    const hasNextPage = notificationsResult.hasNextPage
+    const totalUnreadCount = unreadCountResult.totalDocs
 
     // Transform notifications to the required format
     const formattedNotifications = notifications.map(async (notification) => {
@@ -132,11 +161,18 @@ const UserNotificationsEndpoint = async (req: PayloadRequest) => {
       }
     })
 
-    // Wait for all async operations to complete
     const resolvedNotifications = await Promise.all(formattedNotifications)
 
     return Response.json({
       notifications: resolvedNotifications,
+      pagination: {
+        totalDocs,
+        hasNextPage,
+        limit,
+        offset,
+        nextOffset: hasNextPage ? offset + limit : null,
+      },
+      totalUnreadCount,
     })
   } catch (error) {
     req.payload.logger.error(`Error fetching user notifications: ${JSON.stringify(error)}`)
