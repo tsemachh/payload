@@ -196,19 +196,28 @@ export const getLabelsForCompanies = async (req: PayloadRequest) => {
       return Response.json({ error: 'Missing companyIds' }, { status: 400 })
     }
 
-    const results = []
-    for (const companyObj of companyIds) {
-      const id = companyObj.id
-      const company = await req.payload.findByID({
-        collection: 'companies',
-        id,
-      })
+    const companyIdsArray = companyIds.map((companyObj: any) => companyObj.id)
+    
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        id: { in: companyIdsArray }
+      },
+      select: {
+        id: true,
+        label: true
+      },
+      limit: companyIdsArray.length
+    })
 
-      results.push({
-        companyId: id,
+    // Create results from batch query
+    const results = companyIdsArray.map(companyId => {
+      const company = companies.docs.find(c => c.id === companyId)
+      return {
+        companyId,
         labels: company?.label?.labels || [],
-      })
-    }
+      }
+    })
 
     return Response.json({ results })
   } catch (err) {
