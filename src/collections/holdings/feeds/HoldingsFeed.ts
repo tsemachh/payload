@@ -38,7 +38,7 @@ export const HoldingsFeed: CollectionConfig = {
       index: true,
       admin: {
         date: {
-          displayFormat: 'dd MMM yyy',
+          displayFormat: 'dd/MM/yyyy',
           pickerAppearance: 'default',
         },
       },

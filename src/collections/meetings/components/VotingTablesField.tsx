@@ -26,14 +26,17 @@ import { useVotingData } from '../hooks/useVotingData'
 import { formatRelativeTime } from '@/utils/dateUtils'
 import ManageMeetingCompanies from './ManageMeetingCompanies'
 import { getGroupedVotesUrl } from '../../../utils/voteGrouping'
+import { useState } from 'react'
 
 export const VotingTablesField = () => {
   const { id } = useDocumentInfo()
+  const [hoveredHistoricalRow, setHoveredHistoricalRow] = useState<string | null>(null)
   const {
     notVotedCompanies,
     votedCompanies,
     processedNotVotedData,
     processedVotedData,
+    historicalHoldings,
     loading,
     exportToCSV,
     groupByNotVoted,
@@ -218,6 +221,9 @@ export const VotingTablesField = () => {
                         )}
                         <span className={cn(item.isGroupHeader && 'font-semibold')}>
                           {item.name}
+                          {item.passiveFunds && !item.isGroupHeader && (
+                            <b className="mr-1"> מחקות בלבד</b>
+                          )}
                           {item.isGroupHeader && (
                             <span className="text-base text-muted-foreground mr-2">
                               ({item.subsidiaryCount} חברות)
@@ -406,10 +412,16 @@ export const VotingTablesField = () => {
                                 className="flex items-center gap-2 text-inherit no-underline hover:no-underline cursor-pointer hover:text-blue-600"
                                 title="פתח דף הצבעה קבוצתי"
                               >
-                                <span>{item.name}</span>
+                                <span>
+                                  {item.name}
+                                  {item.passiveFunds && <b className="mr-1"> מחקות בלבד</b>}
+                                </span>
                               </a>
                             ) : (
-                              <span>{item.name}</span>
+                              <span>
+                                {item.name}
+                                {item.passiveFunds && <b className="mr-1"> מחקות בלבד</b>}
+                              </span>
                             )}
                           </>
                         )}
@@ -455,6 +467,98 @@ export const VotingTablesField = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Historical Holdings - Companies that held 30 days before but not invited */}
+      {historicalHoldings.length > 0 && (
+        <Card style={{ width: '60%' }}>
+          <CardHeader>
+            <CardTitle className="text-lg">חברות שלא מזומנות לאסיפה עם הסטוריית החזקות</CardTitle>
+            <CardDescription>
+              חברות שהחזיקו בנייר 30 יום לפני המועד הקובע אך לא מזומנות לאסיפה (
+              {historicalHoldings.length} חברות)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="relative">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>שם חברה</TableHead>
+                    <TableHead>תאריך החזקה אחרון</TableHead>
+                    <TableHead>כמות החזקה</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {historicalHoldings.map((holding) => (
+                    <TableRow
+                      key={holding.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors relative"
+                      onMouseEnter={() => setHoveredHistoricalRow(holding.id)}
+                      onMouseLeave={() => setHoveredHistoricalRow(null)}
+                    >
+                      <TableCell>{holding.companyName}</TableCell>
+                      <TableCell>
+                        {holding.lastHoldingDate
+                          ? new Date(holding.lastHoldingDate).toLocaleDateString('he-IL')
+                          : '-'}
+                      </TableCell>
+                      <TableCell>{holding.quantity.toLocaleString()}</TableCell>
+
+                      {/* Fund Details Tooltip */}
+                      {hoveredHistoricalRow === holding.id && holding.fundDetails.length > 0 && (
+                        <div
+                          className="absolute z-50 p-3 bg-white border border-gray-300 rounded-md shadow-lg"
+                          style={{
+                            top: '100%',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            minWidth: '400px',
+                            maxWidth: '600px',
+                          }}
+                        >
+                          <div className="space-y-1">
+                            {holding.fundDetails.map((fund, index) => (
+                              <div
+                                key={fund.fundId}
+                                className={`grid grid-cols-[2fr_1fr_1fr] gap-2 items-center py-1 ${
+                                  index !== holding.fundDetails.length - 1
+                                    ? 'border-b border-gray-200'
+                                    : ''
+                                }`}
+                              >
+                                <div className="font-medium text-sm">{fund.fundName}</div>
+
+                                <div className="text-sm text-gray-600">
+                                  {fund.lastHoldingDate
+                                    ? new Date(fund.lastHoldingDate).toLocaleDateString('he-IL')
+                                    : '-'}
+                                </div>
+
+                                <div className="text-sm text-gray-600">
+                                  {fund.quantity.toLocaleString()}
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* שורה של סה"כ, משתלבת בתוך הטבלה */}
+                            {holding.fundDetails.length > 1 && (
+                              <div className="grid grid-cols-[2fr_1fr_1fr] gap-2 items-center pt-2 border-t border-gray-200 font-semibold text-sm">
+                                <div className="col-span-2 text-right">סה״כ:</div>
+                                <div>{holding.quantity.toLocaleString()}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <ManageMeetingCompanies />
     </div>
   )

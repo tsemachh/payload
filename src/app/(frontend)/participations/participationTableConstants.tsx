@@ -66,16 +66,9 @@ export const createParticipationColumns = (
     //     </div>
     //   ),
     // },
-    {
+   {
       key: 'stockNumber',
       header: 'מספר נייר /  \n נושאי האסיפה',
-      type: 'string',
-      isAlwaysVisible: true,
-      minWidth: 80,
-    },
-    {
-      key: 'corporateName',
-      header: 'שם תאגיד',
       type: 'string',
       isAlwaysVisible: true,
       minWidth: 80,
@@ -88,7 +81,6 @@ export const createParticipationColumns = (
       header: 'שם חברה',
       type: 'string',
       minWidth: 120,
-      isAlwaysVisible: true,
       render: (row: any) => {
         return row.currentCompany?.name || '-'
       },
@@ -98,9 +90,14 @@ export const createParticipationColumns = (
   baseColumns.push(
     { key: 'stockName', header: 'שם נייר', type: 'string', minWidth: 120 },
     {
+      key: 'corporateName',
+      header: 'שם התאגיד',
+      type: 'string',
+      minWidth: 80,
+    },
+    {
       key: 'marketValue',
       header: `שווי שוק (מ' ₪)`,
-      isAlwaysVisible: true,
       type: 'string',
       render: (row) => {
         const marketValue = parseNumber(row.marketValue)
@@ -109,9 +106,18 @@ export const createParticipationColumns = (
       minWidth: 80,
     },
     {
+      key: 'holdingQuantity',
+      header: 'ערך נקוב בפועל',
+      type: 'number',
+      render: (row) => {
+        // Display the holdingQuantity which is now the nominalValue equivalent
+        return formatNumberWithLocale(row.holdingQuantity || 0, 0, 'he-IL')
+      },
+      minWidth: 80,
+    },
+    {
       key: 'percentageHolding',
       header: 'החזקה (%)',
-      isAlwaysVisible: true,
       type: 'number',
       render: (row) => formatNumberWithLocale(row.percentageHolding, 4, 'he-IL'),
       minWidth: 80,
@@ -119,7 +125,6 @@ export const createParticipationColumns = (
     {
       key: 'holdingValueInMillions',
       header: `שווי החזקה (מ' ₪)`,
-      isAlwaysVisible: true,
       type: 'number',
       render: (row) => formatNumberWithLocale(row.holdingValueInMillions, 2, 'he-IL'),
       minWidth: 80,
@@ -127,9 +132,26 @@ export const createParticipationColumns = (
     {
       key: 'meetingDate',
       header: 'מועד האסיפה',
-      isAlwaysVisible: true,
       type: 'datetime',
       render: (row) => formatDateTime(row.meetingDate, true),
+      minWidth: 80,
+    },
+    {
+      key: 'meetingTime',
+      header: 'שעת האסיפה',
+      type: 'datetime',
+      render: (row) => {
+        if (!row.meetingDate) return ''
+        const date = new Date(row.meetingDate)
+        return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+      },
+      minWidth: 80,
+    },
+    {
+      key: 'holdingsLimit',
+      header: ' מועד קובע',
+      type: 'datetime',
+      render: (row) => formatDateTime(row.holdingsLimit, true),
       minWidth: 80,
     },
     { key: 'meetingType', header: 'סוג האסיפה', type: 'string', minWidth: 80 },
@@ -138,7 +160,6 @@ export const createParticipationColumns = (
     baseColumns.push({
       key: 'recommendation',
       header: 'המלצת הצבעה ',
-      isAlwaysVisible: true,
       type: 'string',
       render: () => null,
       minWidth: 70,
@@ -149,7 +170,6 @@ export const createParticipationColumns = (
     {
       key: 'vote',
       header: 'הצבעה',
-      isAlwaysVisible: true,
       type: 'string',
       render: () => null,
       minWidth: 70,
@@ -157,7 +177,6 @@ export const createParticipationColumns = (
     {
       key: 'meetingResults',
       header: 'תוצאות האסיפה',
-      isAlwaysVisible: true,
       type: 'string',
       render: () => null,
       minWidth: 75,
@@ -165,7 +184,6 @@ export const createParticipationColumns = (
     {
       key: 'simpleMajority',
       header: 'רוב רגיל',
-      isAlwaysVisible: true,
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -173,16 +191,14 @@ export const createParticipationColumns = (
     },
     {
       key: 'privilegedMajority',
-      header: 'רוב מיוחד (%)',
-      isAlwaysVisible: true,
+      header: 'רוב מיוחד',
       type: 'string',
       render: () => null,
       minWidth: 40,
     },
     {
       key: 'policyCompliance',
-      header: 'בהתאם למדיניות דריקטוריון ו/או וועדת השקעות',
-      isAlwaysVisible: true,
+      header: 'בהתאם למדיניות דירקטוריון ו/או ועדת השקעות',
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -191,7 +207,6 @@ export const createParticipationColumns = (
     {
       key: 'conflictOfInterest',
       header: 'ניגוד עניינים',
-      isAlwaysVisible: true,
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -199,8 +214,7 @@ export const createParticipationColumns = (
     },
     {
       key: 'relatedParty',
-      header: 'צד קשר',
-      isAlwaysVisible: true,
+      header: 'צד קשור',
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -209,7 +223,14 @@ export const createParticipationColumns = (
     {
       key: 'personalInterest',
       header: 'עניין אישי',
-      isAlwaysVisible: true,
+      type: 'boolean',
+      render: () => null,
+      positionCenter: true,
+      minWidth: 50,
+    },
+    {
+      key: 'isFinancialCorporation',
+      header: 'תאגיד פיננסי',
       type: 'boolean',
       render: () => null,
       positionCenter: true,
@@ -221,152 +242,128 @@ export const createParticipationColumns = (
 }
 export const renderAgendaRows = (
   row: ParticipationTableDataType,
-  participationColumns: Column<ParticipationTableDataType>[],
-  selectedCompaniesCount: number,
+  visibleColumns: Column<ParticipationTableDataType>[],
+  selectedCompaniesCount?: number,
 ) => {
   return (
     <>
       {row.agendas.map((agenda: ParticipationAgendaType, agendaIndex: number) => {
         const isRemoved = agenda.isRemoved === true
+        const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
 
         return (
           <TableRow
             key={`participation-${uuidv4()}`}
             className="bg-muted/70 border-t-0 hover:bg-primary/20 h-[40px]"
           >
-            {/* Empty cell for companies column */}
-            <TableCell className="py-2 px-6"></TableCell>
+            {/* תא קבוע עבור טקסט האג'נדה */}
+            <TableCell key="agenda-text" className="py-2 px-3 whitespace-nowrap">
+              <div className="relative  flex items-center gap-2">
+                <span
+                  className={cn(
+                    'font-medium',
+                    isRemoved ? 'text-gray-400' : 'text-muted-foreground',
+                  )}
+                >
+                  {agendaIndex + 1}.
+                </span>
 
-            {/* Map through visible columns and show relevant fund data */}
-            {participationColumns.slice(1).map((column, columnIndex) => {
-              if (column.key in agenda) {
-                return (
-                  <TableCell
-                    key={`fund-${uuidv4()}-${String(column.key)}`}
-                    className="py-2 px-3 whitespace-nowrap"
-                    style={{ textAlign: 'right' }}
+                <div
+                  className={cn('relative group', isEnglish ? 'text-left' : 'text-right')}
+                  dir={isEnglish ? 'ltr' : 'rtl'}
+                >
+                  <div
+                    className="cursor-pointer flex items-center gap-1"
+                    style={{ maxWidth: '600px' }}
                   >
-                    {(() => {
-                      // If removed from agenda, don't show voting details
-                      if (isRemoved && column.key !== 'text') {
-                        return null
-                      }
+                    <span
+                      className={cn(
+                        'truncate',
+                        isRemoved
+                          ? 'text-gray-400 line-through decoration-gray-400'
+                          : 'hover:text-blue-600',
+                      )}
+                      style={{ textDecorationThickness: '1px' }}
+                    >
+                      {agenda.text}
+                    </span>
 
-                      let value = agenda[column.key as keyof ParticipationAgendaType]
-                      if (column.key === 'recommendation') {
-                        value = agenda.recommendation.votingRecommendation
-                      }
-                      if (column.key === 'privilegedMajority') {
-                        return agenda.privilegedMajority && agenda.percentResult ? (
-                          `${formatNumberWithLocale(agenda.percentResult)}%`
-                        ) : (
-                          <BooleanIcon iconType={agenda.privilegedMajority} showX={false} />
-                        )
-                      }
-                      if (column.key === 'simpleMajority') {
-                        return agenda.simpleMajority && agenda.percentResult ? (
-                          `${formatNumberWithLocale(agenda.percentResult)}%`
-                        ) : (
-                          <BooleanIcon iconType={agenda.simpleMajority} showX={false} />
-                        )
-                      }
-                      if (column.key === 'meetingResults') {
-                        value = agenda.result
-                          ? resultMapping[agenda.result] || agenda.result
-                          : agenda.meetingResults || null
-                      }
-                      if (typeof value === 'number') {
-                        return new Intl.NumberFormat('he-IL').format(value)
-                      }
-                      if (typeof value === 'string') {
-                        return value
-                      }
-                      if (typeof value === 'boolean') {
-                        return <BooleanIcon iconType={value} showX={false} />
-                      }
-                    })()}
-                  </TableCell>
-                )
-              } else {
-                return (
-                  <TableCell
-                    key={`fund-${uuidv4()}-${String(column.key)}`}
-                    className="py-2 px-3  whitespace-nowrap"
-                  >
-                    {columnIndex === 0 && (
-                      <div className="relative h-40px flex items-center gap-2 -mr-[100px]">
-                        <span
-                          className={cn(
-                            'font-medium',
-                            isRemoved ? 'text-gray-400' : 'text-muted-foreground',
-                          )}
-                        >
-                          {agendaIndex + 1}.
-                        </span>
-
-                        {(() => {
-                          const isEnglish = /^[A-Za-z]/.test(agenda.text?.trim?.() || '')
-                          return (
-                            <div
-                              className={cn(
-                                'relative group',
-                                isEnglish ? 'text-left' : 'text-right',
-                              )}
-                              dir={isEnglish ? 'ltr' : 'rtl'}
-                            >
-                              <div
-                                className="cursor-pointer flex items-center gap-1"
-                                style={{ maxWidth: '800px' }}
-                              >
-                                <span
-                                  className={cn(
-                                    'truncate',
-                                    isRemoved
-                                      ? 'text-gray-400 line-through decoration-gray-400'
-                                      : 'hover:text-blue-600',
-                                  )}
-                                  style={{ textDecorationThickness: '1px' }}
-                                >
-                                  {agenda.text}
-                                </span>
-
-                                {isRemoved && (
-                                  <span
-                                    className="text-gray-400 whitespace-nowrap"
-                                    style={{ textDecoration: 'none' }}
-                                  >
-                                    {isEnglish ? ' (Removed from agenda) ' : ' (הוסר מסדר היום) '}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* tooltip */}
-                              <div
-                                className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg max-w-md whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{
-                                  [isEnglish ? 'left' : 'right']: 0,
-                                }}
-                              >
-                                {agenda.text}
-                                {isRemoved &&
-                                  (isEnglish ? ' (Removed from agenda) ' : ' (הוסר מסדר היום) ')}
-                                <div
-                                  className={cn(
-                                    'absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent',
-                                    isEnglish
-                                      ? 'left-4 border-b-gray-900'
-                                      : 'right-4 border-b-gray-900',
-                                  )}
-                                />
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
+                    {isRemoved && (
+                      <span
+                        className="text-gray-400 whitespace-nowrap"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        {isEnglish ? ' (Removed from agenda) ' : ' (הוסר מסדר היום) '}
+                      </span>
                     )}
-                  </TableCell>
-                )
-              }
+                  </div>
+
+                  {/* Tooltip */}
+                  <div
+                    className="absolute z-50 invisible group-hover:visible bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg max-w-md whitespace-normal break-words top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    style={{
+                      [isEnglish ? 'left' : 'right']: 0,
+                    }}
+                  >
+                    {agenda.text}
+                    {isRemoved && (isEnglish ? ' (Removed from agenda) ' : ' (הוסר מסדר היום) ')}
+                    <div
+                      className={cn(
+                        'absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent',
+                        isEnglish ? 'left-4 border-b-gray-900' : 'right-4 border-b-gray-900',
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            </TableCell>
+
+            {/* רנדור עמודות נראות בלבד - מקבל מה-DataTableServer */}
+            {visibleColumns.slice(1).map((column) => {
+              if (column.key === 'text') return null // כבר הצגנו את הטקסט
+
+              const value = agenda[column.key as keyof ParticipationAgendaType]
+
+              return (
+                <TableCell
+                  key={`fund-${uuidv4()}-${String(column.key)}`}
+                  className="py-2 px-3 whitespace-nowrap"
+                  style={{ textAlign: 'right' }}
+                >
+                  {(() => {
+                    if (isRemoved && column.key !== 'text') return null
+
+                    if (column.key === 'recommendation') {
+                      return agenda.recommendation.votingRecommendation
+                    }
+                    if (column.key === 'privilegedMajority') {
+                      return agenda.privilegedMajority && agenda.percentResult ? (
+                        `${formatNumberWithLocale(agenda.percentResult)}%`
+                      ) : (
+                        <BooleanIcon iconType={agenda.privilegedMajority} showX={false} />
+                      )
+                    }
+                    if (column.key === 'simpleMajority') {
+                      return agenda.simpleMajority && agenda.percentResult ? (
+                        `${formatNumberWithLocale(agenda.percentResult)}%`
+                      ) : (
+                        <BooleanIcon iconType={agenda.simpleMajority} showX={false} />
+                      )
+                    }
+                    if (column.key === 'meetingResults') {
+                      return agenda.result
+                        ? resultMapping[agenda.result] || agenda.result
+                        : agenda.meetingResults || null
+                    }
+                    if (typeof value === 'number')
+                      return new Intl.NumberFormat('he-IL').format(value)
+                    if (typeof value === 'string') return value
+                    if (typeof value === 'boolean')
+                      return <BooleanIcon iconType={value} showX={false} />
+                    return null
+                  })()}
+                </TableCell>
+              )
             })}
           </TableRow>
         )

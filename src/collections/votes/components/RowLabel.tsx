@@ -3,12 +3,24 @@ import { useRowLabel, useFormFields, useField } from '@payloadcms/ui'
 import { useEffect, useState } from 'react'
 import { stringify } from 'qs-esm'
 
-const RowLabel: React.FC = () => {
+type RowLabelType = 'votes' | 'dynamicQuestions'
+
+interface RowLabelProps {
+  type?: RowLabelType
+}
+
+const RowLabel: React.FC<RowLabelProps> = ({ type = 'votes' }) => {
   const { rowNumber } = useRowLabel()
   const meetingId = useFormFields(([fields]) => fields.meeting?.value)
 
+  // For votes - get topicIndex
   const { value: topicIndex } = useField<number>({
     path: `votes.${rowNumber}.topicIndex`,
+  })
+
+  // For dynamic questions - get questionText directly from the field
+  const { value: questionText } = useField<string>({
+    path: `dynamicQuestions.${rowNumber}.questionText`,
   })
 
   const [labelText, setLabelText] = useState('')
@@ -44,11 +56,33 @@ const RowLabel: React.FC = () => {
   }
 
   useEffect(() => {
-    if (meetingId) {
+    if (type === 'votes' && meetingId) {
       fetchAgendaText()
+    } else if (type === 'dynamicQuestions' && questionText) {
+      setLabelText(questionText)
     }
-  }, [meetingId, rowNumber])
+  }, [meetingId, rowNumber, type, questionText])
 
+  // For dynamic questions, show simple label
+  if (type === 'dynamicQuestions') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', maxWidth: '100%' }}>
+        <span
+          style={{
+            flex: 1,
+            marginRight: 4,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {labelText || 'שאלה'}
+        </span>
+      </div>
+    )
+  }
+
+  // For votes, show with topicIndex and removed status
   return (
     <div style={{ display: 'flex', alignItems: 'center', maxWidth: '100%' }}>
       <span style={{ marginRight: 4 }}>{topicIndex}.</span>

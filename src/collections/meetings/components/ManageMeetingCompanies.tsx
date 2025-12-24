@@ -51,7 +51,6 @@ export const ManageMeetingCompanies = () => {
   const [availableStocks, setAvailableStocks] = useState<any[]>([])
   const [selectedStockId, setSelectedStockId] = useState<string>('')
   const [showStockSelection, setShowStockSelection] = useState(false)
-  const [isForeignStock, setIsForeignStock] = useState(false)
 
   // Popover state
   const [openAdd, setOpenAdd] = useState(false)
@@ -236,7 +235,6 @@ export const ManageMeetingCompanies = () => {
         setSelectedStockId('')
         setShowStockSelection(false)
         setAvailableStocks([])
-        setIsForeignStock(false)
         // Refresh the page to update Payload's document state
         const currentPath = window.location.pathname
         router.push(currentPath)
@@ -449,7 +447,6 @@ export const ManageMeetingCompanies = () => {
             setSelectedStockId('')
             setShowStockSelection(false)
             setAvailableStocks([])
-            setIsForeignStock(false)
             setOpenAdd(false)
           }
         }}
@@ -511,6 +508,7 @@ export const ManageMeetingCompanies = () => {
                     aria-expanded={openAdd}
                     className="w-full justify-between text-left font-normal"
                     style={{ direction: 'rtl' }}
+                    disabled={isProcessing}
                   >
                     {selectedAddId ? getAddName() : 'בחר חברה...'}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -564,11 +562,9 @@ export const ManageMeetingCompanies = () => {
             <div className="py-4 space-y-4">
               <div className="flex justify-between items-center">
                 <div className="text-sm font-medium">
-                  {isForeignStock && (
-                    <div className="mb-2 text-xs text-gray-500">
-                      נייר ערך: <strong>{getSelectedStockName()}</strong>
-                    </div>
-                  )}
+                  <div className="mb-2 text-xs text-gray-500">
+                    נייר ערך: <strong>{getSelectedStockName()}</strong>
+                  </div>
                   חברה נבחרה: <strong>{getAddName()}</strong>
                 </div>
                 <Button
@@ -602,7 +598,7 @@ export const ManageMeetingCompanies = () => {
                         variant="outline"
                         size="sm"
                         onClick={selectAllFunds}
-                        disabled={selectedFunds.length === availableFunds.length}
+                        disabled={selectedFunds.length === availableFunds.length || isProcessing}
                       >
                         בחר הכל
                       </Button>
@@ -610,7 +606,7 @@ export const ManageMeetingCompanies = () => {
                         variant="outline"
                         size="sm"
                         onClick={deselectAllFunds}
-                        disabled={selectedFunds.length === 0}
+                        disabled={selectedFunds.length === 0 || isProcessing}
                       >
                         בטל הכל
                       </Button>
@@ -628,6 +624,7 @@ export const ManageMeetingCompanies = () => {
                           checked={selectedFunds.includes(fund.id)}
                           onChange={() => toggleFund(fund.id)}
                           className="h-4 w-4 cursor-pointer"
+                          disabled={isProcessing}
                         />
                         <span className="flex-1">{fund.name}</span>
                         <input
@@ -643,7 +640,7 @@ export const ManageMeetingCompanies = () => {
                               [fund.id]: value,
                             }))
                           }}
-                          disabled={!selectedFunds.includes(fund.id)}
+                          disabled={!selectedFunds.includes(fund.id) || isProcessing}
                           className="w-24 px-2 py-1 text-sm border rounded dark:bg-gray-900 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                       </div>
@@ -692,9 +689,9 @@ export const ManageMeetingCompanies = () => {
                 setSelectedStockId('')
                 setShowStockSelection(false)
                 setAvailableStocks([])
-                setIsForeignStock(false)
                 setOpenAdd(false)
               }}
+              disabled={isProcessing}
             >
               ביטול
             </Button>
@@ -726,6 +723,7 @@ export const ManageMeetingCompanies = () => {
                   aria-expanded={openRemove}
                   className="w-full justify-between text-left font-normal"
                   style={{ direction: 'rtl' }}
+                  disabled={isProcessing}
                 >
                   {selectedRemoveId ? getRemoveName() : 'בחר חברה...'}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -799,6 +797,7 @@ export const ManageMeetingCompanies = () => {
                 setSelectedRemoveId('')
                 setOpenRemove(false)
               }}
+              disabled={isProcessing}
             >
               ביטול
             </Button>
@@ -831,6 +830,7 @@ export const ManageMeetingCompanies = () => {
                   aria-expanded={openRestore}
                   className="w-full justify-between text-left font-normal"
                   style={{ direction: 'rtl' }}
+                  disabled={isProcessing}
                 >
                   {selectedRestoreId ? getRestoreName() : 'בחר חברה...'}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -903,6 +903,7 @@ export const ManageMeetingCompanies = () => {
                 setSelectedRestoreId('')
                 setOpenRestore(false)
               }}
+              disabled={isProcessing}
             >
               ביטול
             </Button>

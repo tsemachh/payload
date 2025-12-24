@@ -2,6 +2,7 @@ import type { Field, Where } from 'payload'
 import { type CollectionConfig } from 'payload'
 import ProcessMeetingStateEndpoint from './endpoints/ProcessMeetingStateEndpoint'
 import ProcessMeetingCompaniesEndPoint from './endpoints/ProcessMeetingCompaniesEndPoint'
+import ResearchWarningsEndpoint from './endpoints/ResearchWarningsEndpoint'
 import {
   allMeetingsEndpoint,
   futureMeetingsEndpoint,
@@ -12,7 +13,11 @@ import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesM
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
 import uploadMeetingsAgendaEndPoint from './feeds/uploadMeetingsAgendaEndPoint'
 import addCompanyEndpoint from './endpoints/AddCompanyEndpoint'
-import removeCompanyEndpoint, { restoreCompanyEndpoint } from './endpoints/RemoveCompanyEndpoint'
+import ExportMeetingsExcelEndpoint from './endpoints/ExportMeetingsExcelEndpoint'
+import removeCompanyEndpoint, {
+  restoreCompanyEndpoint,
+  removeFundEndpoint,
+} from './endpoints/RemoveCompanyEndpoint'
 import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
   afterChangeDeleteResearchDocs,
@@ -26,6 +31,7 @@ import { syncDualMeeting } from './hooks/syncDualMeeting'
 import {
   beforeChangeMeetingId,
   handleResult,
+  setStockValueOnCreateOrHoldingsChange,
   updateStockRegisteredValue,
   validateMeetingInvitationLink,
   validateMeetingState,
@@ -35,6 +41,7 @@ import { updateVoteStatusOnCompaniesChange } from '@/collections/meetings/hooks/
 import { isAdmin, isUserCompanyMeeting, isUserCompanyMeetingWrite } from '@/utils/authUtils'
 import { stockOriginOptions } from '@/app/(frontend)/meetings/filtersConst'
 import { syncLabelsOnStockChange } from './hooks/syncLabelsOnStockChange'
+import { updateResearchDocumentsStatus } from './hooks/researchDocumentsStatusHook'
 
 const PropsManualLink: IconLinkProps = {
   urlTemplate: '${value}',
@@ -121,6 +128,7 @@ export const Meetings: CollectionConfig = {
         { name: 'hasResearchDoc', width: '130px' },
         { name: 'votesStatus', width: '130px' },
         { name: 'votesReportStatus', width: '130px' },
+        { name: 'researchDocumentsStatus', width: '130px' },
         { name: 'resultsConfirmationStatus', width: '130px' },
         { name: 'hasRelatedStocks', width: '130px' },
       ],
@@ -162,9 +170,11 @@ export const Meetings: CollectionConfig = {
       limits: [100, 200, 300, 500],
     },
     components: {
+      listMenuItems: ['/collections/meetings/components/ExportMeetingsMenuItem'],
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
         PublishButton: '/components/buttons/CustomPublishButton',
+        
       },
     },
   },
@@ -172,6 +182,11 @@ export const Meetings: CollectionConfig = {
     drafts: true,
     maxPerDoc: 20,
   },
+  indexes: [
+    {
+      fields: ['_status', 'meetingDate'],
+    },
+  ],
   fields: [
     {
       type: 'tabs',
@@ -277,43 +292,6 @@ export const Meetings: CollectionConfig = {
               admin: {
                 hidden: true,
                 readOnly: true,
-              },
-            },
-            {
-              type: 'relationship',
-              relationTo: 'companies',
-              hasMany: true,
-              name: 'companiesNotYetVoted',
-              label: 'חברות שטרם הצביעו',
-              virtual: true,
-              admin: {
-                hidden: true,
-              },
-              hooks: {
-                afterRead: [
-                  async ({ data, req }) => {
-                    if (!data?.votes?.docs || !data?.companies) {
-                      return []
-                    }
-                    const votes = await req.payload.find({
-                      collection: 'votes',
-                      select: {
-                        company: true,
-                      },
-                      where: {
-                        id: {
-                          in: data?.votes?.docs,
-                        },
-                      },
-                      limit: 0,
-                      depth: 0,
-                    })
-                    const votedCompanyIds = votes.docs.map((vote) => vote.company)
-                    return data.companies.filter(
-                      (companyId: string) => !votedCompanyIds.includes(companyId),
-                    )
-                  },
-                ],
               },
             },
             {
@@ -431,6 +409,7 @@ export const Meetings: CollectionConfig = {
               admin: {
                 allowCreate: false,
                 disableListColumn: true,
+                disableListFilter: true,
                 components: {
                   Field: '/collections/meetings/components/VotingTablesField',
                 },
@@ -549,6 +528,36 @@ export const Meetings: CollectionConfig = {
                       cellWidth: '50px',
                     },
                     width: '150px',
+                  },
+                  hooks: {
+                    beforeChange: [
+                      async ({ value, data, req, operation }) => {
+                        // Only auto-fill relatedQuestions if it's empty/null and we have a meeting type
+                        if (!value || !data || data.relatedQuestions) {
+                          return value
+                        }
+
+                        // Find questions that are marked for auto-fill for this meeting type
+                        const matchingQuestions = await req.payload.find({
+                          collection: 'questions',
+                          where: {
+                            and: [
+                              { type: { equals: value } },
+                              { autoFillInMeetings: { equals: true } },
+                            ],
+                          },
+                          limit: 1,
+                          depth: 0,
+                        })
+
+                        // Auto-populate relatedQuestions if we found matching questions
+                        if (matchingQuestions.docs.length > 0) {
+                          data.relatedQuestions = matchingQuestions.docs[0].id
+                        }
+
+                        return value
+                      },
+                    ],
                   },
                 },
                 {
@@ -962,6 +971,17 @@ export const Meetings: CollectionConfig = {
           label: 'סדר יום',
           fields: [
             {
+              name: 'relatedQuestions',
+              label: 'שאלות קשורות',
+              type: 'relationship',
+              relationTo: 'questions',
+              hasMany: false,
+              admin: {
+                description:
+                  'שאלות שימולאו אוטומטית בטופס ההצבעה. ברירת המחדל היא שאלות התואמות לסוג האסיפה, אך ניתן לשנות ידנית.',
+              },
+            },
+            {
               name: 'agenda',
               label: 'נושאים',
               type: 'array',
@@ -1138,6 +1158,24 @@ export const Meetings: CollectionConfig = {
                   Field: '/collections/meetings/components/ResearchUploadDisplay',
                 },
               },
+              hooks: {
+                afterChange: [updateResearchDocumentsStatus],
+              },
+            },
+            {
+              name: 'researchDocumentsStatus',
+              label: 'סטטוס מסמכי מחקר',
+              type: 'select',
+              options: [
+                { label: 'ריק', value: 'empty' },
+                { label: 'חלקי', value: 'partial' },
+                { label: 'מלא', value: 'complete' },
+              ],
+              admin: {
+                description: 'מציין את סטטוס מסמכי המחקר עבור חברות האסיפה',
+                readOnly: true,
+                hidden: true,
+              },
             },
           ],
         },
@@ -1211,6 +1249,18 @@ export const Meetings: CollectionConfig = {
                       label: 'החזקה בנייר עוקב',
                     },
                     {
+                      name: 'holdingDate',
+                      type: 'date',
+                      label: 'תאריך החזקה',
+                      admin: {
+                        readOnly: true,
+                        date: {
+                          displayFormat: 'dd/MM/yyyy',
+                          pickerAppearance: 'default',
+                        },
+                      },
+                    },
+                    {
                       name: 'original',
                       label: 'מניה מקורית',
                       type: 'array',
@@ -1240,6 +1290,56 @@ export const Meetings: CollectionConfig = {
                           type: 'number',
                         },
                       ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: 'historicalHoldings',
+              label: 'החזקות היסטוריות (30 יום לפני)',
+              admin: {
+                readOnly: true,
+                description: 'חברות שהחזיקו 30 יום לפני מועד הרישום אך לא הוזמנו לאסיפה',
+              },
+              labels: {
+                plural: 'החזקות היסטוריות',
+                singular: 'החזקה היסטורית',
+              },
+              type: 'array',
+              interfaceName: 'HistoricalHolding',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'company',
+                      label: 'מזהה חברה',
+                      type: 'text',
+                      index: true,
+                      required: true,
+                    },
+                    {
+                      name: 'fund',
+                      label: 'מזהה תיק',
+                      type: 'text',
+                    },
+                    {
+                      name: 'lastHoldingDate',
+                      label: 'תאריך החזקה אחרון',
+                      type: 'date',
+                      required: true,
+                      admin: {
+                        date: {
+                          pickerAppearance: 'dayOnly',
+                        },
+                      },
+                    },
+                    {
+                      name: 'quantity',
+                      label: 'כמות',
+                      type: 'number',
+                      required: true,
                     },
                   ],
                 },
@@ -1365,24 +1465,17 @@ export const Meetings: CollectionConfig = {
 
         const holdingsLimitChanged =
           previousDoc?.holdingsLimit?.toString() !== doc?.holdingsLimit?.toString()
-        const currentIds = (doc?.removedCompanies || []).map((item: any) =>
-          typeof item === 'string' ? item : item.id,
-        )
-
-        const previousIds = (previousDoc?.removedCompanies || []).map((item: any) =>
-          typeof item === 'string' ? item : item.id,
-        )
-        const holdingsRemovedCompanies = currentIds.toString() !== previousIds.toString()
-
         const stockChanged =
           getIdOfRelationField(previousDoc?.stock) !== getIdOfRelationField(doc?.stock)
         const firstPublish =
-          previousDoc?._status === 'draft' && doc._ && (!doc.meetings || doc.meetings.length === 0)
+          previousDoc?._status === 'draft' &&
+          doc?._status === 'published' &&
+          (!previousDoc.companies || previousDoc.companies.length === 0)
         const isPublish = doc?._status === 'published'
 
         if (
           isPublish &&
-          (holdingsLimitChanged || stockChanged || firstPublish || holdingsRemovedCompanies) &&
+          (holdingsLimitChanged || stockChanged || firstPublish) &&
           !meetingAlreadyProcessed
         ) {
           if (req.context?.from !== 'process' && req.context?.from !== 'migration') {
@@ -1405,12 +1498,18 @@ export const Meetings: CollectionConfig = {
       clearCompaniesInSingleBondResearchDoc,
       beforeChangeMeetingId,
       updateVoteStatusOnCompaniesChange, // Add hook to update vote statuses when companies change
+      setStockValueOnCreateOrHoldingsChange, // Auto-pick stockValue on create / holdingsLimit change
       updateStockRegisteredValue, // Update stockRegisteredValue when stockValue changes
       syncLabelsOnStockChange,
       handleResult, // Automatically update state to 'ended' when all results are filled
     ],
   },
   endpoints: [
+    {
+      path: '/export-excel',
+      method: 'get',
+      handler: ExportMeetingsExcelEndpoint,
+    },
     {
       path: '/process-meetings',
       method: 'post',
@@ -1420,6 +1519,11 @@ export const Meetings: CollectionConfig = {
       path: '/process-companies',
       method: 'post',
       handler: ProcessMeetingCompaniesEndPoint,
+    },
+    {
+      path: '/:id/research-warnings',
+      method: 'post',
+      handler: ResearchWarningsEndpoint,
     },
     {
       path: '/upload-meetings-csv',
@@ -1465,6 +1569,11 @@ export const Meetings: CollectionConfig = {
       path: '/restore-company',
       method: 'post',
       handler: restoreCompanyEndpoint,
+    },
+    {
+      path: '/removeFund',
+      method: 'post',
+      handler: removeFundEndpoint,
     },
   ],
 }

@@ -9,11 +9,20 @@ import {
 import { PayloadRequest } from 'payload'
 import { HoldingFeedLine } from '@/payload-types'
 import { getPreviousHoldings } from '@/collections/holdings/feeds/FeedDataUtils'
-import { containsHebrewText } from '@/collections/holdings/feeds/FeedUtils'
+import { containsHebrewText, convertTextToNumbers } from '@/collections/holdings/feeds/FeedUtils'
 
 export type HoldingFeedLineWithName = HoldingFeedLine & {
   stockName?: string | null
   companyName?: string | null
+}
+
+/**
+ * Helper function to convert text stockId values to numbers, removing quotes and commas
+ * @param results The parsed file content
+ * @param hasHebrewHeader Whether the file has a Hebrew header row
+ */
+const convertStockIdTextToNumbers = (results: Array<any>, hasHebrewHeader: boolean): void => {
+  convertTextToNumbers(results, hasHebrewHeader, STOCK_ID_COL, true)
 }
 
 /**
@@ -22,35 +31,7 @@ export type HoldingFeedLineWithName = HoldingFeedLine & {
  * @param hasHebrewHeader Whether the file has a Hebrew header row
  */
 const convertQuantityTextToNumbers = (results: Array<any>, hasHebrewHeader: boolean): void => {
-  const startIndex = hasHebrewHeader ? 1 : 0
-
-  for (let i = startIndex; i < results.length; i++) {
-    const row = results[i]
-
-    if (Array.isArray(row)) {
-      // For XLSX files
-      const quantity = row[QUANTITY_COL]
-
-      if (typeof quantity === 'string' && quantity.trim() !== '') {
-        // Remove commas and convert to number
-        const cleanedQuantity = quantity.replace(/,/g, '')
-        if (!isNaN(Number(cleanedQuantity))) {
-          row[QUANTITY_COL] = Number(cleanedQuantity)
-        }
-      }
-    } else {
-      // For CSV files
-      const quantity = row[QUANTITY_COL.toString()]
-
-      if (typeof quantity === 'string' && quantity.trim() !== '') {
-        // Remove commas and convert to number
-        const cleanedQuantity = quantity.replace(/,/g, '')
-        if (!isNaN(Number(cleanedQuantity))) {
-          row[QUANTITY_COL.toString()] = Number(cleanedQuantity)
-        }
-      }
-    }
-  }
+  convertTextToNumbers(results, hasHebrewHeader, QUANTITY_COL, false)
 }
 
 /**
@@ -94,7 +75,8 @@ export const validateWholeFeed = (
     firstRow = results[1]
   }
 
-  // Always convert text quantity values to numbers (handles comma-separated numbers)
+  // Always convert text stockId and quantity values to numbers
+  convertStockIdTextToNumbers(results, hasHebrewHeader)
   convertQuantityTextToNumbers(results, hasHebrewHeader)
 
   // Check column format

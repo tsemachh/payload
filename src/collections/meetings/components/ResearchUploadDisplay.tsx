@@ -6,10 +6,12 @@ import { UploadFieldClientProps } from 'payload'
 import { stringify } from 'qs-esm'
 import { useCustomContext } from '@/providers/CustomContext'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
+import ResearchDocumentsView from './ResearchDocumentsView'
 
 const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
   const { value } = useField()
   const [uploadsData, setUploadsData] = useState<any[]>([])
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
   const { setMeetingCompanies, setStockId } = useCustomContext()
   const documentInfo = useDocumentInfo()
 
@@ -26,22 +28,22 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
       },
     }
 
-    const stringifiedQuery = stringify(query, { addQueryPrefix: true })
-    const res = await fetch(`/api/companies${stringifiedQuery}`)
+    const res = await fetch(`/api/companies${stringify(query, { addQueryPrefix: true })}`)
     if (!res.ok) return false
     const data = await res.json()
     return data?.docs?.length > 0
   }
 
+  /**
+   * init context + hide unused upload UI parts
+   */
   useEffect(() => {
     const companies = documentInfo.initialData?.companies || []
     const stock = documentInfo.initialData?.stock || []
-    if (companies) {
-      setMeetingCompanies(companies)
-    }
-    if (stock) {
-      setStockId(stock)
-    }
+
+    setMeetingCompanies(companies)
+    setStockId(stock)
+
     const chooseExistingBtn = document.querySelector('.upload__listToggler')
     if (chooseExistingBtn) {
       ;(chooseExistingBtn as HTMLElement).style.display = 'none'
@@ -51,44 +53,43 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
     if (orText) {
       ;(orText as HTMLElement).style.display = 'none'
     }
-  }, [])
+  }, [documentInfo.initialData])
 
+  /**
+   * fetch research documents when value changes
+   */
   useEffect(() => {
     const getAllUploads = async () => {
-      if (!value || !Array.isArray(value) || value.length === 0) return
+      if (!Array.isArray(value) || value.length === 0) return
 
       const ids = value.map((v: any) => (typeof v === 'object' ? v.id : v))
       const query = {
-        where: {
-          id: {
-            in: ids,
-          },
-        },
+        where: { id: { in: ids } },
         depth: 1,
         limit: 0,
-        select: {
-          companies: true,
-          filename: true,
-        },
+        select: { companies: true, filename: true },
       }
 
-      const stringifiedQuery = stringify(query, { addQueryPrefix: true })
       try {
-        const res = await fetch(`/api/research-documents${stringifiedQuery}`)
+        const res = await fetch(`/api/research-documents${stringify(query, { addQueryPrefix: true })}`)
         const { docs } = await res.json()
+
         const uploadsMap = new Map(docs.map((doc: any) => [doc.id, doc]))
-        const sortedDocs = ids.map((id) => uploadsMap.get(id)).filter(Boolean)
-        setUploadsData(sortedDocs)
+        setUploadsData(ids.map((id) => uploadsMap.get(id)).filter(Boolean))
       } catch (err) {
         console.error('Failed to fetch uploads', err)
       }
     }
 
     getAllUploads()
+    setRefreshTrigger((prev) => prev + 1)
   }, [value])
 
+  /**
+   * enrich upload list UI (filename metadata)
+   */
   useEffect(() => {
-    if (!uploadsData || uploadsData.length === 0) return
+    if (!uploadsData.length) return
 
     const updateFilenames = async () => {
       const filenameEls = document.querySelectorAll('.upload-relationship-details__details')
@@ -101,34 +102,38 @@ const ResearchUploadDisplay: React.FC<UploadFieldClientProps> = (props) => {
 
         const companyNames = (upload.companies || []).map((c: any) => c?.name).filter(Boolean)
         const result = parseResearchFilename(upload.filename)
+        const companyExists = await fetchCompanyIsRegular(result.companyName || '')
 
-        if (!el.querySelector('.withMeta-span')) {
-          const newSpan = document.createElement('p')
-          newSpan.className = 'withMeta-span'
+        const metaText =
+          !result.isGeneric && result.companyName && companyNames.length === 0 && !companyExists
+            ? 'מסמך לחברה לא קיימת'
+            : companyNames.length > 0
+              ? companyNames.join(', ')
+              : 'מסמך מחקר כללי'
 
-          const companyExists = await fetchCompanyIsRegular(result.companyName || '')
-          newSpan.textContent =
-            !result.isGeneric && result.companyName && companyNames.length === 0 && !companyExists
-              ? 'מסמך לחברה לא קיימת'
-              : companyNames.length > 0
-                ? companyNames.join(', ')
-                : 'מסמך מחקר כללי'
+        const meta = document.createElement('p')
+        meta.className = 'withMeta-span'
+        meta.textContent = metaText
+        meta.style.marginLeft = '8px'
+        meta.style.fontFamily = 'Arial, sans-serif'
+        meta.style.fontStyle = 'italic'
 
-          newSpan.style.marginLeft = '8px'
-          newSpan.style.fontFamily = 'Arial, sans-serif'
-          newSpan.style.fontStyle = 'italic'
-
-          el.appendChild(newSpan)
-        }
+        el.appendChild(meta)
       }
     }
 
-    updateFilenames().catch((err) => console.error('Error updating filenames:', err))
+    updateFilenames().catch(console.error)
   }, [uploadsData])
 
   return (
-    <div>
+    <div className="space-y-6">
       <UploadField {...props} />
+
+      {documentInfo.id && (
+        <div className="mt-8">
+          <ResearchDocumentsView refreshTrigger={refreshTrigger} />
+        </div>
+      )}
     </div>
   )
 }

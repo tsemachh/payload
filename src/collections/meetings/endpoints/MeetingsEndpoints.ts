@@ -2,7 +2,7 @@ import { addDataAndFileToRequest, PayloadRequest, SelectType, User } from 'paylo
 import { Company, Meeting, MeetingAgenda, ResearchDocument, Stock } from '@/payload-types'
 import {
   AgendasType,
-  CompanyTableDate,
+  CompanyTableData,
   DateFilterType,
   FundType,
   MeetingTableDataType,
@@ -16,6 +16,7 @@ import {
   findRelevantCompanyIds,
 } from '@/utils/dataUtils' // Response is available globally from lib.dom.d.ts
 import { downloadMeetingsExcel } from '@/lib/meetingsExcelGenerator'
+import { calculateVotingPercentages } from '@/collections/votes/votingPercentagesEndPoint'
 // Response is available globally from lib.dom.d.ts
 
 /**
@@ -48,6 +49,7 @@ const MEETING_SELECT_FIELDS: SelectType = {
   stockMarketValue: true,
   invitationLink: true,
   votes: true,
+  relatedQuestions: true,
 }
 
 /**
@@ -459,6 +461,10 @@ export const allMeetingsEndpoint = async (req: PayloadRequest) => {
             ...meeting,
             companies: filteredCompanies,
             // Recalculate aggregated values based on filtered companies
+            nominalValueClientReported: filteredCompanies.reduce(
+              (acc, obj) => acc + obj.nominalValueClientReported,
+              0,
+            ),
             nominalValue: filteredCompanies.reduce((acc, obj) => acc + obj.nominalValue, 0),
             percentageHolding: filteredCompanies.reduce(
               (acc, obj) => acc + obj.percentageHolding,
@@ -506,7 +512,8 @@ export const meetingColumnsForServer = [
   { key: 'meetingDate', header: 'מועד אסיפה' },
   { key: 'holdingsLimit', header: 'מועד קובע' },
   { key: 'proxyVotingDate', header: 'מועד מסירת הצבעות' },
-  { key: 'nominalValue', header: 'ערך נקוב ליום קובע' },
+  { key: 'nominalValueClientReported', header: 'ערך נקוב מדווח ' },
+  { key: 'nominalValue', header: 'ערך נקוב בפועל ' },
   { key: 'percentageHolding', header: 'החזקה (%)' },
   { key: 'holdingValueInMillions', header: 'שווי החזקה  (מיליוני ₪)' },
   { key: 'reference', header: 'אסמכתא' },
@@ -519,6 +526,8 @@ export const meetingColumnsForServer = [
   { key: 'electronicVotingEnabled', header: 'מופיעה במערכת האלק׳' },
   { key: 'committeeInitiated', header: 'תאגיד פיננסי דורש ועדה' },
   { key: 'reported', header: 'הצבעה בפועל' },
+  { key: 'fromRelatedStock', header: 'ניירות עוקבים' },
+  { key: 'votingPercentage', header: 'הצבעות התקבלו בעמדה' },
 ]
 
 export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
@@ -559,6 +568,29 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
     const pageSize = parseInt((req.query.pageSize as string) || '50')
     const totalPages = Math.ceil(meetings.totalDocs / pageSize)
     if (req.query.export === 'true') {
+      // Fetch voting percentages for export using the reusable helper
+      const meetingsPayload = meetingData
+        .filter((meeting): meeting is MeetingTableDataType => meeting !== null)
+        .map((meeting) => ({
+          meetingId: meeting.meetingIdPayload,
+          companyIds: meeting.companies.map((company: CompanyTableData) => company.id),
+        }))
+
+      const userCompanyIds = req.user.companies?.map((c) => c.companyId as string) || []
+      const percentagesMap = await calculateVotingPercentages(
+        payload,
+        meetingsPayload,
+        userCompanyIds,
+      )
+
+      // Add voting percentages to meeting data
+      const meetingDataWithPercentages = meetingData
+        .filter((meeting): meeting is MeetingTableDataType => meeting !== null)
+        .map((meeting) => ({
+          ...meeting,
+          votingPercentage: percentagesMap[meeting.meetingIdPayload]?.votingPercentage ?? null,
+        }))
+
       const columns = req.query.columns ? JSON.parse(req.query.columns as string) : []
       const headerMap: Record<string, string> = {}
       meetingColumnsForServer.forEach((col) => {
@@ -567,7 +599,11 @@ export const futureMeetingsEndpoint = async (req: PayloadRequest) => {
 
       const mappedColumns = columns.map((colKey: string) => headerMap[colKey] || colKey)
       const viewMode = req.query.viewMode || ''
-      const buffer = await downloadMeetingsExcel(meetingData, mappedColumns, viewMode as string)
+      const buffer = await downloadMeetingsExcel(
+        meetingDataWithPercentages,
+        mappedColumns,
+        viewMode as string,
+      )
 
       const encodedFilename = encodeURIComponent('דו׳׳ח אסיפות')
       const contentDisposition = `attachment; filename*=UTF-8''${encodedFilename}.xlsx;`
@@ -599,11 +635,26 @@ function createMeetingDataObject(
   meeting: Meeting,
   stockPresent: Stock,
   agendas: AgendasType[],
-  companiesArray: CompanyTableDate[],
+  companiesArray: CompanyTableData[],
   researchDocuments: UrlFilenameMap[],
   displayVotingRecommendation: boolean,
   defaultVotingRecommendation: boolean,
 ): MeetingTableDataType {
+  // Process related questions
+  const relatedQuestions =
+    meeting.relatedQuestions && typeof meeting.relatedQuestions === 'object'
+      ? {
+          id: meeting.relatedQuestions.id || '',
+          questions: Array.isArray(meeting.relatedQuestions.questions)
+            ? meeting.relatedQuestions.questions.map((q: any) => ({
+                id: q.id || '',
+                questionText: q.questionText || '',
+                defaultValue: q.defaultValue === 'true',
+              }))
+            : [],
+        }
+      : undefined
+
   return {
     meetingIdPayload: meeting.id,
     meetingId: meeting.primaryLegacyId || '' || '',
@@ -631,6 +682,8 @@ function createMeetingDataObject(
     location: meeting.location || '-',
     holdingsLimit: meeting.holdingsLimit || '-',
     proxyVotingDate: meeting.proxyVotingDate || '-',
+    nominalValueClientReported:
+      companiesArray?.reduce((acc, obj) => acc + obj.nominalValueClientReported, 0) || 0,
     nominalValue: companiesArray?.reduce((acc, obj) => acc + obj.nominalValue, 0) || 0,
     percentageHolding: companiesArray?.reduce((acc, obj) => acc + obj.percentageHolding, 0) || 0,
     holdingValueInMillions:
@@ -642,8 +695,9 @@ function createMeetingDataObject(
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!stockPresent.isFinancial,
-    votes: meeting.votes || [],
+    votes: meeting.votes || undefined,
     fromRelatedStock: companiesArray.some((c) => c.fromRelatedStock),
+    relatedQuestions,
   }
 }
 
@@ -729,15 +783,26 @@ async function processMeetingsData(
             return item.fund && (item.fund as string) == fundId
           })
           if (match && match.fund) {
-            if (match?.ownedQuantity) {
-              quantity = match.ownedQuantity
-            } else if (match.quantity) {
-              quantity = match.quantity
-            } else {
-              console.error(
-                `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
-              )
-              return null
+            if (match.original && Array.isArray(match.original) && match.original.length > 0) {
+              // If there's an original array, sum all ownedQuantity from it
+              quantity = match.original.reduce((sum: number, orig: any) => {
+                if (orig?.ownedQuantity) {
+                  return sum + (orig.ownedQuantity || 0)
+                }
+                if (orig?.quantity) {
+                  return sum + (orig.quantity || 0)
+                }
+                console.error(
+                  `Company ${fundId} in stock ${orig.stockId} does not exist or is not valid in the fundsWithHolding array`,
+                )
+                return null
+              }, 0)
+              if (quantity == 0) {
+                console.error(
+                  `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
+                )
+                return null
+              }
             }
           } else {
             console.error(
@@ -747,17 +812,19 @@ async function processMeetingsData(
           }
           // Calculate values for this company's holdings
           const { percentageHolding, holdingValueInMillions, nominalValue } =
-            calculateHoldingValues(quantity, meeting.stockValue)
+            calculateHoldingValues(quantity || 0, meeting.stockValue)
+          const nominalValueClientReported = Math.round(match.quantity || 0)
           const parentCompany = fundToParentMap.get(fundId as string)
           const holdingsCompanyName = findSubCompanyNameById(parentCompany, fundId)
           const originalStockIds = match.original?.map((o) => {
-            return { stockId: o.stockId, quantity: o.quantity }
+            return { stockId: o.stockId, quantity: o.quantity, fundId }
           })
           return {
             id: fundId,
             holdingsCompanyName,
             percentageHolding,
             holdingValueInMillions,
+            nominalValueClientReported,
             nominalValue,
             parentCompany,
             originalStockIds,
@@ -785,6 +852,7 @@ async function processMeetingsData(
           holdingsCompanyName: fund.holdingsCompanyName || ' ',
           percentageHolding: fund.percentageHolding,
           holdingValueInMillions: fund.holdingValueInMillions,
+          nominalValueClientReported: fund.nominalValueClientReported,
           nominalValue: fund.nominalValue,
           parentCompany: parentCompany,
           originalStockIds: fund.originalStockIds,
@@ -801,7 +869,7 @@ async function processMeetingsData(
       }
 
       // Create the final companiesArray
-      const companiesArray: CompanyTableDate[] = Array.from(parentCompaniesMap.values()).map(
+      const companiesArray: CompanyTableData[] = Array.from(parentCompaniesMap.values()).map(
         ({ parentCompany, funds }) => {
           // Calculate aggregated values for the parent company
           const totalPercentageHolding = funds.reduce((sum, fund) => {
@@ -819,6 +887,11 @@ async function processMeetingsData(
             return sum + (originalFund?.nominalValue || 0)
           }, 0)
 
+          const totalNominalValueClientReported = funds.reduce((sum, fund) => {
+            const originalFund = fundsArray.find((f) => f.id === fund.id)
+            return sum + (originalFund?.nominalValueClientReported || 0)
+          }, 0)
+
           const originalStockIds = [
             ...new Set(funds.flatMap((fund) => fund.originalStockIds || [])),
           ]
@@ -828,6 +901,7 @@ async function processMeetingsData(
             id: typeof parentCompany === 'string' ? parentCompany : parentCompany.id,
             percentageHolding: totalPercentageHolding,
             holdingValueInMillions: totalHoldingValueInMillions,
+            nominalValueClientReported: totalNominalValueClientReported,
             nominalValue: totalNominalValue,
             originalStockIds,
             funds,

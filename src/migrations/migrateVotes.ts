@@ -57,8 +57,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     let successCount = 0
     let errorCount = 0
-    let skippedCount = 0
+    let skippedNotFoundCount = 0
+    let skippedFinalizedCount = 0
     let skippedVotedCount = 0
+    let skippedNoVotesCount = 0
     // Create a promise pool with 20 concurrent threads
     const promisePool = new PromisePool(20)
     const promises = []
@@ -75,7 +77,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               where: {
                 and: [
                   { legacyIds: { contains: meeting.id.toString() } },
-                  { finalized: { not_equals: true } },
                 ],
               },
               select: { id: true, finalized: true },
@@ -84,17 +85,32 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             })
 
             const mongoMeetingId = mongoMeetingRes?.docs?.[0]?.id
-
+            const mongoMeetingFinalized = mongoMeetingRes?.docs?.[0]?.finalized
             if (!mongoMeetingId) {
-              console.log(
-                `Meeting with legacyId ${meeting.id} not found or is finalized in MongoDB; skipping votes`,
+              console.warn(
+                `Meeting with legacyId ${meeting.id} not found; skipping votes`,
               )
-              skippedCount++
+              skippedNotFoundCount++
               await logMigrationFault({
                 payload,
                 type: 'vote',
                 typeId: `meeting-${meeting.id}`,
-                comments: `Meeting with legacyId ${meeting.id} not found or is finalized; votes cannot be migrated`,
+                comments: `Meeting with legacyId ${meeting.id} not found; votes cannot be migrated`,
+                row: meeting,
+                severity: 'warning',
+              })
+              return
+            }
+            if (mongoMeetingFinalized === true) {
+              console.warn(
+                `Meeting with legacyId ${meeting.id} is finalized; skipping votes`,
+              )
+              skippedFinalizedCount++
+              await logMigrationFault({
+                payload,
+                type: 'vote',
+                typeId: `meeting-${meeting.id}`,
+                comments: `Meeting with legacyId ${meeting.id} is finalized; votes cannot be migrated`,
                 row: meeting,
                 severity: 'warning',
               })
@@ -183,10 +199,29 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 `)
 
                 // Filter voting data to get only the votes for the current company
+                // and only rows where cdecision > 0
                 const votingData = votingResult?.recordset.filter(
-                  (vote) => vote.fid === company.firmid,
+                  (vote) => vote.fid === company.firmid && vote.cdecision > 0,
                 )
                 const meetingClientsData = meetingClientsResult?.recordset[0]
+
+                // If there are no relevant votes, skip creating a vote document
+                if (!votingData || votingData.length === 0) {
+                  console.warn(
+                    `No positive voting data (cdecision > 0) for firm ${company.firmid} in meeting ${meeting.id}; skipping vote creation`,
+                  )
+                  skippedNoVotesCount++
+                  await logMigrationFault({
+                    payload,
+                    type: 'vote',
+                    typeId: `meeting-${meeting.id}-company-${company.firmid}`,
+                    comments:
+                      `No positive voting data (cdecision > 0) for firm ${company.firmid} in meeting ${meeting.id}; skipping vote creation`,
+                    row: company,
+                    severity: 'warning',
+                  })
+                  continue
+                }
 
                 // Extract votingOrdersMemo from meetingClients data
                 const votingOrdersMemo = meetingClientsData?.votingOrdersMemo
@@ -304,8 +339,10 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     console.log(`Total meetings processed: ${meetings.length}`)
     console.log(`Successfully processed: ${successCount}`)
     console.log(`Failed processing: ${errorCount}`)
-    console.log(`Skipped (meeting not found): ${skippedCount}`)
+    console.log(`Skipped (meeting not found): ${skippedNotFoundCount}`)
+    console.log(`Skipped (meeting finalized): ${skippedFinalizedCount}`)
     console.log(`Skipped (Vote exists): ${skippedVotedCount}`)
+    console.log(`Skipped (No positive voting data): ${skippedNoVotesCount}`)
     console.log('Votes migration completed successfully.')
   } catch (error) {
     console.error('Critical error during votes migration:', error)

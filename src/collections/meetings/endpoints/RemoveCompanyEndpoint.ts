@@ -1,4 +1,6 @@
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
+import { getIdOfRelationField } from '@/utils/utils'
+import { processCompaniesMeetings } from '../hooks/processCompaniesMeetings'
 
 /**
  * Endpoint to remove a company from a meeting
@@ -91,6 +93,12 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
       req,
     })
 
+    const affectedFundIds = company.subCompanies
+      ?.map((fund) => getIdOfRelationField(fund))
+      .filter((id): id is string => typeof id === 'string')
+
+    // Process the meeting with only the affected funds
+    await processCompaniesMeetings(req, [meetingId || ''], affectedFundIds)
     return Response.json({
       success: true,
       message: `החברה ${company?.name || companyId} נוספה בהצלחה לחברות המוסרות מהאסיפה`,
@@ -192,12 +200,153 @@ export const restoreCompanyEndpoint = async (req: PayloadRequest) => {
       req,
     })
 
+    const affectedFundIds = company.subCompanies
+      ?.map((fund) => getIdOfRelationField(fund))
+      .filter((id): id is string => typeof id === 'string')
+
+    // Process the meeting with only the affected funds
+    await processCompaniesMeetings(req, [meetingId || ''], affectedFundIds)
+
     return Response.json({
       success: true,
       message: `החברה ${company?.name || companyId} הוסרה ממערך החברות להסרה בהצלחה`,
     })
   } catch (error) {
     req.payload.logger.error(`Error restoring company to meeting: ${error}`)
+    return Response.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    )
+  }
+}
+
+export const removeFundEndpoint = async (req: PayloadRequest) => {
+  try {
+    await addDataAndFileToRequest(req)
+
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
+    const data = req.data as
+      | { meetingId?: string; companyId?: string; fundId?: string; stockId?: string }
+      | undefined
+    const { meetingId, companyId, fundId } = data || {}
+
+    if (!meetingId || !companyId || !fundId) {
+      return Response.json(
+        {
+          success: false,
+          message: 'Missing required fields: meetingId, companyId, and fundId',
+        },
+        { status: 400 },
+      )
+    }
+
+    // Get the meeting
+    const meeting = await req.payload.findByID({
+      collection: 'meetings',
+      id: meetingId,
+      select: {
+        holdingsLimit: true,
+        stock: true,
+        fullName: true,
+        funds: true,
+        companies: true,
+      },
+      depth: 0,
+    })
+
+    if (!meeting) {
+      return Response.json(
+        {
+          success: false,
+          message: 'Meeting not found for meetingId: ' + meetingId,
+        },
+        { status: 404 },
+      )
+    }
+
+    // Check if company exists in meeting companies
+    const meetingCompanies = meeting.companies || []
+    if (!meetingCompanies.includes(companyId)) {
+      return Response.json(
+        {
+          success: false,
+          message: `החברה ${companyId} לא נמצאת באסיפה ${meeting?.fullName || meetingId}`,
+        },
+        { status: 404 },
+      )
+    }
+
+    // Check if fund exists in meeting funds
+    const meetingFunds = meeting.funds || []
+    if (!meetingFunds.includes(fundId)) {
+      return Response.json(
+        {
+          success: false,
+          message: `התיק ${fundId} לא נמצא באסיפה ${meeting?.fullName || meetingId}`,
+        },
+        { status: 404 },
+      )
+    }
+
+    const stockId = meeting.stock
+    // Handle holdings removal if stockId is provided
+    if (stockId && meeting.holdingsLimit) {
+      const holdingLimitDate = new Date(meeting.holdingsLimit)
+
+      // Find the latest holding before or equal to holdingLimit
+      const { docs: lessThanEqualHolding } = await req.payload.find({
+        collection: 'holdings',
+        where: {
+          and: [{ fund: { equals: fundId } }, { valueDate: { less_than_equal: holdingLimitDate } }],
+        },
+        sort: '-valueDate',
+        limit: 1,
+        depth: 0,
+      })
+
+      if (lessThanEqualHolding.length > 0) {
+        const holdingDoc = lessThanEqualHolding[0]
+
+        // Check if holding has the stock
+        const existingStockHolding = holdingDoc?.holdings?.find(
+          (h: any) => getIdOfRelationField(h.stock) === stockId,
+        )
+
+        if (existingStockHolding) {
+          // Remove the holding from the holdings array
+          const updatedHoldings = holdingDoc.holdings.filter(
+            (h: any) => getIdOfRelationField(h.stock) !== stockId,
+          )
+
+          await req.payload.update({
+            collection: 'holdings',
+            id: holdingDoc.id,
+            data: {
+              holdings: updatedHoldings as any,
+            },
+            context: { from: 'process' },
+            req,
+          })
+        }
+      }
+    }
+
+    // Remove the fund from fundsWithHolding array
+    // Pass only the affected fund to processCompaniesMeetings
+    await processCompaniesMeetings(req, [meetingId || ''], [fundId])
+
+    return Response.json({
+      success: true,
+      message: `התיק ${fundId} הוסר בהצלחה מהחברה ${companyId} באסיפה ${meeting?.fullName || meetingId}`,
+    })
+  } catch (error) {
+    req.payload.logger.error(`Error removing fund from meeting: ${error}`)
     return Response.json(
       {
         success: false,

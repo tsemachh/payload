@@ -40,7 +40,7 @@ import {
 import { v4 as uuidv4 } from 'uuid'
 import type {
   Column,
-  CompanyTableDate,
+  CompanyTableData,
   DataTableProps,
   MeetingTableDataType,
   FundType,
@@ -109,6 +109,7 @@ export function DataTableServer<T extends Record<string, any>>({
   showViewModeToggle = false,
   viewMode,
   onViewModeChange,
+  customFilters,
 }: ServerDataTableProps<T>) {
   const { companies } = useCompaniesContext()
   const [currentPage, setCurrentPage] = useState(pagination?.currentPage || 1)
@@ -678,6 +679,9 @@ export function DataTableServer<T extends Record<string, any>>({
             </div>
           )}
 
+          {/* Custom Filters */}
+          {customFilters && customFilters}
+
           {filterOption && (
             <Button
               variant="outline"
@@ -1101,16 +1105,16 @@ export function DataTableServer<T extends Record<string, any>>({
                     </TableRow>
                     {renderExpandedRowContent &&
                       expandedRowIds.has(row[idField] as string) &&
-                      renderExpandedRowContent(row)}
+                      renderExpandedRowContent(row, visibleColumns as Column<T>[])}
                     {companiesExpandedRows[row.meetingId] &&
                       row.companies &&
                       row.companies.length > 0 && (
                         <>
                           {row.companies
-                            .filter((company: CompanyTableDate) =>
+                            .filter((company: CompanyTableData) =>
                               selectedCompanyIds?.includes(company.id),
                             )
-                            .map((company: CompanyTableDate) => (
+                            .map((company: CompanyTableData) => (
                               <React.Fragment key={row.meetingId + uuidv4()}>
                                 <TableRow
                                   key={`company-${uuidv4()}`}
@@ -1181,9 +1185,38 @@ export function DataTableServer<T extends Record<string, any>>({
                                         >
                                           {(() => {
                                             const value =
-                                              company[column.key as keyof CompanyTableDate]
+                                              company[column.key as keyof CompanyTableData]
                                             if (typeof value === 'number') {
-                                              return new Intl.NumberFormat('he-IL').format(value)
+                                              // Check if user has reported votes for this company
+                                              const companyVote = row.votes?.docs?.find(
+                                                (v: any) => v.company === company.id,
+                                              )
+                                              const hasReported = companyVote?.reported === true
+
+                                              // For nominalValue: show only if there's a reported vote
+                                              if (column.key === 'nominalValue' && !hasReported) {
+                                                return <span className="text-gray-400">-</span>
+                                              }
+
+                                              // For nominalValueClientReported: always show, color red only if mismatch with nominalValue
+                                              let mismatch = false
+                                              if (column.key === 'nominalValueClientReported') {
+                                                // Only red if there's a reported vote AND values don't match
+                                                mismatch =
+                                                  hasReported &&
+                                                  company.nominalValue !==
+                                                    company.nominalValueClientReported
+                                              } else if (column.key === 'nominalValue') {
+                                                // For nominalValue, red if values don't match
+                                                mismatch =
+                                                  company.nominalValue !==
+                                                  company.nominalValueClientReported
+                                              }
+                                              return (
+                                                <span className={mismatch ? 'text-red-600' : ''}>
+                                                  {new Intl.NumberFormat('he-IL').format(value)}
+                                                </span>
+                                              )
                                             }
                                             if (typeof value === 'boolean') {
                                               return <BooleanIcon iconType={value} showX={false} />
@@ -1244,8 +1277,47 @@ export function DataTableServer<T extends Record<string, any>>({
                                                   {(() => {
                                                     const value = fund[column.key as keyof FundType]
                                                     if (typeof value === 'number') {
-                                                      return new Intl.NumberFormat('he-IL').format(
-                                                        value,
+                                                      // Check if user has reported votes for this company
+                                                      const companyVote = row.votes?.docs?.find(
+                                                        (v: any) => v.company === company.id,
+                                                      )
+                                                      const hasReported =
+                                                        companyVote?.reported === true
+
+                                                      // For nominalValue: show only if there's a reported vote
+                                                      if (
+                                                        column.key === 'nominalValue' &&
+                                                        !hasReported
+                                                      ) {
+                                                        return (
+                                                          <span className="text-gray-400">-</span>
+                                                        )
+                                                      }
+
+                                                      // For nominalValueClientReported: always show, color red only if mismatch with nominalValue
+                                                      let mismatch = false
+                                                      if (
+                                                        column.key === 'nominalValueClientReported'
+                                                      ) {
+                                                        // Only red if there's a reported vote AND values don't match
+                                                        mismatch =
+                                                          hasReported &&
+                                                          fund.nominalValue !==
+                                                            fund.nominalValueClientReported
+                                                      } else if (column.key === 'nominalValue') {
+                                                        // For nominalValue, red if values don't match
+                                                        mismatch =
+                                                          fund.nominalValue !==
+                                                          fund.nominalValueClientReported
+                                                      }
+                                                      return (
+                                                        <span
+                                                          className={mismatch ? 'text-red-600' : ''}
+                                                        >
+                                                          {new Intl.NumberFormat('he-IL').format(
+                                                            value,
+                                                          )}
+                                                        </span>
                                                       )
                                                     }
                                                     if (typeof value === 'boolean') {

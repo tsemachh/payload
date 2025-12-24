@@ -1,4 +1,4 @@
-import { MeetingState, StockOrigin } from '@/payload-types'
+import { MeetingState, StockOrigin, Vote } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
 
 export type MeetingTableDataType = {
@@ -8,7 +8,7 @@ export type MeetingTableDataType = {
   votingPercentage: number | null // אחוז ההצבעה של המשתש מתוך חברות המשתמש
   displayVotingRecommendation: boolean
   defaultVotingRecommendation: boolean
-  companies: CompanyTableDate[]
+  companies: CompanyTableData[]
   stockNumber: string //מספר נייר
   stockType: string //סוג נייר
   stockSymbol: string //סימול
@@ -18,7 +18,8 @@ export type MeetingTableDataType = {
   stockOrigin: StockOrigin // מקור נייר הערך
   fromRelatedStock: boolean // ניירות עוקבים
   marketValue: number //שווי שוק
-  nominalValue: number // ערך נקוב ליום קובע
+  nominalValueClientReported: number // ערך נקוב מדיווח לקוחות
+  nominalValue: number // ערך נקוב בפועל
   percentageHolding: number //אחוז החזקות
   holdingValueInMillions: number //שווי החזקה במיליונים
   meetingType: string //סוג האסיפה
@@ -35,10 +36,14 @@ export type MeetingTableDataType = {
   electronicVotingEnabled: boolean //האם האסיפה מופיעה במערכת האלקטרונית?
   resultsConfirmationStatus: boolean //אימות תוצאות האסיפה
   committeeInitiated: boolean //האם פיננסי דורש ועדה?
-  votes: any
+  votes?: { docs?: (string | Vote)[]; hasNextPage?: boolean; totalDocs?: number } //הצבעות
   displayMode?: string
   selectedCompanyIds?: string[]
   labels: { id: string; label: string; color: string }[]
+  relatedQuestions?: {
+    id: string
+    questions: Array<{ id: string; questionText: string; defaultValue: boolean }>
+  }
 }
 
 export type DateFilterOption = {
@@ -46,10 +51,11 @@ export type DateFilterOption = {
   label: string
 }
 
-export type CompanyTableDate = {
+export type CompanyTableData = {
   id: string
   percentageHolding: number
   holdingValueInMillions: number
+  nominalValueClientReported: number
   nominalValue: number
   funds: FundType[]
   originalStockIds?: any[]
@@ -61,6 +67,7 @@ export type FundType = {
   holdingsCompanyName: string
   percentageHolding: number
   holdingValueInMillions: number
+  nominalValueClientReported: number
   nominalValue: number
   parentCompany?: TreeCompanyType // Parent company structure
   passiveFund?: boolean
@@ -165,7 +172,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   activeFilters?: Record<string, string[]>
   setActiveFilters?: (filters: Record<string, string[]>) => void
   tableHeightOffset?: number
-  renderExpandedRowContent?: (row: T) => React.ReactNode // New prop
+  renderExpandedRowContent?: (row: T, visibleColumns?: Column<T>[]) => React.ReactNode // New prop
   expanderColumnKey?: keyof T
   searchOption?: boolean
   selectAll?: string
@@ -192,6 +199,7 @@ export interface DataTableProps<T extends Record<string, any>> {
   showViewModeToggle?: boolean
   viewMode?: 'companies' | 'agenda'
   onViewModeChange?: (mode: 'companies' | 'agenda') => void
+  customFilters?: React.ReactNode
 }
 
 export interface ServerDataTableProps<T extends Record<string, any>> extends DataTableProps<T> {

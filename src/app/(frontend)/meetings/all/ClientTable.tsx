@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DataTableServer } from '@/components/data-table-server'
 import { createMeetingColumns, renderMeetingActions } from '../meetingTableConstants'
-import { CompanyTableDate, DateFilterType, MeetingTableDataType } from '../../types/meetings'
+import { CompanyTableData, DateFilterType, MeetingTableDataType } from '../../types/meetings'
 import { fetcher, postFetcher } from '../../helpers/utils-data-table'
 import { useSWRWithErrorHandling } from '../../helpers/swr-helpers'
 import { futureDateFilterOptions, pastDateFilterOptions } from '../filtersConst'
@@ -84,7 +84,7 @@ export function MeetingsTableServer() {
 
     const meetingsPayload = meetingsResponse?.data.map((meeting: MeetingTableDataType) => ({
       meetingId: meeting.meetingIdPayload,
-      companyIds: meeting.companies.map((company: CompanyTableDate) => company.id),
+      companyIds: meeting.companies.map((company: CompanyTableData) => company.id),
     }))
 
     return { meetings: meetingsPayload }

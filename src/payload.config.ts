@@ -45,6 +45,8 @@ import { openapi, swaggerUI } from 'payload-oapi'
 import { handleImpersonationEnd, handleImpersonationStart } from './plugins/impersonate/hooks'
 import { CollectionResetPreferencesPlugin } from '@shefing/reset-list-view'
 import versionsPlugin from '@shefing/custom-version-view'
+import { MeetingQuestions } from './collections/questions/MeetingQuestions'
+import { preloadFundsCache } from '@/collections/meetings/hooks/activeFundsCache'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -110,6 +112,12 @@ export default buildConfig({
     },
   },
   onInit: async (payload) => {
+    // warm up active funds cache on boot
+    try {
+      await preloadFundsCache(payload)
+    } catch (e: any) {
+      payload.logger.error('Failed to preload active funds cache', e)
+    }
     if (process.env.JOB_LEADER === 'true') {
       payload.logger.info('leader instance scheduling daily tasks')
       await scheduleDailyTasks(payload)
@@ -280,6 +288,7 @@ export default buildConfig({
     RecommendationReasons,
     AuditLogs,
     AuditLogReads,
+    MeetingQuestions,
     // תחזוקה
     CompanyMeetingNotifications,
     Votes,

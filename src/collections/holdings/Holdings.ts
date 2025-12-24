@@ -54,11 +54,30 @@ export const Holdings: CollectionConfig = {
           relationTo: 'companies',
           required: true,
           index: true,
+          admin: {
+            readOnly: true,
+          },
           filterOptions: () => ({
             type: {
               equals: 'fund',
             },
           }),
+        },
+        {
+          name: 'company',
+          label: 'חברה',
+          type: 'relationship',
+          relationTo: 'companies',
+          index: true,
+          admin: {
+            readOnly: true,
+          },
+          filterOptions: () => ({
+            type: {
+              equals: 'regular',
+            },
+          }),
+          virtual: 'fund.parentCompany',
         },
         {
           name: 'valueDate',
@@ -67,8 +86,9 @@ export const Holdings: CollectionConfig = {
           required: true,
           index: true,
           admin: {
+            readOnly: true,
             date: {
-              displayFormat: 'dd MMM yyy',
+              displayFormat: 'dd/MM/yyyy',
               pickerAppearance: 'default',
             },
           },
@@ -81,6 +101,7 @@ export const Holdings: CollectionConfig = {
       type: 'group',
       admin: {
         readOnly: true,
+        hidden: true,
       },
       fields: [
         {
@@ -92,6 +113,9 @@ export const Holdings: CollectionConfig = {
           name: 'accountIds',
           label: 'מזהי חשבונות',
           type: 'json',
+          admin: {
+            hidden: true,
+          },
         },
       ],
     },
@@ -101,6 +125,11 @@ export const Holdings: CollectionConfig = {
       type: 'array',
       required: true,
       interfaceName: 'HoldingsPerDay',
+      admin: {
+        components: {
+          Field: '/admincomponents/fields/arrayHoldingsTable',
+        },
+      },
       fields: [
         {
           type: 'row',
@@ -171,6 +200,17 @@ export const Holdings: CollectionConfig = {
           ],
         },
       ],
+    },
+  ],
+  // Performance: add compound indexes to support historical lookups
+  // - {'holdings.stock': 1, fund: 1, valueDate: -1} optimizes scans by stock+fund within a date range and supports sorting by newest first
+  // - {fund: 1, valueDate: -1} optimizes current-day queries that fetch latest holdings per fund
+  indexes: [
+    {
+      fields: ['fund', 'valueDate'],
+    },
+    {
+      fields: ['fund', 'valueDate', 'holdings.stock'],
     },
   ],
   endpoints: [

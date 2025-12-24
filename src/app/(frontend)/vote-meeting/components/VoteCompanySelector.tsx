@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { CompanyTableDate, MeetingTableDataType } from '../../types/meetings'
+import { CompanyTableData, MeetingTableDataType } from '../../types/meetings'
 import { useCompaniesContext } from '../../context/companiesContext'
 import { CheckIcon } from 'lucide-react'
 
 interface VoteCompanySelectorProps {
   meetingData: MeetingTableDataType
-  meetingCompanies: CompanyTableDate[]
+  meetingCompanies: CompanyTableData[]
   companiesIDs: string[]
   setCompaniesIDsAction: (selectedCompanyIds: string[]) => void
   isGeneralVoteOption: boolean
@@ -51,13 +51,13 @@ export default function VoteCompanySelector({
 
   const handleCompanyChange = (companyId: string) => {
     if (companyId === 'all' && isGeneralVoteOption) {
-      setCompaniesIDsAction(meetingCompanies.map((comp: CompanyTableDate) => comp.id) || [])
+      setCompaniesIDsAction(meetingCompanies.map((comp: CompanyTableData) => comp.id) || [])
     } else {
       setCompaniesIDsAction([companyId])
     }
   }
 
-  const isCompanyPassive = (company?: CompanyTableDate) => {
+  const isCompanyPassive = (company?: CompanyTableData) => {
     return (
       company?.funds?.every((fund) =>
         fundPassiveMap.has(fund.id) ? fundPassiveMap.get(fund.id) : false,
@@ -193,14 +193,21 @@ export default function VoteCompanySelector({
               <TooltipContent>
                 {company.originalStockIds?.length ? (
                   <div className="flex flex-col">
-                    <div className="flex justify-between gap-4 font-bold">
-                      <div>מס׳ נייר</div>
-                      <div>ע׳ נקוב</div>
+                    <div className="grid grid-cols-[1fr_4rem_7rem] gap-4 font-bold">
+                      <div className="text-right">תיק</div>
+                      <div className="text-left">מס׳ נייר</div>
+                      <div className="text-left">ע׳ נקוב</div>
                     </div>
                     {company.originalStockIds.map((stock: any, index: number) => (
-                      <div className="flex justify-between gap-4" key={`${index}-${stock.stockId}`}>
-                        <div>{stock.stockId}</div>
-                        <div>{stock.quantity.toLocaleString()}</div>
+                      <div
+                        className="grid grid-cols-[1fr_4rem_7rem] gap-4"
+                        key={`${index}-${stock.stockId}`}
+                      >
+                        <div className="text-right">
+                          {funds.find((f) => f.id === stock.fundId)?.name || stock.fundId}
+                        </div>
+                        <div className="text-left">{stock.stockId}</div>
+                        <div className="text-left">{stock.quantity.toLocaleString()}</div>
                       </div>
                     ))}
                   </div>

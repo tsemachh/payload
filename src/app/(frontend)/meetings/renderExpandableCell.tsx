@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { calculatePrecedingColumnsWidth } from '../helpers/utils-data-table'
-import { Column, CompanyTableDate, MeetingTableDataType } from '../types/meetings'
+import { Column, CompanyTableData, MeetingTableDataType } from '../types/meetings'
 import { Button } from '../components/ui/button'
 
 // Function to display a button for companies in a meeting
@@ -11,7 +11,7 @@ export function renderCompaniesCell<T>(
   setFundsExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
 ) {
   if ((row as any).companies?.length === 0) return null
-  const companyIds: string[] = ((row as any).companies as CompanyTableDate[])?.map(
+  const companyIds: string[] = ((row as any).companies as CompanyTableData[])?.map(
     (company) => company.id,
   )
   return (
@@ -71,7 +71,7 @@ export function renderAgendaCell<T>(
 
 // Function to display a button for funds within a company
 export function renderFundsCell(
-  company: CompanyTableDate,
+  company: CompanyTableData,
   companyName: string,
   fundsExpandedRows: Record<string, boolean>,
   setFundsExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
