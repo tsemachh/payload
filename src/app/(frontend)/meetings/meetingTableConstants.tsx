@@ -18,39 +18,7 @@ import { toggleAllCompanies, toggleAllAgendas } from './renderExpandableCell'
 import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { LabelsIcon } from '../components/labels-icon'
-import { useCompaniesContext } from '../context/companiesContext'
-
-// Helper function to get user votes for a meeting (filtered by user's companies)
-const getUserVotesForMeeting = (row: MeetingTableDataType, userCompanyIds: string[]) => {
-  if (!Array.isArray(row.votes?.docs) || userCompanyIds.length === 0) {
-    return []
-  }
-
-  return row.votes.docs.filter((v: any) => {
-    if (typeof v === 'string') {
-      return false
-    }
-    return userCompanyIds.includes(v.company)
-  })
-}
-
-// Helper function to check if user has reported votes for all their companies in a meeting
-export const hasUserReportedAllVotes = (
-  row: MeetingTableDataType,
-  userCompanyIds: string[],
-): boolean => {
-  const userVotes = getUserVotesForMeeting(row, userCompanyIds)
-  return userVotes.length > 0 && userVotes.every((v: any) => v.reported === true)
-}
-
-// Helper function to check if user has any reported votes for a meeting
-export const hasUserAnyReportedVotes = (
-  row: MeetingTableDataType,
-  userCompanyIds: string[],
-): boolean => {
-  const userVotes = getUserVotesForMeeting(row, userCompanyIds)
-  return userVotes.some((v: any) => v.reported === true)
-}
+import { hasUserReportedAllVotes } from '../helpers/utils-meeting'
 
 // Function to create expand all header for companies
 const createCompaniesExpandHeader = (
@@ -116,8 +84,7 @@ const createAgendasExpandHeader = (
 
 // Component for nominal value client reported cell
 function NominalValueClientReportedCell({ row }: { row: MeetingTableDataType }) {
-  const { companies } = useCompaniesContext()
-  const userCompanyIds = companies.map((c) => c.id)
+  const userCompanyIds = row.companies.map((c) => c.id)
 
   const hasReportedAll = hasUserReportedAllVotes(row, userCompanyIds)
 
@@ -134,8 +101,7 @@ function NominalValueClientReportedCell({ row }: { row: MeetingTableDataType }) 
 
 // Component for nominal value actual cell
 function NominalValueActualCell({ row }: { row: MeetingTableDataType }) {
-  const { companies } = useCompaniesContext()
-  const userCompanyIds = companies.map((c) => c.id)
+  const userCompanyIds = row.companies.map((c) => c.id)
 
   const hasReportedAll = hasUserReportedAllVotes(row, userCompanyIds)
 

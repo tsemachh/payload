@@ -60,8 +60,38 @@ async function processVotesData(
         if (!match || !match.quantity) return null
         const parent = fundToParentMap.get(fundId)
         if (parent?.id != companyId) return null
+
+        let quantity
+        if (match.fund) {
+          if (match.original && Array.isArray(match.original) && match.original.length > 0) {
+            // If there's an original array, sum all ownedQuantity from it
+            quantity = match.original.reduce((sum: number, orig: any) => {
+              if (orig?.ownedQuantity) {
+                return sum + (orig.ownedQuantity || 0)
+              }
+              if (orig?.quantity) {
+                return sum + (orig.quantity || 0)
+              }
+              console.error(
+                `Company ${fundId} in stock ${orig.stockId} does not exist or is not valid in the fundsWithHolding array`,
+              )
+              return null
+            }, 0)
+            if (quantity == 0) {
+              console.error(
+                `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
+              )
+              return null
+            }
+          }
+        } else {
+          console.error(
+            `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
+          )
+          return null
+        }
         const { percentageHolding, holdingValueInMillions } = calculateHoldingValues(
-          match.ownedQuantity || match.quantity,
+          quantity,
           meeting.stockValue,
           false,
         )
