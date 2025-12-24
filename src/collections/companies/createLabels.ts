@@ -8,45 +8,82 @@ export const addTagToCompany = async (req: PayloadRequest) => {
 
   try {
     const body = await req.json()
-    const { companyIds, label, color, stocks: stock, labelId } = body
+    let { companyIds, label, color, stocks: stock, labelId } = body
+    
+    // Generate labelId if not provided (for new tags)
+    if (!labelId) {
+      labelId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }
     if (!Array.isArray(companyIds) || companyIds.length === 0 || !label || !color || !stock) {
       return Response.json({ error: 'Missing fields' }, { status: 400 })
     }
 
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        id: { in: companyIds }
+      },
+      select: {
+        id: true,
+        label: true
+      },
+      limit: companyIds.length
+    })
+
+    const companiesMap = new Map(companies.docs.map(company => [company.id, company]))
     const results = []
+    const bulkUpdates = []
 
     for (const companyId of companyIds) {
       try {
-        const company = await req.payload.findByID({
-          collection: 'companies',
-          id: companyId,
-        })
+        const company = companiesMap.get(companyId)
+        if (!company) {
+          results.push({ success: false, companyId, error: 'Company not found' })
+          continue
+        }
 
         const existingLabels = company?.label?.labels || []
-
-        const updatedLabels = existingLabels.map((lbl: any) => {
-          if (lbl.labelId === labelId) {
-            return {
-              ...lbl,
+        
+        // Check if label already exists
+        const existingLabelIndex = existingLabels.findIndex((lbl: any) => lbl.labelId === labelId)
+        
+        let updatedLabels
+        if (existingLabelIndex !== -1) {
+          // Update existing label
+          updatedLabels = [...existingLabels]
+          updatedLabels[existingLabelIndex] = {
+            ...existingLabels[existingLabelIndex],
+            label,
+            color,
+            stock,
+            companiesWithSameLabel: companyIds,
+          }
+        } else {
+          // Add new label
+          updatedLabels = [
+            ...existingLabels,
+            {
+              labelId,
               label,
               color,
               stock,
               companiesWithSameLabel: companyIds,
             }
-          }
-          return lbl
+          ]
+        }
+
+        bulkUpdates.push({
+          companyId,
+          updatedLabels
         })
 
-        const isExisting = existingLabels.some((lbl: any) => lbl.labelId === labelId)
-        if (!isExisting) {
-          updatedLabels.push({
-            labelId,
-            label,
-            color,
-            stock,
-            companiesWithSameLabel: companyIds,
-          })
-        }
+      } catch (err) {
+        results.push({ success: false, companyId, error: (err as Error).message })
+      }
+    }
+
+    const updatePromises = bulkUpdates.map(async ({ companyId, updatedLabels }) => {
+      try {
         const updatedCompany = await req.payload.update({
           collection: 'companies',
           id: companyId,
@@ -54,15 +91,18 @@ export const addTagToCompany = async (req: PayloadRequest) => {
             label: { labels: updatedLabels },
           },
         })
-
-        results.push({ success: true, companyId, updatedCompany })
+        return { success: true, companyId, updatedCompany }
       } catch (err) {
-        results.push({ success: false, companyId, error: (err as Error).message })
+        return { success: false, companyId, error: (err as Error).message }
       }
-    }
+    })
 
-    return Response.json({ results })
+    const updateResults = await Promise.all(updatePromises)
+    results.push(...updateResults)
+
+    return Response.json({ results, labelId })
   } catch (error) {
+    console.error('❌ addTagToCompany error:', error)
     return Response.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -84,13 +124,25 @@ export const deleteTagFromCompany = async (req: PayloadRequest) => {
       return Response.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const results = []
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        id: { in: companyIds }
+      },
+      select: {
+        id: true,
+        label: true
+      },
+      limit: companyIds.length
+    })
 
+    const companiesMap = new Map(companies.docs.map(company => [company.id, company]))
+    const bulkUpdates = []
+
+    // 🚀 Prepare all updates in memory first
     for (const companyId of companyIds) {
-      const company = await req.payload.findByID({
-        collection: 'companies',
-        id: companyId,
-      })
+      const company = companiesMap.get(companyId)
+      if (!company) continue
 
       const existingLabels = company?.label?.labels || []
 
@@ -98,20 +150,32 @@ export const deleteTagFromCompany = async (req: PayloadRequest) => {
         (lbl: any) => !(lbl.label === tagLabel && lbl.color === tagColor),
       )
 
-      const updatedCompany = await req.payload.update({
-        collection: 'companies',
-        id: companyId,
-        data: {
-          label: {
-            labels: updatedLabels,
-          },
-        },
+      bulkUpdates.push({
+        companyId,
+        updatedLabels
       })
-
-      results.push(updatedCompany)
     }
 
-    return Response.json({ success: true, updated: results })
+    const updatePromises = bulkUpdates.map(async ({ companyId, updatedLabels }) => {
+      try {
+        return await req.payload.update({
+          collection: 'companies',
+          id: companyId,
+          data: {
+            label: { labels: updatedLabels },
+          },
+        })
+      } catch (err) {
+        console.error(`Failed to update company ${companyId}:`, err)
+        return null
+      }
+    })
+
+    // Wait for all updates to complete
+    const results = await Promise.all(updatePromises)
+    const successfulUpdates = results.filter(result => result !== null)
+
+    return Response.json({ success: true, updated: successfulUpdates })
   } catch (error) {
     console.error('❌ Failed to delete tag:', error)
     return Response.json({ error: 'Internal Server Error' }, { status: 500 })
@@ -132,19 +196,28 @@ export const getLabelsForCompanies = async (req: PayloadRequest) => {
       return Response.json({ error: 'Missing companyIds' }, { status: 400 })
     }
 
-    const results = []
-    for (const companyObj of companyIds) {
-      const id = companyObj.id
-      const company = await req.payload.findByID({
-        collection: 'companies',
-        id,
-      })
+    const companyIdsArray = companyIds.map((companyObj: any) => companyObj.id)
+    
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        id: { in: companyIdsArray }
+      },
+      select: {
+        id: true,
+        label: true
+      },
+      limit: companyIdsArray.length
+    })
 
-      results.push({
-        companyId: id,
+    // Create results from batch query
+    const results = companyIdsArray.map(companyId => {
+      const company = companies.docs.find(c => c.id === companyId)
+      return {
+        companyId,
         labels: company?.label?.labels || [],
-      })
-    }
+      }
+    })
 
     return Response.json({ results })
   } catch (err) {

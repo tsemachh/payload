@@ -702,14 +702,16 @@ export default function SettingsPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                disabled={deletingTagId !== null} 
                                 onClick={() => handleEditTag(tag)}
-                                className="h-8 w-8 hover:bg-muted"
+                                className="h-8 w-8 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 <Edit2 className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                disabled={deletingTagId !== null} 
                                 onClick={() => {
                                   handleDeleteTag(
                                     tag.id,
@@ -718,7 +720,7 @@ export default function SettingsPage() {
                                     tag.allCompanyIdsForLabel,
                                   )
                                 }}
-                                className="h-8 w-8 hover:bg-muted hover:text-destructive"
+                                className="h-8 w-8 hover:bg-muted hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 {deletingTagId === tag.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
