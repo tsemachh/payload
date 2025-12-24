@@ -406,7 +406,6 @@ export const Meetings: CollectionConfig = {
               on: 'meeting',
               defaultLimit: 0,
               maxDepth: 1,
-              _sanitized: true,
               admin: {
                 allowCreate: false,
                 disableListColumn: true,

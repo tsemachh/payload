@@ -666,7 +666,7 @@ function createMeetingDataObject(
     electronicVotingEnabled: !!meeting.electronicVotingEnabled,
     resultsConfirmationStatus: !!meeting.resultsConfirmationStatus,
     committeeInitiated: !!stockPresent.isFinancial,
-    votes: meeting.votes || [],
+    votes: meeting.votes || undefined,
     fromRelatedStock: companiesArray.some((c) => c.fromRelatedStock),
     relatedQuestions,
   }
@@ -754,15 +754,26 @@ async function processMeetingsData(
             return item.fund && (item.fund as string) == fundId
           })
           if (match && match.fund) {
-            if (match?.ownedQuantity) {
-              quantity = match.ownedQuantity
-            } else if (match.quantity) {
-              quantity = match.quantity
-            } else {
-              console.error(
-                `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
-              )
-              return null
+            if (match.original && Array.isArray(match.original) && match.original.length > 0) {
+              // If there's an original array, sum all ownedQuantity from it
+              quantity = match.original.reduce((sum: number, orig: any) => {
+                if (orig?.ownedQuantity) {
+                  return sum + (orig.ownedQuantity || 0)
+                }
+                if (orig?.quantity) {
+                  return sum + (orig.quantity || 0)
+                }
+                console.error(
+                  `Company ${fundId} in stock ${orig.stockId} does not exist or is not valid in the fundsWithHolding array`,
+                )
+                return null
+              }, 0)
+              if (quantity == 0) {
+                console.error(
+                  `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
+                )
+                return null
+              }
             }
           } else {
             console.error(
@@ -772,7 +783,7 @@ async function processMeetingsData(
           }
           // Calculate values for this company's holdings
           const { percentageHolding, holdingValueInMillions, nominalValue } =
-            calculateHoldingValues(quantity, meeting.stockValue)
+            calculateHoldingValues(quantity || 0, meeting.stockValue)
           const nominalValueClientReported = Math.round(match.quantity || 0)
           const parentCompany = fundToParentMap.get(fundId as string)
           const holdingsCompanyName = findSubCompanyNameById(parentCompany, fundId)
