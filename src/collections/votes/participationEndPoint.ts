@@ -96,6 +96,22 @@ async function processVotesData(
       displayVotingRecommendation,
       votes: [vote],
       hasVotes: true,
+      // New fields for additional columns
+      holdingQuantity: fundsArray.reduce(
+        (sum, fund) => {
+          // Find the matching fund in fundsWithHolding to get the quantity
+          const match = meeting?.fundsWithHolding?.find(
+            (item: { fund: string }) => item.fund === fund.id,
+          )
+          const quantity = match?.ownedQuantity || match?.quantity || 0
+          // Use the same calculation as in meetings: Math.round(quantity)
+          return sum + Math.round(quantity)
+        },
+        0,
+      ), // This should now match exactly the nominalValue from meetings
+      meetingTime: meeting.meetingDate ? new Date(meeting.meetingDate).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }) : '',
+      holdingsLimit: meeting.holdingsLimit || '',
+      isFinancialCorporation: stock.isFinancial || false,
       agendas: (vote.votes || []).map((voteItem: any, index: number) => {
         const agendaItem = meeting.agenda?.[index] || {}
         let votingRecommendation: string | undefined =

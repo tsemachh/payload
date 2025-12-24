@@ -514,6 +514,14 @@ export const Companies: CollectionConfig = {
               type: 'array',
               fields: [
                 {
+                  name: 'labelId',
+                  label: 'מזהה תגית',
+                  type: 'text',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
                   name: 'label',
                   label: 'שם התגית',
                   type: 'text',

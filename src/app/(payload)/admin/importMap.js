@@ -22,8 +22,8 @@ import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../..
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_76cac0c7f70bb3de068333b13381d163 } from '../../../admincomponents/fields/arrayTable'
+import { default as default_aad63116ea792c565309d620a65bd218 } from '../../../collections/meetings/components/ExportMeetingsMenuItem'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
-import { default as default_dd3ee69567110c21e2d418a451dc5848 } from '../../../collections/meetings/components/MeetingsListTableHeader'
 import { default as default_6dd674b10194d045c09b533845410341 } from '../../../collections/meetings/components/NavCloser'
 import { default as default_b0fd6d42c10a2a9bdf03d06835428598 } from '../../../components/buttons/CustomPublishButton'
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
@@ -88,8 +88,8 @@ export const importMap = {
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/admincomponents/fields/arrayTable#default": default_76cac0c7f70bb3de068333b13381d163,
+  "/collections/meetings/components/ExportMeetingsMenuItem#default": default_aad63116ea792c565309d620a65bd218,
   "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
-  "/collections/meetings/components/MeetingsListTableHeader#default": default_dd3ee69567110c21e2d418a451dc5848,
   "/collections/meetings/components/NavCloser#default": default_6dd674b10194d045c09b533845410341,
   "/components/buttons/CustomPublishButton#default": default_b0fd6d42c10a2a9bdf03d06835428598,
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
