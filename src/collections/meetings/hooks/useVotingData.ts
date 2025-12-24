@@ -745,7 +745,6 @@ export const useVotingData = () => {
         })
       }
     })
-
     return result
   }, [votedCompanies, groupByVoted, collapsedVotedGroups, votedSort, companyOrderMap])
 

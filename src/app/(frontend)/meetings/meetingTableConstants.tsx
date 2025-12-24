@@ -18,6 +18,39 @@ import { toggleAllCompanies, toggleAllAgendas } from './renderExpandableCell'
 import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { LabelsIcon } from '../components/labels-icon'
+import { useCompaniesContext } from '../context/companiesContext'
+
+// Helper function to get user votes for a meeting (filtered by user's companies)
+const getUserVotesForMeeting = (row: MeetingTableDataType, userCompanyIds: string[]) => {
+  if (!Array.isArray(row.votes?.docs) || userCompanyIds.length === 0) {
+    return []
+  }
+
+  return row.votes.docs.filter((v: any) => {
+    if (typeof v === 'string') {
+      return false
+    }
+    return userCompanyIds.includes(v.company)
+  })
+}
+
+// Helper function to check if user has reported votes for all their companies in a meeting
+export const hasUserReportedAllVotes = (
+  row: MeetingTableDataType,
+  userCompanyIds: string[],
+): boolean => {
+  const userVotes = getUserVotesForMeeting(row, userCompanyIds)
+  return userVotes.length > 0 && userVotes.every((v: any) => v.reported === true)
+}
+
+// Helper function to check if user has any reported votes for a meeting
+export const hasUserAnyReportedVotes = (
+  row: MeetingTableDataType,
+  userCompanyIds: string[],
+): boolean => {
+  const userVotes = getUserVotesForMeeting(row, userCompanyIds)
+  return userVotes.some((v: any) => v.reported === true)
+}
 
 // Function to create expand all header for companies
 const createCompaniesExpandHeader = (
@@ -78,6 +111,44 @@ const createAgendasExpandHeader = (
       </Button>
       <span>סדר יום</span>
     </div>
+  )
+}
+
+// Component for nominal value client reported cell
+function NominalValueClientReportedCell({ row }: { row: MeetingTableDataType }) {
+  const { companies } = useCompaniesContext()
+  const userCompanyIds = companies.map((c) => c.id)
+
+  const hasReportedAll = hasUserReportedAllVotes(row, userCompanyIds)
+
+  // Always show nominalValueClientReported
+  // Color red only if there's a reported vote AND values don't match
+  const mismatch = hasReportedAll && row.nominalValue !== row.nominalValueClientReported
+
+  return (
+    <span className={mismatch ? 'text-red-600' : ''}>
+      {formatNumberWithLocale(row.nominalValueClientReported, 0, 'he-IL')}
+    </span>
+  )
+}
+
+// Component for nominal value actual cell
+function NominalValueActualCell({ row }: { row: MeetingTableDataType }) {
+  const { companies } = useCompaniesContext()
+  const userCompanyIds = companies.map((c) => c.id)
+
+  const hasReportedAll = hasUserReportedAllVotes(row, userCompanyIds)
+
+  if (!hasReportedAll) {
+    return <span className="text-gray-400">-</span>
+  }
+
+  const mismatch = row.nominalValue !== row.nominalValueClientReported
+
+  return (
+    <span className={mismatch ? 'text-red-600' : ''}>
+      {formatNumberWithLocale(row.nominalValue, 0, 'he-IL')}
+    </span>
   )
 }
 
@@ -227,28 +298,14 @@ export const createMeetingColumns = (
     key: 'nominalValueClientReported',
     header: 'ערך נקוב מדווח ',
     type: 'number',
-    render: (row) => {
-      const mismatch = row.nominalValue !== row.nominalValueClientReported
-      return (
-        <span className={mismatch ? 'text-red-600' : ''}>
-          {formatNumberWithLocale(row.nominalValueClientReported, 0, 'he-IL')}
-        </span>
-      )
-    },
+    render: (row) => <NominalValueClientReportedCell row={row} />,
     minWidth: 90,
   },
   {
     key: 'nominalValue',
     header: 'ערך נקוב בפועל',
     type: 'number',
-    render: (row) => {
-      const mismatch = row.nominalValue !== row.nominalValueClientReported
-      return (
-        <span className={mismatch ? 'text-red-600' : ''}>
-          {formatNumberWithLocale(row.nominalValue, 0, 'he-IL')}
-        </span>
-      )
-    },
+    render: (row) => <NominalValueActualCell row={row} />,
     minWidth: 90,
   },
   {

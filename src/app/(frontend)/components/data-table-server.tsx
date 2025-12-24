@@ -1187,13 +1187,31 @@ export function DataTableServer<T extends Record<string, any>>({
                                             const value =
                                               company[column.key as keyof CompanyTableData]
                                             if (typeof value === 'number') {
-                                              const isNominalValueField =
-                                                column.key === 'nominalValue' ||
-                                                column.key === 'nominalValueClientReported'
-                                              const mismatch =
-                                                isNominalValueField &&
-                                                company.nominalValue !==
+                                              // Check if user has reported votes for this company
+                                              const companyVote = row.votes?.docs?.find(
+                                                (v: any) => v.company === company.id,
+                                              )
+                                              const hasReported = companyVote?.reported === true
+
+                                              // For nominalValue: show only if there's a reported vote
+                                              if (column.key === 'nominalValue' && !hasReported) {
+                                                return <span className="text-gray-400">-</span>
+                                              }
+
+                                              // For nominalValueClientReported: always show, color red only if mismatch with nominalValue
+                                              let mismatch = false
+                                              if (column.key === 'nominalValueClientReported') {
+                                                // Only red if there's a reported vote AND values don't match
+                                                mismatch =
+                                                  hasReported &&
+                                                  company.nominalValue !==
+                                                    company.nominalValueClientReported
+                                              } else if (column.key === 'nominalValue') {
+                                                // For nominalValue, red if values don't match
+                                                mismatch =
+                                                  company.nominalValue !==
                                                   company.nominalValueClientReported
+                                              }
                                               return (
                                                 <span className={mismatch ? 'text-red-600' : ''}>
                                                   {new Intl.NumberFormat('he-IL').format(value)}
@@ -1259,16 +1277,46 @@ export function DataTableServer<T extends Record<string, any>>({
                                                   {(() => {
                                                     const value = fund[column.key as keyof FundType]
                                                     if (typeof value === 'number') {
-                                                      const isNominalValueField =
-                                                        column.key === 'nominalValue' ||
+                                                      // Check if user has reported votes for this company
+                                                      const companyVote = row.votes?.docs?.find(
+                                                        (v: any) => v.company === company.id,
+                                                      )
+                                                      const hasReported =
+                                                        companyVote?.reported === true
+
+                                                      // For nominalValue: show only if there's a reported vote
+                                                      if (
+                                                        column.key === 'nominalValue' &&
+                                                        !hasReported
+                                                      ) {
+                                                        return (
+                                                          <span className="text-gray-400">-</span>
+                                                        )
+                                                      }
+
+                                                      // For nominalValueClientReported: always show, color red only if mismatch with nominalValue
+                                                      let mismatch = false
+                                                      if (
                                                         column.key === 'nominalValueClientReported'
-                                                      const mismatch =
-                                                        isNominalValueField &&
-                                                        fund.nominalValue !==
+                                                      ) {
+                                                        // Only red if there's a reported vote AND values don't match
+                                                        mismatch =
+                                                          hasReported &&
+                                                          fund.nominalValue !==
+                                                            fund.nominalValueClientReported
+                                                      } else if (column.key === 'nominalValue') {
+                                                        // For nominalValue, red if values don't match
+                                                        mismatch =
+                                                          fund.nominalValue !==
                                                           fund.nominalValueClientReported
+                                                      }
                                                       return (
-                                                        <span className={mismatch ? 'text-red-600' : ''}>
-                                                          {new Intl.NumberFormat('he-IL').format(value)}
+                                                        <span
+                                                          className={mismatch ? 'text-red-600' : ''}
+                                                        >
+                                                          {new Intl.NumberFormat('he-IL').format(
+                                                            value,
+                                                          )}
                                                         </span>
                                                       )
                                                     }
