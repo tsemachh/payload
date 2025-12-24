@@ -550,6 +550,7 @@ export interface Company {
   label?: {
     labels?:
       | {
+          labelId?: string | null;
           label?: string | null;
           color?: string | null;
           stock?: (string | Stock)[] | null;
@@ -1779,6 +1780,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         labels?:
           | T
           | {
+              labelId?: T;
               label?: T;
               color?: T;
               stock?: T;
