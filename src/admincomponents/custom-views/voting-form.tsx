@@ -23,11 +23,13 @@ import { OwnedQuantityInput } from './OwnedQuantityInput'
 import { sortFundsData } from '@/utils/companySort'
 import { Trash2, Copy } from 'lucide-react'
 import { toast } from '@payloadcms/ui'
+import { HoldingsDetailsTooltip } from './HoldingsDetailsTooltip'
 
 export interface VoteData {
   fundsData: Array<{
     company: { id: string; name: string; _order?: string }
     fund: { id: string; name: string; _order?: string }
+    holdingDate: string
     quantity: number
     ownedQuantity?: number
     verifiedHoldings: boolean
@@ -48,6 +50,7 @@ export interface VoteData {
   meeting: string
   meetingDate: string
   meetingStockNum: string
+  meetingStockId: string
   holdingsLimit: string
   isInterested: boolean
   interestedExplanation?: string
@@ -537,9 +540,16 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                       </TableCell>
                     )}
                     <TableCell>
-                      <span className="text-right text-gray-600 dark:text-gray-300 text-base">
-                        {displayData?.quantity && formatNumberWithLocale(displayData.quantity)}
-                      </span>
+                      <div className="flex items-center gap-1 justify-end w-fit">
+                        <HoldingsDetailsTooltip
+                          fundId={fund.fund.id}
+                          stockId={voteData.meetingStockId}
+                          holdingDate={fund.holdingDate || voteData.holdingsLimit}
+                        />
+                        <span className="text-gray-600 dark:text-gray-300 text-base">
+                          {displayData?.quantity && formatNumberWithLocale(displayData.quantity)}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">

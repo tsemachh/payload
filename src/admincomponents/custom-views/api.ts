@@ -18,6 +18,7 @@ export async function getVoteData(
       meetingDate: true,
       holdingsLimit: true,
       stockId: true,
+      stock: true,
     },
     depth: 0,
     limit: 0,
@@ -169,6 +170,7 @@ export async function getVoteData(
         _order: fundIdToOrderMap.get(fundHold?.fund),
       },
       fromRelatedStock: fundHold.fromRelatedStock,
+      holdingDate: fundHold.holdingDate,
     }
 
     if (fundHold.original && fundHold.original.length > 0) {
@@ -202,6 +204,7 @@ export async function getVoteData(
     meeting: meetingData.fullName,
     meetingDate: meetingData.meetingDate,
     meetingStockNum: meetingData.stockId,
+    meetingStockId: meetingData.stock,
     holdingsLimit: meetingData.holdingsLimit,
     fundsData: fundsWithHoldings,
     agenda: meetingData.agenda,
