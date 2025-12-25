@@ -174,7 +174,6 @@ export const Meetings: CollectionConfig = {
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
         PublishButton: '/components/buttons/CustomPublishButton',
-        
       },
     },
   },
@@ -474,6 +473,15 @@ export const Meetings: CollectionConfig = {
                   label: 'מספר נייר',
                   type: 'text',
                   virtual: 'stock.stockId',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'stockName',
+                  label: 'שם נייר',
+                  type: 'text',
+                  virtual: 'stock.name',
                   admin: {
                     hidden: true,
                   },
