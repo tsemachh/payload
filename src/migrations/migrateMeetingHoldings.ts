@@ -50,6 +50,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let successCount = 0
     let errorCount = 0
     let skippedCount = 0
+    // Aggregate 'Matched by subAccountNum' messages to log once at the end
+    const matchedBySubAccountMsgs = new Map<string, number>()
 
     for (const meeting of meetings.docs) {
       promises.push(
@@ -150,9 +152,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   }
                 }
                 if (matchedBySub) {
-                  console.info(
-                    `Matched by subAccountNum: firmId=${holding.firmid}, accountNum=${accountStr}, fundId=${fund.id}`,
-                  )
+                  const key = `Matched by subAccountNum: firmId=${holding.firmid}, accountNum=${accountStr}, fundId=${fund.id}`
+                  matchedBySubAccountMsgs.set(key, (matchedBySubAccountMsgs.get(key) || 0) + 1)
                 }
               }
             })
@@ -229,6 +230,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     // Wait for all promises to complete
     await promisePool.waitForAll()
 
+    // Emit consolidated 'matched by subAccountNum' logs
+    if (matchedBySubAccountMsgs.size > 0) {
+      console.log('\n[migrateMeetingHoldings.up] Matched-by-subAccountNum summary (logged once at end):')
+      for (const [msg, count] of Array.from(matchedBySubAccountMsgs.entries())) {
+        console.info(`${msg} | occurrences=${count}`)
+      }
+    }
     console.log('\nMigration Summary:')
     console.log(`Total meetings processed: ${meetings.docs.length}`)
     console.log(`Successfully updated: ${successCount}`)
