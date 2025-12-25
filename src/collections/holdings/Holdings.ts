@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import getHoldingsDatesEndPoint from './endpoints/getHoldingsDatesEndPoint'
+import getHoldingsDetailsEndpoint from './endpoints/getHoldingsDetailsEndpoint'
 import uploadHoldingsCsvEndPoint from '@/collections/holdings/feeds/endpoints/uploadHoldingsCsvEndPoint'
 import refreshEndPoint from '@/collections/holdings/feeds/endpoints/refreshEndPoint'
 import { scheduleProcessHoldingsChangeTask } from '@/tasks/processHoldingsChange'
@@ -228,6 +229,11 @@ export const Holdings: CollectionConfig = {
       path: '/dates',
       method: 'get',
       handler: getHoldingsDatesEndPoint,
+    },
+    {
+      path: '/details',
+      method: 'get',
+      handler: getHoldingsDetailsEndpoint,
     },
   ],
 }

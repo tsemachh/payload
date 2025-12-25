@@ -139,6 +139,7 @@ export type FundWithHolding =
       ownedQuantity?: number | null;
       verifiedHoldings?: boolean | null;
       fromRelatedStock?: boolean | null;
+      holdingDate?: string | null;
       original?:
         | {
             stockId?: string | null;
@@ -553,6 +554,7 @@ export interface Company {
   label?: {
     labels?:
       | {
+          labelId?: string | null;
           label?: string | null;
           color?: string | null;
           stock?: (string | Stock)[] | null;
@@ -704,6 +706,7 @@ export interface Meeting {
   };
   stock: string | Stock;
   stockId?: string | null;
+  stockName?: string | null;
   legacyStockNum?: string | null;
   isFinancialStock?: boolean | null;
   stockOrigin?: ('TASE' | 'Foreign' | 'Private') | null;
@@ -1486,6 +1489,7 @@ export interface PayloadQueryPreset {
     | number
     | boolean
     | null;
+  groupBy?: string | null;
   relatedCollection:
     | 'admin-notifications'
     | 'meetings'
@@ -1548,6 +1552,7 @@ export interface MeetingsSelect<T extends boolean = true> {
   votes?: T;
   stock?: T;
   stockId?: T;
+  stockName?: T;
   legacyStockNum?: T;
   isFinancialStock?: T;
   stockOrigin?: T;
@@ -1642,6 +1647,7 @@ export interface FundWithHoldingSelect<T extends boolean = true> {
   ownedQuantity?: T;
   verifiedHoldings?: T;
   fromRelatedStock?: T;
+  holdingDate?: T;
   original?:
     | T
     | {
@@ -1781,6 +1787,7 @@ export interface CompaniesSelect<T extends boolean = true> {
         labels?:
           | T
           | {
+              labelId?: T;
               label?: T;
               color?: T;
               stock?: T;
@@ -2338,6 +2345,7 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
       };
   where?: T;
   columns?: T;
+  groupBy?: T;
   relatedCollection?: T;
   isTemp?: T;
   updatedAt?: T;

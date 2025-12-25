@@ -748,8 +748,8 @@ export const useVotingData = () => {
     return result
   }, [votedCompanies, groupByVoted, collapsedVotedGroups, votedSort, companyOrderMap])
 
-  const exportToCSV = (data: any[], filename: string, columns: any) => {
-    const exportData = data.filter((item) => !item.isGroupHeader)
+  const exportToCSV = (exportData: any[], filename: string, columns: any) => {
+    const filteredData = exportData.filter((item) => !item.isGroupHeader)
 
     const columnMapping: any = {
       company: { header: 'חברה', field: 'name' },
@@ -765,10 +765,40 @@ export const useVotingData = () => {
 
     const selectedColumns = Object.keys(columns).filter((key) => columns[key] && columnMapping[key])
     const headers = selectedColumns.map((key) => columnMapping[key].header)
+    // Extract meeting metadata from the data variable (meeting data from useDocumentInfo)
+    const stockName = data?.stockName
+    const stockId = data?.stockId
+    const meetingDate = data?.meetingDate
+      ? new Date(data.meetingDate).toLocaleDateString('he-IL')
+      : ''
+    const meetingTime = data?.meetingDate
+      ? new Date(data.meetingDate).toLocaleTimeString('he-IL', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : ''
+    const holdingsLimit = data?.holdingsLimit
+      ? new Date(data.holdingsLimit).toLocaleDateString('he-IL')
+      : ''
+    const meetingType = data?.type || ''
+    const comments = data?.comments || ''
+
+    // Create metadata rows - field name in first cell, value in second cell
+    const metadataRows = [
+      `שם נייר,"${stockName}"`,
+      `מספר נייר,"${stockId}"`,
+      `תאריך אסיפה,"${meetingDate}"`,
+      `שעת אסיפה,"${meetingTime}"`,
+      `מועד קובע,"${holdingsLimit}"`,
+      `סוג אסיפה,"${meetingType}"`,
+      `הערות,"${comments.replace(/"/g, '""')}"`, // Escape quotes in comments
+      '', // Empty row separator
+    ]
 
     const csvContent = [
+      ...metadataRows,
       headers.join(','),
-      ...exportData.map((row) =>
+      ...filteredData.map((row) =>
         selectedColumns
           .map((columnKey) => {
             const field = columnMapping[columnKey].field

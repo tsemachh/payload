@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle, useMemo } from 'react'
-import { Bell, X, CheckCheck } from 'lucide-react'
+import { Bell, X, CheckCheck, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -31,6 +31,10 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [hasNextPage, setHasNextPage] = useState(false)
+    const [currentOffset, setCurrentOffset] = useState(0)
+    const [totalUnreadCount, setTotalUnreadCount] = useState(0) 
     const [markingAllAsRead, setMarkingAllAsRead] = useState(false)
     const [showUnreadOnly, setShowUnreadOnly] = useState(false)
     const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
@@ -70,10 +74,7 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }, [notifications])
 
-    const unreadCount = useMemo(
-      () => groupedNotifications.filter((n) => !n.isRead).length,
-      [groupedNotifications],
-    )
+    const unreadCount = totalUnreadCount
 
     const filteredNotifications = useMemo(
       () => (showUnreadOnly ? groupedNotifications.filter((n) => !n.isRead) : groupedNotifications),
@@ -90,6 +91,13 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
     useEffect(() => {
       fetchNotifications()
     }, [])
+
+    useEffect(() => {
+      if (hasFetchedOnce && isOpen) {
+        setCurrentOffset(0)
+        fetchNotifications(false, false)
+      }
+    }, [showUnreadOnly])
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -108,24 +116,54 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
       }
     }, [isOpen])
 
-    const fetchNotifications = async (silent = false) => {
+    const fetchNotifications = async (silent = false, loadMore = false) => {
       // Prevent duplicate concurrent fetches
       if (fetchInProgressRef.current) return
 
       try {
         fetchInProgressRef.current = true
-        if (!silent) setLoading(true)
+        if (!silent) {
+          if (loadMore) {
+            setLoadingMore(true)
+          } else {
+            setLoading(true)
+            setCurrentOffset(0) 
+          }
+        }
 
-        const response = await fetch('/api/company-meeting-notifications/user-notifications')
+        const offset = loadMore ? currentOffset : 0
+        const response = await fetch(
+          `/api/company-meeting-notifications/user-notifications?limit=10&offset=${offset}`
+        )
+        
         if (response.ok) {
           const data = await response.json()
-          setNotifications(data.notifications)
+          
+          if (loadMore) {
+            // Append new notifications to existing ones
+            setNotifications(prev => [...prev, ...data.notifications])
+            setCurrentOffset(prev => prev + 10)
+            // Don't update totalUnreadCount when loading more - server returns 0 for subsequent pages
+          } else {
+            // Replace notifications for fresh fetch
+            setNotifications(data.notifications)
+            setCurrentOffset(10)
+            // Only update totalUnreadCount on fresh fetch (first page) when server provides it
+            if (data.totalUnreadCount !== undefined && data.totalUnreadCount >= 0) {
+              setTotalUnreadCount(data.totalUnreadCount)
+            }
+          }
+          
+          setHasNextPage(data.pagination?.hasNextPage || false)
           setHasFetchedOnce(true)
         }
       } catch (error) {
         console.error('Failed to fetch notifications:', error)
       } finally {
-        if (!silent) setLoading(false)
+        if (!silent) {
+          setLoading(false)
+          setLoadingMore(false)
+        }
         fetchInProgressRef.current = false
       }
     }
@@ -155,6 +193,14 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
               groupedNotification.notificationIds.includes(n.id) ? { ...n, isRead: true } : n,
             ),
           )
+          
+          if (!groupedNotification.isRead) {
+            const unreadNotificationsInGroup = groupedNotification.notificationIds.filter(id => {
+              const notification = notifications.find(n => n.id === id)
+              return notification && !notification.isRead
+            }).length
+            setTotalUnreadCount(prev => Math.max(0, prev - unreadNotificationsInGroup))
+          }
         }
       } catch (error) {
         console.error('Failed to mark notification as read:', error)
@@ -170,6 +216,7 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
 
         if (response.ok) {
           setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+          setTotalUnreadCount(0) 
         }
       } catch (error) {
         console.error('Failed to mark all notifications as read:', error)
@@ -218,12 +265,12 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
                   onMouseEnter={handleMouseEnter}
                 >
                   <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
+                  {totalUnreadCount > 0 && (
                     <Badge
                       variant="destructive"
                       className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
                     >
-                      {unreadCount > 99 ? '99+' : unreadCount}
+                      {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                     </Badge>
                   )}
                 </Button>
@@ -252,6 +299,16 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
                     >
                       הצג לא נקראו
                     </label>
+                    {!showUnreadOnly && notifications.length > 0 && hasNextPage && (
+                      <span className="text-xs text-muted-foreground mr-2">
+                        מציג {filteredNotifications.length} (יש עוד)
+                      </span>
+                    )}
+                    {!showUnreadOnly && notifications.length > 0 && !hasNextPage && (
+                      <span className="text-xs text-muted-foreground mr-2">
+                        מציג {filteredNotifications.length} התראות
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     {unreadCount > 0 && (
@@ -324,6 +381,27 @@ export const UserNotificationComponent = forwardRef<{ openNotifications: () => v
                           </div>
                         </div>
                       ))}
+                      
+                      {/* Load More Button */}
+                      {hasNextPage && (
+                        <div className="p-4 text-center border-t">
+                          <Button
+                            variant="ghost"
+                            onClick={() => fetchNotifications(false, true)}
+                            disabled={loadingMore}
+                            className="w-full"
+                          >
+                            {loadingMore ? (
+                              <>
+                                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                                טוען עוד...
+                              </>
+                            ) : (
+                              'ראה עוד התראות'
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </ScrollArea>
