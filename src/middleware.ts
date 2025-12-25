@@ -12,6 +12,7 @@ export async function middleware(request: NextRequest) {
     '/holdings',
     '/participations',
     '/settings',
+    '/vote-meeting',
   ]
   const isFrontendRoute =
     pathname === '/' || protectedRoutes.some((route) => pathname.startsWith(route))
@@ -31,17 +32,36 @@ export async function middleware(request: NextRequest) {
   // Payload CMS uses a cookie named 'payload-token' for authentication
   const payloadCookie = request.cookies.get('payload-token')
 
-  // If the user is not authenticated and trying to access a protected route,
-  // redirect to the login page
-  if (!payloadCookie && isFrontendRoute) {
+  // If no cookie at all, redirect to login
+  if (!payloadCookie || !payloadCookie.value) {
     const url = new URL('/auth/signin', request.url)
-    // Use only pathname and search params to avoid hardcoded hostname issues
     const callbackPath = request.nextUrl.pathname + request.nextUrl.search
-
-    // Only set callbackUrl if it's not the home page
     url.searchParams.set('callbackUrl', encodeURI(callbackPath))
-
     return NextResponse.redirect(url)
+  }
+
+  try {
+    const response = await fetch(new URL('/api/users/me', request.url), {
+      headers: {
+        'Cookie': `payload-token=${payloadCookie.value}`,
+      },
+    })
+
+    if (!response.ok && (response.status === 401 || response.status === 403)) {
+      const url = new URL('/auth/signin', request.url)
+      const callbackPath = request.nextUrl.pathname + request.nextUrl.search
+      url.searchParams.set('callbackUrl', encodeURI(callbackPath))
+      
+      const redirectResponse = NextResponse.redirect(url)
+      redirectResponse.cookies.set('payload-token', '', { 
+        expires: new Date(0),
+        path: '/' 
+      })
+      
+      return redirectResponse
+    }
+  } catch (error) {
+    console.warn('Middleware: Failed to validate token, letting client handle it')
   }
 
   return NextResponse.next()

@@ -115,9 +115,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setUser(null)
         }
-      } catch (error) {
-        // If not logged in, set user to null
+      } catch (error: any) {
         setUser(null)
+        
+        if (error?.status === 401 || error?.status === 403) {
+          document.cookie = 'payload-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+        }
       }
     }
 
