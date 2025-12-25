@@ -4,9 +4,14 @@ import { FieldHook } from 'payload'
  * Hook to calculate and update research documents status when research documents change
  * This hook runs after research documents are changed and updates the meeting's researchDocumentsStatus field
  */
-export const updateResearchDocumentsStatus: FieldHook = async ({ data, req, value, originalDoc }) => {
+export const updateResearchDocumentsStatus: FieldHook = async ({
+  data,
+  req,
+  value,
+  originalDoc,
+}) => {
   // Skip if this is already a process update to avoid infinite loops
-  if (req.context?.from === 'process') {
+  if (req.context?.from === 'process' || req.context?.from === 'migration') {
     return
   }
 
@@ -26,7 +31,11 @@ export const updateResearchDocumentsStatus: FieldHook = async ({ data, req, valu
           depth: 0,
         })
 
-        if (!meeting?.companies || !Array.isArray(meeting.companies) || meeting.companies.length === 0) {
+        if (
+          !meeting?.companies ||
+          !Array.isArray(meeting.companies) ||
+          meeting.companies.length === 0
+        ) {
           await req.payload.update({
             collection: 'meetings',
             id: originalDoc.id,
@@ -99,7 +108,6 @@ export const updateResearchDocumentsStatus: FieldHook = async ({ data, req, valu
         req.payload.logger.error('Error in deferred research documents status update:', error)
       }
     }, 100) // Small delay to ensure the main save operation completes first
-
   } catch (error: any) {
     req.payload.logger.error('Error setting up research documents status update:', error)
   }

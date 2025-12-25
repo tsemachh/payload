@@ -89,6 +89,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let errorCount = 0
     // Aggregate missing stockNums per company and per processed holding date
     const missingByCompanyDate = new Map<string, Map<string, Set<string>>>()
+    // Aggregate 'Matched by subAccountNum' messages to log once at the end
+    const matchedBySubAccountMsgs = new Map<string, number>()
 
     const silencedStocks = await payload.find({
       collection: 'silenced-stocks',
@@ -156,9 +158,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
         // If matched via a sub-account, log informative message
         if (subAccountKeySet.has(accountKey)) {
-          console.info(
-            `Matched by subAccountNum: firmId=${holding.firm}, accountNum=${holding.subAccountNum}, fundId=${companyId}`,
-          )
+          const key = `Matched by subAccountNum: firmId=${holding.firm}, accountNum=${holding.subAccountNum}, fundId=${companyId}`
+          matchedBySubAccountMsgs.set(key, (matchedBySubAccountMsgs.get(key) || 0) + 1)
         }
 
         // Find the holding in the map if not found add it to the map
@@ -267,22 +268,25 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             continue
           }
 
-          // Delete old holding day if exists
-          await payload.delete({
+          // If a holding day already exists for this fund and date — do not delete/overwrite, skip it
+          const existing = await payload.find({
             collection: 'holdings',
-            req: {
-              ...req,
-              context: { ...req.context, from: 'migration', process: 'migrateHoldings' },
-            },
             where: {
-              fund: {
-                equals: companyId,
-              },
-              valueDate: {
-                equals: holdingDate,
-              },
+              fund: { equals: companyId },
+              valueDate: { equals: new Date(holdingDate).toISOString() },
             },
+            depth: 0,
+            select: { fund: true },
+            limit: 1,
+            req,
           })
+
+          if (existing.docs && existing.docs.length > 0) {
+            console.log(
+              `[migrateHoldings.up] Holding already exists. Skipping create for fund ${companyId} on ${holdingDate}.`,
+            )
+            continue
+          }
 
           // Create new holding day with all stocks
           const holdingDayData = {
@@ -415,6 +419,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         `Completed batch ${i / MAX_CONCURRENT_PROCESSES + 1} of ${Math.ceil(activeCompanies.length / MAX_CONCURRENT_PROCESSES)}`,
       )
     }
+    // Emit consolidated 'matched by subAccountNum' logs
+    if (matchedBySubAccountMsgs.size > 0) {
+      console.log('\n[migrateHoldings.up] Matched-by-subAccountNum summary (logged once at end):')
+      for (const [msg, count] of Array.from(matchedBySubAccountMsgs.entries())) {
+        console.info(`${msg} | occurrences=${count}`)
+      }
+    }
     console.log(`Migration completed. Success: ${successCount}, Errors: ${errorCount}`)
   } catch (error) {
     console.error('Migration failed:', error)
@@ -463,6 +474,8 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
 
     // Aggregate missing stockNums per company and per processed holding date (deferred logging)
     const missingByCompanyDate = new Map<string, Map<string, Set<string>>>()
+    // Aggregate 'Matched by subAccountNum' messages to log once at the end
+    const matchedBySubAccountMsgs = new Map<string, number>()
 
     // Local processor copied from migrateHoldings.up
     // NOTE: Concurrency removed entirely per request — all processing is strictly sequential.
@@ -515,9 +528,8 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
         }
 
         if (subAccountKeySet.has(accountKey)) {
-          console.info(
-            `Matched by subAccountNum: firmId=${holding.firm}, accountNum=${holding.subAccountNum}, fundId=${companyId}`,
-          )
+          const key = `Matched by subAccountNum: firmId=${holding.firm}, accountNum=${holding.subAccountNum}, fundId=${companyId}`
+          matchedBySubAccountMsgs.set(key, (matchedBySubAccountMsgs.get(key) || 0) + 1)
         }
 
         let stocksMap = companyHoldings.get(companyId)
@@ -812,6 +824,13 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
       await new Promise((r) => setImmediate(r))
     }
 
+    // Emit consolidated 'matched by subAccountNum' logs
+    if (matchedBySubAccountMsgs.size > 0) {
+      console.log('\n[backfillDiscontinuedHoldings] Matched-by-subAccountNum summary (logged once at end):')
+      for (const [msg, count] of Array.from(matchedBySubAccountMsgs.entries())) {
+        console.info(`${msg} | occurrences=${count}`)
+      }
+    }
     console.log('Discontinued holdings backfill completed')
     // Emit consolidated warnings after all dates have been processed
     for (const [companyId, datesMap] of Array.from(missingByCompanyDate.entries())) {

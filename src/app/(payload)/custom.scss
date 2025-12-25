@@ -255,8 +255,12 @@ form[action*="/api/research-documents"] .file-field__filename {
       z-index: 0 !important;
     }
 
+
   }
 
+  .popup-button-list.popup-button-list__text-align--left.popup-button-list__button-size--default > button{
+    text-align: right !important;
+  }
   .collection-list.collection-list--admin-notifications {
     #heading-url .sort-column__buttons,
     #heading-handled .sort-column__buttons {

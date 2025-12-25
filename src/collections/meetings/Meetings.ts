@@ -170,7 +170,11 @@ export const Meetings: CollectionConfig = {
       limits: [100, 200, 300, 500],
     },
     components: {
-      listMenuItems: ['/collections/meetings/components/ExportMeetingsMenuItem'],
+      listMenuItems: [
+        '/collections/meetings/components/ExportMeetingsMenuItem',
+        '/collections/meetings/components/ProcessCompaniesMeetingsMenuItem',
+        '/collections/meetings/components/MigrateVoteCountsMenuItem',
+      ],
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
         PublishButton: '/components/buttons/CustomPublishButton',
@@ -1517,6 +1521,11 @@ export const Meetings: CollectionConfig = {
       path: '/export-excel',
       method: 'get',
       handler: ExportMeetingsExcelEndpoint,
+    },
+    {
+      path: '/recalculate-vote-counts',
+      method: 'post',
+      handler: async (req) => (await import('./endpoints/RecalculateVoteCountsEndpoint')).default(req),
     },
     {
       path: '/process-meetings',
