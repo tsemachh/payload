@@ -68,6 +68,7 @@ export function StockSelector({
 }: StockSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredStocks, setFilteredStocks] = useState<Stock[]>(stocks || [])
+  const [recentlyToggled, setRecentlyToggled] = useState<string | null>(null)
 
   useEffect(() => {
     setSearchQuery('')
@@ -102,16 +103,11 @@ export function StockSelector({
       result = stocksWithScores
     }
 
-    const sortedResult = [...result].sort((a, b) => {
-      const aSelected = selectedStocks.includes(a.id)
-      const bSelected = selectedStocks.includes(b.id)
-
-      if (aSelected && !bSelected) return -1
-      if (!aSelected && bSelected) return 1
-      return 0
-    })
-
-    setFilteredStocks(sortedResult)
+    // Sort selected items to top, but maintain order within each group
+    const selectedItems = result.filter(stock => selectedStocks.includes(stock.id))
+    const unselectedItems = result.filter(stock => !selectedStocks.includes(stock.id))
+    
+    setFilteredStocks([...selectedItems, ...unselectedItems])
   }, [searchQuery, stocks, selectedStocks])
 
   const handleToggle = (stockId: string) => {
@@ -121,6 +117,11 @@ export function StockSelector({
     } else {
       newSelection = [...selectedStocks, stockId]
     }
+    
+    // Add visual feedback for the toggled item
+    setRecentlyToggled(stockId)
+    setTimeout(() => setRecentlyToggled(null), 600)
+    
     onSelectionChangeAction(newSelection)
   }
 
@@ -141,25 +142,88 @@ export function StockSelector({
         {isLoading ? (
           <div className="py-6 text-center text-sm text-gray-500">טוען...</div>
         ) : filteredStocks.length > 0 ? (
-          <div className="space-y-1">
-            {filteredStocks.map((stock) => (
-              <div
-                key={stock.id}
-                className="flex items-center px-2 py-1.5 hover:bg-muted rounded-sm cursor-pointer gap-2"
-                onClick={() => handleToggle(stock.id)}
-              >
-                <Checkbox
-                  id={`stock-${stock.id}`}
-                  checked={selectedStocks.includes(stock.id)}
-                  onCheckedChange={() => handleToggle(stock.id)}
-                  className="h-3.5 w-3.5"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <span className="truncate">
-                  {stock.name} – {stock.stockId}
-                </span>
+          <div className="max-h-64 overflow-y-auto">
+            {/* Selected items section */}
+            {filteredStocks.filter(stock => selectedStocks.includes(stock.id)).length > 0 && (
+              <div className="space-y-0.5 mb-2">
+                {filteredStocks
+                  .filter(stock => selectedStocks.includes(stock.id))
+                  .map((stock) => {
+                    const isRecentlyToggled = recentlyToggled === stock.id
+                    
+                    return (
+                      <div
+                        key={stock.id}
+                        className={cn(
+                          "flex items-center px-3 py-2 rounded-md cursor-pointer gap-3 transition-all duration-500 ease-in-out transform",
+                          "hover:bg-gray-50 border border-transparent hover:border-gray-200",
+                          isRecentlyToggled && "scale-[1.02] shadow-md"
+                        )}
+                        onClick={() => handleToggle(stock.id)}
+                      >
+                        <Checkbox
+                          id={`stock-selected-${stock.id}`}
+                          checked={true}
+                          onCheckedChange={() => handleToggle(stock.id)}
+                          className="h-4 w-4 transition-all duration-200"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span className="flex-1 truncate transition-all duration-300 text-gray-700">
+                          {stock.name} – {stock.stockId}
+                        </span>
+                        
+                        <div className="flex items-center gap-2">
+                          {isRecentlyToggled && (
+                            <div className="w-3 h-3 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
               </div>
-            ))}
+            )}
+            
+            {/* Separator line if there are both selected and unselected items */}
+            {filteredStocks.filter(stock => selectedStocks.includes(stock.id)).length > 0 && 
+             filteredStocks.filter(stock => !selectedStocks.includes(stock.id)).length > 0 && (
+              <div className="border-t border-gray-200 my-2"></div>
+            )}
+            
+            {/* Unselected items section */}
+            <div className="space-y-0.5">
+              {filteredStocks
+                .filter(stock => !selectedStocks.includes(stock.id))
+                .map((stock) => {
+                  const isRecentlyToggled = recentlyToggled === stock.id
+                  
+                  return (
+                    <div
+                      key={stock.id}
+                      className={cn(
+                        "flex items-center px-3 py-2 rounded-md cursor-pointer gap-3 transition-all duration-500 ease-in-out transform",
+                        "hover:bg-gray-50 border border-transparent hover:border-gray-200",
+                        isRecentlyToggled && "scale-[1.02] shadow-md"
+                      )}
+                      onClick={() => handleToggle(stock.id)}
+                    >
+                      <Checkbox
+                        id={`stock-unselected-${stock.id}`}
+                        checked={false}
+                        onCheckedChange={() => handleToggle(stock.id)}
+                        className="h-4 w-4 transition-all duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className="flex-1 truncate transition-all duration-300 text-gray-700">
+                        {stock.name} – {stock.stockId}
+                      </span>
+                      
+                      {isRecentlyToggled && (
+                        <div className="w-3 h-3 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                      )}
+                    </div>
+                  )
+                })}
+            </div>
           </div>
         ) : (
           <div className="py-6 text-center text-sm text-gray-500">
