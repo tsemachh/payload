@@ -4,10 +4,9 @@ import { getIdOfRelationField } from '@/utils/utils'
 import { initPerformanceContext, PerfTimer } from '@/collections/meetings/hooks/perfTimer'
 import {
   getActiveFundsCache,
+  getCompanyIdFromFundId,
   getCompanyToFundsMap,
   getFundToCompanyMap,
-  requireFundToCompanyMap,
-  getCompanyIdFromFundId,
 } from '@/collections/meetings/hooks/activeFundsCache'
 
 // Historical fetch strategy v2:
@@ -296,9 +295,7 @@ async function processMeeting(
       // Build the list of companies to check for historical (non-invited, not removed)
       // Use ALL companyIds from the cache mapping values, not only those tied to current fundsWithHolding
       const f2cMap = getFundToCompanyMap() || {}
-      const allCompanyIdsFromCache = Array.from(
-        new Set(Object.values(f2cMap).map(String)),
-      )
+      const allCompanyIdsFromCache = Array.from(new Set(Object.values(f2cMap).map(String)))
       const companiesToCheck = allCompanyIdsFromCache.filter(
         (cid) => !invitedCompanyIds.has(cid) && !removedCompanyIds.includes(cid),
       )
@@ -496,13 +493,15 @@ export const processCompaniesMeetings = async (
     req.payload.logger.info('loaded meetings:' + meetings.length)
 
     // Use provided funds or, else, preload via cache helper and use as-is per instruction
-    let funds: string[]
+    let funds: string[] = []
     if (fundsToProcess && fundsToProcess.length > 0) {
       funds = fundsToProcess
       req.payload.logger.info(`Using provided funds: ${funds.length} funds`)
     } else {
-      funds = getActiveFundsCache() as string[]
-      req.payload.logger.info(`Preloaded active funds via helper: ${funds.length} funds`)
+      funds = (getActiveFundsCache() as string[] | undefined) || []
+      req.payload.logger.info(
+        `Preloaded active funds via helper: ${Array.isArray(funds) ? funds.length : 0} funds`,
+      )
     }
 
     // Shared cache of holding documents for reuse across all meetings in this run
