@@ -68,7 +68,7 @@ export const ManageMeetingCompanies = () => {
 
   const fetchMeetingData = async () => {
     try {
-      const res = await fetch(`/api/meetings/${id}?depth=1`, {
+      const res = await fetch(`/api/meetings/${id}?depth=1&joins=false`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       })

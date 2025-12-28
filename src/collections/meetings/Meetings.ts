@@ -1163,6 +1163,7 @@ export const Meetings: CollectionConfig = {
               type: 'upload',
               relationTo: 'research-documents',
               hasMany: true,
+              maxDepth: 0,
               admin: {
                 description:
                   'יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.',
@@ -1525,7 +1526,8 @@ export const Meetings: CollectionConfig = {
     {
       path: '/recalculate-vote-counts',
       method: 'post',
-      handler: async (req) => (await import('./endpoints/RecalculateVoteCountsEndpoint')).default(req),
+      handler: async (req) =>
+        (await import('./endpoints/RecalculateVoteCountsEndpoint')).default(req),
     },
     {
       path: '/process-meetings',
