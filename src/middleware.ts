@@ -27,6 +27,7 @@ export async function middleware(request: NextRequest) {
     '/holdings',
     '/participations',
     '/settings',
+    '/vote-meeting',
   ]
   const isFrontendRoute =
     pathname === '/' || protectedRoutes.some((route) => pathname.startsWith(route))
@@ -43,19 +44,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check if the user is authenticated by looking for the payload cookie
-  // Payload CMS uses a cookie named 'payload-token' for authentication
   const payloadCookie = request.cookies.get('payload-token')
-
-  // If the user is not authenticated and trying to access a protected route,
-  // redirect to the login page
-  if (!payloadCookie && isFrontendRoute) {
+  // If no cookie at all, redirect to login
+  if (!payloadCookie || !payloadCookie.value) {
     const url = new URL('/auth/signin', request.url)
-    // Use only pathname and search params to avoid hardcoded hostname issues
     const callbackPath = request.nextUrl.pathname + request.nextUrl.search
-
-    // Only set callbackUrl if it's not the home page
     url.searchParams.set('callbackUrl', encodeURI(callbackPath))
-
     return NextResponse.redirect(url)
   }
 

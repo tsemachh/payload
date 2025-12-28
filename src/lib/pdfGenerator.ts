@@ -209,15 +209,15 @@ export async function generateParticipationsPDF(
             '6': { halign: 'center', cellWidth: 50 }, // Meeting Results
             '7': { halign: 'center', cellWidth: 50 }, // Vote
             '8': { halign: 'center', cellWidth: 50 }, // ADVISOR_RECOMMENDATION
-            '9': { halign: 'center', cellWidth: 45 }, // Meeting Type
-            '10': { halign: 'center', cellWidth: 48 }, // Meeting Date
-            '11': { halign: 'center', cellWidth: 43 }, // Holding Value
-            '12': { halign: 'center', cellWidth: 35 }, // Percentage Holding
-            '13': { halign: 'center', cellWidth: 35 }, // Market Value
-            '14': { halign: 'center', cellWidth: 45 }, // Stock Name
-            '15': { halign: 'center', cellWidth: 75 }, // Company Name
-            '16': { halign: 'center', cellWidth: 70 }, // Corporate Name
-            '17': { halign: 'center', cellWidth: 45 }, // Stock Number
+            '9': { halign: 'center', cellWidth: 45 }, // Meeting Type (סוג אסיפה)
+            '10': { halign: 'center', cellWidth: 48 }, // Meeting Date (מועד אסיפה)
+            '11': { halign: 'center', cellWidth: 43 }, // Holding Value (שווי החזקה)
+            '12': { halign: 'center', cellWidth: 35 }, // Percentage Holding (החזקה %)
+            '13': { halign: 'center', cellWidth: 35 }, // Market Value (שווי שוק)
+            '14': { halign: 'center', cellWidth: 75 }, // Company Name (שם חברה)
+            '15': { halign: 'center', cellWidth: 45 }, // Stock Name (שם נייר)
+            '16': { halign: 'center', cellWidth: 70 }, // Corporate Name (שם התאגיד)
+            '17': { halign: 'center', cellWidth: 45 }, // Stock Number (מספר נייר)
             '18': { halign: 'center', cellWidth: 20 }, // Agenda Number
           }
         : {
@@ -229,15 +229,15 @@ export async function generateParticipationsPDF(
             '5': { halign: 'center', cellWidth: 37 }, // Regular Majority (+6)
             '6': { halign: 'center', cellWidth: 52 }, // Meeting Results (+6)
             '7': { halign: 'center', cellWidth: 52 }, // Vote (+6)
-            '8': { halign: 'center', cellWidth: 45 }, // Meeting Type
-            '9': { halign: 'center', cellWidth: 48 }, // Meeting Date
-            '10': { halign: 'center', cellWidth: 43 }, // Holding Value
-            '11': { halign: 'center', cellWidth: 35 }, // Percentage Holding
-            '12': { halign: 'center', cellWidth: 35 }, // Market Value
-            '13': { halign: 'center', cellWidth: 45 }, // Stock Name
-            '14': { halign: 'center', cellWidth: 75 }, // Company Name
-            '15': { halign: 'center', cellWidth: 70 }, // Corporate Name
-            '16': { halign: 'center', cellWidth: 45 }, // Stock Number
+            '8': { halign: 'center', cellWidth: 45 }, // Meeting Type (סוג אסיפה)
+            '9': { halign: 'center', cellWidth: 48 }, // Meeting Date (מועד אסיפה)
+            '10': { halign: 'center', cellWidth: 43 }, // Holding Value (שווי החזקה)
+            '11': { halign: 'center', cellWidth: 35 }, // Percentage Holding (החזקה %)
+            '12': { halign: 'center', cellWidth: 35 }, // Market Value (שווי שוק)
+            '13': { halign: 'center', cellWidth: 75 }, // Company Name (שם חברה)
+            '14': { halign: 'center', cellWidth: 45 }, // Stock Name (שם נייר)
+            '15': { halign: 'center', cellWidth: 70 }, // Corporate Name (שם התאגיד)
+            '16': { halign: 'center', cellWidth: 45 }, // Stock Number (מספר נייר)
             '17': { halign: 'center', cellWidth: 20 }, // Agenda Number
           }
 
@@ -266,66 +266,66 @@ export async function generateParticipationsPDF(
           ]
         : []),
       {
-        content: prepareText('נושא'),
-        colSpan: 9, // מיזוג8 עמודות - עמודות 9-16
+        content: '', //  הכותרת "נושא" - עמודה ריקה
+        colSpan: 9, 
         halign: 'center',
         styles: {
           fontSize: FONT_SIZE_HEADER,
           cellPadding: { top: PADDING + 13 },
         },
       },
-      { content: '', rowSpan: 2 }, // עמודה 16 - מספר סעיף
+      { content: '', rowSpan: 2 }, // עמודה 18 - מספר סעיף
     ]
 
     const headerRow2 = [
       {
-        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[0], doc, 70),
+        content: prepareText(SHARED_COLUMNS.MEETING_TYPE), // סוג אסיפה
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // מספר מניה
+      },
       {
-        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[1], doc, 70),
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.MEETING_DATE, doc, 90), // מועד אסיפה
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, //  שם תאגיד
+      },
       {
-        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[2], doc, 70),
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.HOLDING_VALUE, doc, 80), // שווי החזקה
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, //  שם חברה
+      },
       {
-        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[3], doc, 60),
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.PERCENTAGE_HOLDING, doc, 50), // החזקה %
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // שם מניה
+      },
       {
-        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[4], doc, 60),
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.MARKET_VALUE, doc, 60), // שווי שוק
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // שווי שוק
+      },
       {
-        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[5], doc, 50),
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.COMPANY_NAME, doc, 70), // שם חברה
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // Percentage Holding
+      },
       {
-        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[6], doc, 80),
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.STOCK_NAME, doc, 60), // שם נייר
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // Holding Value
+      },
       {
-        content: prepareTextWithLineBreaks(COMPANY_SUB_HEADERS[7], doc, 90),
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.CORPORATE_NAME, doc, 70), // שם התאגיד
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // Meeting Date
+      },
       {
-        content: prepareText(COMPANY_SUB_HEADERS[8]),
+        content: prepareTextWithLineBreaks(SHARED_COLUMNS.STOCK_NUMBER, doc, 70), // מספר נייר
         halign: 'center',
         styles: { fontSize: FONT_SIZE_SUBHEADER },
-      }, // Meeting Type
+      },
     ]
 
-    const head = [headerRow1, headerRow2.reverse()]
+    const head = [headerRow1, headerRow2]
 
     const body: any[] = []
 
@@ -350,16 +350,17 @@ export async function generateParticipationsPDF(
       )
 
       // Organize company data for columns 9-17 (or 9-16 if no advisor column)
+      // הסדר החדש: סוג אסיפה, מועד אסיפה, שווי החזקה, החזקה %, שווי שוק, שם חברה, שם נייר, שם התאגיד, מספר נייר
       const companyValues = [
-        meeting.meetingType || '', // Meeting Type
-        formattedDate, // Meeting Date
-        formattedHoldingValueInMillions, // Holding Value
-        formattedPercentageHolding, // Percentage Holding
-        formattedMarketValue, // Market Value
-        meeting.stockName || '', // Stock Name
-        meeting.currentCompany.name || 'מוק שם החברה', // Company Name
-        meeting.corporateName || '', // Corporate Name
-        meeting.stockNumber || '', // Stock Number
+        meeting.meetingType || '', // סוג אסיפה (Meeting Type)
+        formattedDate, // מועד אסיפה (Meeting Date)
+        formattedHoldingValueInMillions, // שווי החזקה (Holding Value)
+        formattedPercentageHolding, // החזקה % (Percentage Holding)
+        formattedMarketValue, // שווי שוק (Market Value)
+        meeting.currentCompany.name || 'מוק שם החברה', // שם חברה (Company Name)
+        meeting.stockName || '', // שם נייר (Stock Name)
+        meeting.corporateName || '', // שם התאגיד (Corporate Name)  
+        meeting.stockNumber || '', // מספר נייר (Stock Number)
       ]
 
       // Create company header row with colored background
@@ -649,16 +650,18 @@ export async function generateParticipationsPDF(
           // For Hebrew text, it's already split with \n
           let displayedLines
           if (isEnglish) {
-            // Get the column width to split properly
+            // Get the column width to split properly - calculate total width of company columns
             let totalColWidth = 0
             if (showAdvisorColumn) {
+              // Columns 9-17 for company data when advisor column is shown
               for (let i = 9; i <= 17; i++) {
                 const w = columnStyles[i.toString()]?.cellWidth
                 const num = typeof w === 'number' ? w : Number(w) || 0
                 totalColWidth += num
               }
             } else {
-              for (let i = 8; i <= 17; i++) {
+              // Columns 8-16 for company data when no advisor column
+              for (let i = 8; i <= 16; i++) {
                 const w = columnStyles[i.toString()]?.cellWidth
                 const num = typeof w === 'number' ? w : Number(w) || 0
                 totalColWidth += num
