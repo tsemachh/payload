@@ -244,6 +244,36 @@ export default function VotingForm() {
     return JSON.stringify(currentDataForComparison) !== JSON.stringify(initialDataForComparison)
   }, [votingData, initialVotingData, uploadedDocs])
 
+  // Check if there are any changes across all companies
+  const isAnyCompanyDirty = useMemo(() => {
+    // If current company has changes, return true immediately
+    if (isDirty) return true
+
+    // Check if any company has draft votes that differ from published votes
+    if (!fetchedAllLatestVotes || fetchedAllLatestVotes.length === 0) return false
+    if (!publishedVotes || publishedVotes.length === 0) return true // Has drafts but no published votes
+
+    // Simple check: if we have more draft votes than published votes, there are changes
+    const draftCompanies = new Set(
+      fetchedAllLatestVotes.map((v: any) =>
+        typeof v.company === 'string' ? v.company : v.company?.id,
+      ),
+    )
+    const publishedCompanies = new Set(
+      publishedVotes.map((v: any) => (typeof v.company === 'string' ? v.company : v.company?.id)),
+    )
+
+    // If different number of companies have votes, there are changes
+    if (draftCompanies.size !== publishedCompanies.size) return true
+
+    // If any company has draft but no published, there are changes
+    for (const companyId of draftCompanies) {
+      if (!publishedCompanies.has(companyId)) return true
+    }
+
+    return false
+  }, [isDirty, fetchedAllLatestVotes, publishedVotes])
+
   const votedCompanies = useMemo(() => {
     if (isVotedCompaniesArray || !Array.isArray(votedCompaniesArray)) return new Set<string>()
     return new Set<string>(
@@ -814,6 +844,8 @@ export default function VotingForm() {
 
       // Validate ALL companies votes first
       const validationResult = await validateAllCompaniesVotes()
+      console.log('^^^^^^^^^^^^^^validationResult', validationResult)
+      console.log('^^^^^^^^^^^^^^companiesIDs[0]', companiesIDs[0])
 
       if (!validationResult.isValid) {
         // Set companies with errors
@@ -1603,7 +1635,7 @@ export default function VotingForm() {
                       {(!isDirty || isSubmitting || isUploading || isReadOnly) && (
                         <TooltipContent className="m-1 mx-3">
                           {!isDirty
-                            ? 'אין שינוי מההצבעה שנשלחה לעמדה'
+                            ? 'אין שינוי מההצבעה שנשלחה לעמדה עבור החברה הנוכחית'
                             : isUploading
                               ? 'אנא המתן לסיום העלאת הקבצים'
                               : isReadOnly
@@ -1621,7 +1653,9 @@ export default function VotingForm() {
                         <div>
                           <Button
                             onClick={() => savePublishAll()}
-                            disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
+                            disabled={
+                              !isAnyCompanyDirty || isSubmitting || isUploading || isReadOnly
+                            }
                             className="px-8"
                             variant="secondary"
                           >
@@ -1629,10 +1663,10 @@ export default function VotingForm() {
                           </Button>
                         </div>
                       </TooltipTrigger>
-                      {(!isDirty || isSubmitting || isUploading || isReadOnly) && (
+                      {(!isAnyCompanyDirty || isSubmitting || isUploading || isReadOnly) && (
                         <TooltipContent className="m-1 mx-3">
-                          {!isDirty
-                            ? 'אין שינוי מההצבעה שנשלחה לעמדה'
+                          {!isAnyCompanyDirty
+                            ? 'כל ההצבעות כבר נשלחו'
                             : isUploading
                               ? 'אנא המתן לסיום העלאת הקבצים'
                               : isReadOnly
