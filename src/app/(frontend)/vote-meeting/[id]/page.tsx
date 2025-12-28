@@ -676,9 +676,7 @@ export default function VotingForm() {
         for (const agenda of meetingData.agendas) {
           if (agenda.isRemovedFromAgenda) continue
 
-          const voteItem = (vote.votes || []).find(
-            (v: unknown) => v.topicIndex == agenda.topicIndex,
-          )
+          const voteItem = (vote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
 
           if (!voteItem?.voteDecision) {
             hasAgendaError = true
@@ -719,8 +717,13 @@ export default function VotingForm() {
   // When switching to a company with errors, validate and show field errors
   useEffect(() => {
     if (companiesWithErrors.size > 0 && companiesIDs.length === 1) {
-      if (companiesWithErrors.has(companiesIDs[0])) {
-        // This company has errors - validate and show them
+      const currentCompanyId = companiesIDs[0]
+
+      if (companiesWithErrors.has(currentCompanyId)) {
+        if (!meetingData || !votingData) {
+          return
+        }
+
         const errors = validateForm()
         if (errors.length > 0) {
           setValidationErrors(errors)
@@ -737,7 +740,8 @@ export default function VotingForm() {
         setValidationErrors([])
       }
     }
-  }, [companiesIDs, companiesWithErrors, validateForm])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [votingData, companiesWithErrors, validateForm])
 
   const savePublish = useCallback(
     async () => {
@@ -775,6 +779,8 @@ export default function VotingForm() {
           })
         }, 0)
         return
+      } else {
+        setValidationErrors([])
       }
 
       setIsSubmitting(true)
@@ -863,6 +869,8 @@ export default function VotingForm() {
             )
             errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
           }
+        } else {
+          setValidationErrors([])
         }
 
         setTimeout(() => {
