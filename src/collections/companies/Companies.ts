@@ -76,12 +76,15 @@ export const Companies: CollectionConfig = {
   indexes: [
     {
       fields: ['type', 'active'],
-    }, 
-    {
-      fields: ['companyId'], 
     },
     {
-      fields: ['label.labels.labelId'], 
+      fields: ['label.labels.labelId'],
+    },
+    {
+      fields: ['_order', 'createdAt'],
+    },
+    {
+      fields: ['type', 'active', '_order', 'createdAt'],
     },
   ],
   fields: [
@@ -439,6 +442,7 @@ export const Companies: CollectionConfig = {
               collection: 'holdings',
               on: 'fund',
               name: 'holdings',
+              maxDepth: 0,
               admin: {
                 disableListColumn: true,
               },

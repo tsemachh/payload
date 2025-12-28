@@ -92,7 +92,7 @@ export const useVotingData = () => {
 
       try {
         // Initialize passiveMap
-        let passiveMap = new Map<string, boolean>()
+        const passiveMap = new Map<string, boolean>()
         const meetingFundIds = (data.funds || []) as string[]
 
         let votesDetails: any[] = []
@@ -115,6 +115,8 @@ export const useVotingData = () => {
                 reported: true,
                 checksum: true,
               },
+              joins: false,
+              paging: false,
               depth: 0,
               limit: 0,
             })
@@ -180,6 +182,8 @@ export const useVotingData = () => {
                 },
                 depth: 0,
                 limit: 0,
+                joins: false,
+                paging: false,
                 sort: '_order',
               },
               { addQueryPrefix: true },
@@ -386,6 +390,8 @@ export const useVotingData = () => {
                   select: {
                     name: true,
                   },
+                  joins: false,
+                  paging: false,
                   depth: 0,
                   limit: 0,
                 },
