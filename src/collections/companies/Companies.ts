@@ -76,6 +76,12 @@ export const Companies: CollectionConfig = {
   indexes: [
     {
       fields: ['type', 'active'],
+    }, 
+    {
+      fields: ['companyId'], 
+    },
+    {
+      fields: ['label.labels.labelId'], 
     },
   ],
   fields: [
