@@ -29,23 +29,13 @@ export const updateResearchDocumentsStatus: FieldHook = async ({
   try {
     const startTime = Date.now()
     
-    // 🚀 Use the data we already have - the value parameter contains the new researchDocuments
     const meeting = {
       ...originalDoc,
       ...data, // Apply any changes from the current update
       researchDocuments: value, // Use the new value being set
     }
 
-    console.log('📊 Meeting data:', {
-      id: meeting.id,
-      type: meeting.type,
-      companiesCount: meeting.companies?.length || 0,
-      researchDocsCount: meeting.researchDocuments?.length || 0,
-      companies: meeting.companies?.map((c: any) => typeof c === 'string' ? c : c.id),
-      researchDocs: meeting.researchDocuments?.map((d: any) => typeof d === 'string' ? d : d.id),
-    })
 
-    // 🚀 Early exit if no companies
     if (
       !meeting?.companies ||
       !Array.isArray(meeting.companies) ||
@@ -60,7 +50,6 @@ export const updateResearchDocumentsStatus: FieldHook = async ({
 
     const researchDocs = meeting.researchDocuments || []
     
-    // 🚀 Early exit if no research documents
     if (researchDocs.length === 0) {
       // Set the status in the data object so it gets saved
       if (data) {
@@ -69,10 +58,8 @@ export const updateResearchDocumentsStatus: FieldHook = async ({
       return value
     }
 
-    // 🚀 Get meeting type to determine which permissions are relevant
     const meetingType = meeting.type || 'regular'
     
-    // Determine which columns to show based on meeting type (same logic as ResearchDocumentsView)
     const getColumnsToShow = () => {
       switch (meetingType) {
         case 'אג"ח':
@@ -118,7 +105,6 @@ export const updateResearchDocumentsStatus: FieldHook = async ({
       pagination: false
     })
     
-    // 🚀 Filter companies that should show red X marks (have relevant permissions for this meeting type)
     const companiesWithRelevantPermissions = companiesWithPermissions.docs
       .filter((company: any) => {
         const researchSettings = company.researchDocuments
@@ -155,7 +141,6 @@ export const updateResearchDocumentsStatus: FieldHook = async ({
     const companiesWithDocs = new Set()
 
     if (researchDocs.length > 0) {
-      // 🚀 Batch fetch all research documents at once
       const allResearchDocs = await req.payload.find({
         collection: 'research-documents',
         where: {
@@ -250,7 +235,6 @@ export const updateResearchDocumentsStatus: FieldHook = async ({
     if (companiesWithDocsCount === 0) {
       status = 'empty'
     } else if (companiesWithDocsCount === totalCompaniesWithRelevantPermissions) {
-      // 🚀 Status is complete when ALL companies with relevant permissions have all required docs
       status = 'complete'
     } else {
       status = 'partial'
