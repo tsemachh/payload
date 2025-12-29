@@ -175,6 +175,8 @@ export const useVotingData = () => {
     const fetchCompaniesData = async () => {
       if (!Array.isArray(data.companies)) {
         setVotedCompanies([])
+        setNotVotedCompanies([])
+        setHistoricalHoldings([])
         setVotedLoading(false)
         setNotVotedLoading(false)
         setHistoricalLoading(false)
@@ -192,33 +194,40 @@ export const useVotingData = () => {
         const tempCompanyOrderMap = await fetchCompanyOrderMap(meetingFundIds, meetingCompanyIds)
         setCompanyOrderMap(tempCompanyOrderMap)
 
-        // Fetch voted companies
-        setVotedLoading(true)
-        const votedCompaniesData = await fetchVotedCompaniesData(meetingId)
+        // Fetch all three data sources in parallel
+        const [votedCompaniesData, notVotedCompaniesData, historicalHoldingsData] =
+          await Promise.all([
+            fetchVotedCompaniesData(meetingId),
+            fetchNotVotedCompaniesData(meetingId),
+            fetchHistoricalHoldingsData(meetingId),
+          ])
+
         console.log('Voted companies data:', votedCompaniesData)
-        setVotedCompanies(votedCompaniesData)
-        setVotedLoading(false)
-
-        // Fetch not voted companies
-        setNotVotedLoading(true)
-        const notVotedCompaniesData = await fetchNotVotedCompaniesData(meetingId)
         console.log('Not voted companies data:', notVotedCompaniesData)
-        setNotVotedCompanies(notVotedCompaniesData)
-        setNotVotedLoading(false)
-
-        // Fetch historical holdings
-        setHistoricalLoading(true)
-        const historicalHoldingsData = await fetchHistoricalHoldingsData(meetingId)
         console.log('Historical holdings data:', historicalHoldingsData)
+
+        // Update all state at once to avoid multiple re-renders
+        setVotedCompanies(votedCompaniesData)
+        setNotVotedCompanies(notVotedCompaniesData)
         setHistoricalHoldings(historicalHoldingsData)
+        setVotedLoading(false)
+        setNotVotedLoading(false)
         setHistoricalLoading(false)
       } catch (error) {
         console.error('Error fetching companies data:', error)
         setVotedCompanies([])
         setNotVotedCompanies([])
         setHistoricalHoldings([])
+        setVotedLoading(false)
+        setNotVotedLoading(false)
+        setHistoricalLoading(false)
       }
     }
+
+    // Set all loading states to true before fetching
+    setVotedLoading(true)
+    setNotVotedLoading(true)
+    setHistoricalLoading(true)
 
     fetchCompaniesData()
   }, [data])
