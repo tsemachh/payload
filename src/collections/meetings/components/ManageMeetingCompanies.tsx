@@ -694,7 +694,7 @@ export const ManageMeetingCompanies = () => {
                             }))
                           }}
                           disabled={!selectedFunds.includes(fund.id) || isProcessing}
-                          className="w-24 px-2 py-1 text-sm border rounded dark:bg-gray-900 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-28 px-2 py-1 text-sm border rounded dark:bg-gray-900 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                       </div>
                     ))}
