@@ -1172,7 +1172,7 @@ export const Meetings: CollectionConfig = {
                 },
               },
               hooks: {
-                afterChange: [updateResearchDocumentsStatus],
+                beforeChange: [updateResearchDocumentsStatus],
               },
             },
             {
