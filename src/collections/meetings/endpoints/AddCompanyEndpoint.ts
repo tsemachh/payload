@@ -55,6 +55,10 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
     // Use the selected portfolios instead of finding all funds
     const fundsForCompany = await req.payload.find({
       collection: 'companies',
+      select: {
+        id: true,
+        name: true,
+      },
       where: {
         and: [{ type: { equals: 'fund' } }, { id: { in: fundIds } }],
       },
