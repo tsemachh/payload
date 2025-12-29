@@ -2,7 +2,7 @@
 import { Plus, Trash2, ChevronsUpDown, Check, ArchiveRestore, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDocumentInfo, toast } from '@payloadcms/ui'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Dialog,
@@ -60,18 +60,33 @@ export const ManageMeetingCompanies = () => {
   // Loading states
   const [isLoadingStocks, setIsLoadingStocks] = useState(false)
   const [isLoadingFunds, setIsLoadingFunds] = useState(false)
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false)
+
+  // Refs to prevent duplicate calls
+  const isFetchingMeetingData = useRef(false)
+  const isFetchingCompanies = useRef(false)
 
   // Fetch data
   useEffect(() => {
     if (id) fetchMeetingData()
-  }, [id, dataChange])
+  }, [dataChange])
 
   const fetchMeetingData = async () => {
+    // Prevent duplicate calls using ref
+    if (isFetchingMeetingData.current) {
+      return
+    }
+
+    isFetchingMeetingData.current = true
     try {
-      const res = await fetch(`/api/meetings/${id}?depth=1`, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      })
+      // Fetch meeting data using the new endpoint
+      const res = await fetch(
+        `/api/meetings/manage-companies-help?action=getMeetingData&meetingId=${id}`,
+        {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
       const data = await res.json()
       setMeetingData(data)
 
@@ -80,16 +95,35 @@ export const ManageMeetingCompanies = () => {
 
       const removedCompaniesList = data.removedCompanies || []
       setRemovedCompanies(removedCompaniesList)
+    } catch (err) {
+      console.error('Error fetching meeting data:', err)
+    } finally {
+      isFetchingMeetingData.current = false
+    }
+  }
 
-      const allRes = await fetch(`/api/companies?where[type][equals]=regular&limit=0&depth=0`, {
+  // Fetch regular companies - called after stock selection
+  const fetchRegularCompanies = async () => {
+    // Prevent duplicate calls using ref
+    if (isFetchingCompanies.current) {
+      return
+    }
+
+    isFetchingCompanies.current = true
+    setIsLoadingCompanies(true)
+    try {
+      const allRes = await fetch(`/api/meetings/manage-companies-help?action=getRegularCompanies`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       })
       const allData = await allRes.json()
-      const activeCompanies = allData.docs.filter((company: Company) => company.active)
-      setAvailableCompanies(activeCompanies)
+      setAvailableCompanies(allData.docs || [])
     } catch (err) {
-      console.error('Error fetching meeting data:', err)
+      console.error('Error fetching companies:', err)
+      toast.error('שגיאה בטעינת חברות')
+    } finally {
+      setIsLoadingCompanies(false)
+      isFetchingCompanies.current = false
     }
   }
 
@@ -99,10 +133,15 @@ export const ManageMeetingCompanies = () => {
     try {
       const stockId =
         typeof meetingData.stock === 'string' ? meetingData.stock : meetingData.stock?.id
-      const res = await fetch(`/api/stocks/${stockId}?depth=1`, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      // Fetch stock details using the new endpoint
+      const res = await fetch(
+        `/api/meetings/manage-companies-help?action=getStockDetails&stockId=${stockId}`,
+        {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
       const stockData = await res.json()
 
       // Build available stocks list: main stock + related stocks
@@ -131,11 +170,17 @@ export const ManageMeetingCompanies = () => {
   }
 
   // Fetch funds for selected company
-  const fetchFundsForCompany = async (companyId: string) => {
+  const fetchFundsForCompany = async (company: Company) => {
     setIsLoadingFunds(true)
     try {
+      // Convert subCompanies array to comma-separated string
+      const subCompaniesParam = Array.isArray(company.subCompanies)
+        ? company.subCompanies.map((sc: any) => (typeof sc === 'string' ? sc : sc.id)).join(',')
+        : company.subCompanies
+
+      // Fetch funds using the new endpoint
       const res = await fetch(
-        `/api/companies?where[type][equals]=fund&where[parentCompany][equals]=${companyId}&limit=0&depth=0`,
+        `/api/meetings/manage-companies-help?action=getFundsForCompany&subCompanies=${subCompaniesParam}`,
         {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -157,15 +202,17 @@ export const ManageMeetingCompanies = () => {
     setShowStockSelection(true)
     setShowAddModal(true)
 
+    // Start fetching both stocks and companies in parallel
     fetchStockDetails()
+    fetchRegularCompanies()
   }
 
   // Handle company selection - show fund selection
-  const handleCompanySelect = (companyId: string) => {
-    setSelectedAddId(companyId)
+  const handleCompanySelect = (company: Company) => {
+    setSelectedAddId(company.id)
     setOpenAdd(false)
 
-    fetchFundsForCompany(companyId)
+    fetchFundsForCompany(company)
   }
 
   // Move from stock selection to company selection
@@ -175,7 +222,6 @@ export const ManageMeetingCompanies = () => {
       return
     }
     setShowStockSelection(false)
-    // Now show company selection
   }
 
   // Add company with selected funds
@@ -500,63 +546,70 @@ export const ManageMeetingCompanies = () => {
             </div>
           ) : !selectedAddId ? (
             <div className="py-4">
-              <Popover open={openAdd} onOpenChange={setOpenAdd} modal={true}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openAdd}
-                    className="w-full justify-between text-left font-normal"
-                    style={{ direction: 'rtl' }}
-                    disabled={isProcessing}
+              {isLoadingCompanies ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+                  <span className="mr-2 text-gray-500">טוען חברות...</span>
+                </div>
+              ) : (
+                <Popover open={openAdd} onOpenChange={setOpenAdd} modal={true}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openAdd}
+                      className="w-full justify-between text-left font-normal"
+                      style={{ direction: 'rtl' }}
+                      disabled={isProcessing}
+                    >
+                      {selectedAddId ? getAddName() : 'בחר חברה...'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="useTw w-[var(--radix-popper-anchor-width)] p-0"
+                    style={{
+                      direction: 'rtl',
+                      zIndex: 9999,
+                    }}
+                    align="end"
+                    sideOffset={5}
                   >
-                    {selectedAddId ? getAddName() : 'בחר חברה...'}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="useTw w-[var(--radix-popper-anchor-width)] p-0"
-                  style={{
-                    direction: 'rtl',
-                    zIndex: 9999,
-                  }}
-                  align="end"
-                  sideOffset={5}
-                >
-                  <Command className="useTw opacity-100">
-                    <CommandInput placeholder="הקלד לחיפוש חברה..." className="h-9" />
-                    <CommandList>
-                      <CommandGroup
-                        className="useTw max-h-60 overflow-auto"
-                        style={
-                          {
-                            minHeight: '1px',
-                          } as React.CSSProperties
-                        }
-                      >
-                        {Array.isArray(availableCompanies) &&
-                          availableCompanies.map((company) => (
-                            <CommandItem
-                              key={company.id}
-                              value={company.id}
-                              keywords={[company.name]}
-                              onSelect={() => handleCompanySelect(company.id)}
-                              className="cursor-pointer"
-                            >
-                              <Check
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  selectedAddId === company.id ? 'opacity-100' : 'opacity-0',
-                                )}
-                              />
-                              {company.name}
-                            </CommandItem>
-                          ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                    <Command className="useTw opacity-100">
+                      <CommandInput placeholder="הקלד לחיפוש חברה..." className="h-9" />
+                      <CommandList>
+                        <CommandGroup
+                          className="useTw max-h-60 overflow-auto"
+                          style={
+                            {
+                              minHeight: '1px',
+                            } as React.CSSProperties
+                          }
+                        >
+                          {Array.isArray(availableCompanies) &&
+                            availableCompanies.map((company) => (
+                              <CommandItem
+                                key={company.id}
+                                value={company.id}
+                                keywords={[company.name]}
+                                onSelect={() => handleCompanySelect(company)}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    selectedAddId === company.id ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                                {company.name}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           ) : (
             <div className="py-4 space-y-4">

@@ -18,6 +18,7 @@ import removeCompanyEndpoint, {
   restoreCompanyEndpoint,
   removeFundEndpoint,
 } from './endpoints/RemoveCompanyEndpoint'
+import { manageCompaniesHelpEndpoint } from './endpoints/ManageCompaniesHelpEndpoint'
 import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
   afterChangeDeleteResearchDocs,
@@ -128,7 +129,7 @@ export const Meetings: CollectionConfig = {
         { name: 'hasResearchDoc', width: '130px' },
         { name: 'votesStatus', width: '130px' },
         { name: 'votesReportStatus', width: '130px' },
-        {name:'researchDocumentsStatus',width:'130px'},
+        { name: 'researchDocumentsStatus', width: '130px' },
         { name: 'resultsConfirmationStatus', width: '130px' },
         { name: 'hasRelatedStocks', width: '130px' },
       ],
@@ -174,7 +175,6 @@ export const Meetings: CollectionConfig = {
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
         PublishButton: '/components/buttons/CustomPublishButton',
-        
       },
     },
   },
@@ -544,8 +544,8 @@ export const Meetings: CollectionConfig = {
                           where: {
                             and: [
                               { type: { equals: value } },
-                              { autoFillInMeetings: { equals: true } }
-                            ]
+                              { autoFillInMeetings: { equals: true } },
+                            ],
                           },
                           limit: 1,
                           depth: 0,
@@ -1178,7 +1178,6 @@ export const Meetings: CollectionConfig = {
                 hidden: true,
               },
             },
-
           ],
         },
         {
@@ -1564,6 +1563,11 @@ export const Meetings: CollectionConfig = {
       path: '/removeFund',
       method: 'post',
       handler: removeFundEndpoint,
+    },
+    {
+      path: '/manage-companies-help',
+      method: 'get',
+      handler: manageCompaniesHelpEndpoint,
     },
   ],
 }
