@@ -18,6 +18,7 @@ import removeCompanyEndpoint, {
   restoreCompanyEndpoint,
   removeFundEndpoint,
 } from './endpoints/RemoveCompanyEndpoint'
+import { manageCompaniesHelpEndpoint } from './endpoints/ManageCompaniesHelpEndpoint'
 import { calculateHoldingDateHook } from './hooks/calculateHoldingDate'
 import {
   afterChangeDeleteResearchDocs,
@@ -1593,6 +1594,11 @@ export const Meetings: CollectionConfig = {
       path: '/removeFund',
       method: 'post',
       handler: removeFundEndpoint,
+    },
+    {
+      path: '/manage-companies-help',
+      method: 'get',
+      handler: manageCompaniesHelpEndpoint,
     },
   ],
 }
