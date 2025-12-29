@@ -207,7 +207,6 @@ export const publishVotes = async (req: PayloadRequest) => {
         company: true,
         checksum: true,
         publishedchecksum: true,
-        parentCompany: true,
       },
       where: {
         and: [
@@ -216,7 +215,7 @@ export const publishVotes = async (req: PayloadRequest) => {
           { _status: { equals: 'published' } },
         ],
       },
-      depth: 1,
+      depth: 0,
       limit: votesToPublish.docs.length,
       overrideAccess: true,
     })
@@ -618,8 +617,6 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
 
     return Response.json({ success: true }, { status: 200 })
   } catch (error: any) {
-    console.log('!!!!err', error)
-
     return Response.json(
       { error: 'Internal server error', message: error.message },
       { status: 500 },
