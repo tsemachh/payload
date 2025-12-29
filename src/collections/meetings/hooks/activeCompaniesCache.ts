@@ -86,6 +86,10 @@ export function getManyCompanyDataByIds(ids: string[]): Record<string, CachedCom
   return res
 }
 
+// Alias with clearer name as requested
+export const getByIds = (ids: string[]): Record<string, CachedCompany | null> =>
+  getManyCompanyDataByIds(ids)
+
 // --- Loader: Preload the cache using Payload API only ---
 export async function preloadCompaniesCache(payload: Payload) {
   if (!payload) throw new Error('preloadCompaniesCache requires payload instance')

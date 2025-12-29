@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig, Where } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
+import cacheTestEndpoint from './cacheTestEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
 import {
   addTagToCompany,
@@ -695,6 +696,11 @@ export const Companies: CollectionConfig = {
       path: '/updateLabel',
       method: 'post',
       handler: updateTagInCompany,
+    },
+    {
+      path: '/cache-test',
+      method: 'get',
+      handler: cacheTestEndpoint,
     },
   ],
 }
