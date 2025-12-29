@@ -60,8 +60,38 @@ async function processVotesData(
         if (!match || !match.quantity) return null
         const parent = fundToParentMap.get(fundId)
         if (parent?.id != companyId) return null
+
+        let quantity
+        if (match.fund) {
+          if (match.original && Array.isArray(match.original) && match.original.length > 0) {
+            // If there's an original array, sum all ownedQuantity from it
+            quantity = match.original.reduce((sum: number, orig: any) => {
+              if (orig?.ownedQuantity) {
+                return sum + (orig.ownedQuantity || 0)
+              }
+              if (orig?.quantity) {
+                return sum + (orig.quantity || 0)
+              }
+              console.error(
+                `Company ${fundId} in stock ${orig.stockId} does not exist or is not valid in the fundsWithHolding array`,
+              )
+              return null
+            }, 0)
+            if (quantity == 0) {
+              console.error(
+                `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
+              )
+              return null
+            }
+          }
+        } else {
+          console.error(
+            `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
+          )
+          return null
+        }
         const { percentageHolding, holdingValueInMillions } = calculateHoldingValues(
-          match.ownedQuantity || match.quantity,
+          quantity,
           meeting.stockValue,
           false,
         )
@@ -96,6 +126,22 @@ async function processVotesData(
       displayVotingRecommendation,
       votes: [vote],
       hasVotes: true,
+      // New fields for additional columns
+      holdingQuantity: fundsArray.reduce(
+        (sum, fund) => {
+          // Find the matching fund in fundsWithHolding to get the quantity
+          const match = meeting?.fundsWithHolding?.find(
+            (item: { fund: string }) => item.fund === fund.id,
+          )
+          const quantity = match?.ownedQuantity || match?.quantity || 0
+          // Use the same calculation as in meetings: Math.round(quantity)
+          return sum + Math.round(quantity)
+        },
+        0,
+      ), // This should now match exactly the nominalValue from meetings
+      meetingTime: meeting.meetingDate ? new Date(meeting.meetingDate).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }) : '',
+      holdingsLimit: meeting.holdingsLimit || '',
+      isFinancialCorporation: stock.isFinancial || false,
       agendas: (vote.votes || []).map((voteItem: any, index: number) => {
         const agendaItem = meeting.agenda?.[index] || {}
         let votingRecommendation: string | undefined =

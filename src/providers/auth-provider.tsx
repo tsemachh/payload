@@ -115,8 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setUser(null)
         }
-      } catch (error) {
-        // If not logged in, set user to null
+      } catch (error: any) {
         setUser(null)
       }
     }

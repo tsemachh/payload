@@ -1,6 +1,72 @@
 import { MeetingWithCompanies } from '@/app/(frontend)/types/meetings'
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 
+// Reusable helper function to calculate voting percentages
+export const calculateVotingPercentages = async (
+  payload: any,
+  meetings: MeetingWithCompanies[],
+  userCompanyIds?: string[],
+): Promise<{ [key: string]: { votingPercentage: number | null } }> => {
+  const percentagesMap: { [key: string]: { votingPercentage: number | null } } = {}
+
+  // Extract all valid meeting IDs and company IDs
+  const validMeetings = meetings.filter((m) => m.meetingId && m.companyIds)
+
+  if (validMeetings.length === 0) {
+    return percentagesMap
+  }
+
+  const meetingIds = validMeetings.map((m) => m.meetingId)
+
+  // Build query conditions
+  const queryConditions: any[] = [
+    { meeting: { in: meetingIds } },
+    { _status: { equals: 'published' } },
+  ]
+
+  // Add user company filter if provided (for performance optimization)
+  if (userCompanyIds && userCompanyIds.length > 0) {
+    queryConditions.push({ company: { in: userCompanyIds } })
+  }
+
+  // Single query to fetch all votes for all meetings at once
+  const votesQuery = await payload.find({
+    collection: 'votes',
+    select: { meeting: true, company: true },
+    where: {
+      and: queryConditions,
+    },
+    depth: 0,
+    limit: 0, // No limit - fetch all votes
+  })
+
+  // Group votes by meeting ID
+  const votesByMeeting: { [key: string]: any[] } = {}
+  votesQuery.docs.forEach((vote: any) => {
+    const meetingId = vote.meeting
+    if (!votesByMeeting[meetingId]) {
+      votesByMeeting[meetingId] = []
+    }
+    votesByMeeting[meetingId].push(vote)
+  })
+
+  // Calculate percentages for each meeting
+  validMeetings.forEach((meetingInfo) => {
+    const votes = votesByMeeting[meetingInfo.meetingId] || []
+    // Filter votes by company IDs for this specific meeting
+    const relevantVotes = votes.filter((vote) => {
+      const companyId = vote.company
+      return meetingInfo.companyIds.includes(companyId)
+    })
+
+    percentagesMap[meetingInfo.meetingId] = {
+      votingPercentage: (relevantVotes.length / meetingInfo.companyIds.length) * 100,
+    }
+  })
+
+  return percentagesMap
+}
+
 export const getVotingPercentages = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
@@ -23,34 +89,8 @@ export const getVotingPercentages = async (req: PayloadRequest) => {
       )
     }
 
-    const percentagesMap: { [key: string]: { votingPercentage: number | null } } = {}
-
-    await Promise.all(
-      meetings.map(async (meetingInfo: MeetingWithCompanies) => {
-        if (!meetingInfo.meetingId || !meetingInfo.companyIds) {
-          console.warn('Skipping invalid item in meetings array:', meetingInfo)
-          return
-        }
-
-        const votesQuery = await req.payload.find({
-          collection: 'votes',
-          where: {
-            and: [
-              { meeting: { equals: meetingInfo.meetingId } },
-              { company: { in: meetingInfo.companyIds } },
-              { _status: { equals: 'published' } },
-            ],
-          },
-          limit: 0,
-        })
-
-        const allVotes = votesQuery.docs
-
-        percentagesMap[meetingInfo.meetingId] = {
-          votingPercentage: (allVotes.length / meetingInfo.companyIds.length) * 100,
-        }
-      }),
-    )
+    const userCompanyIds = req.user.companies?.map((c) => c.companyId as string) || []
+    const percentagesMap = await calculateVotingPercentages(req.payload, meetings, userCompanyIds)
 
     return Response.json({ percentages: percentagesMap }, { status: 200 })
   } catch (error: any) {

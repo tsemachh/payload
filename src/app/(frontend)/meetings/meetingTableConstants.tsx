@@ -18,6 +18,7 @@ import { toggleAllCompanies, toggleAllAgendas } from './renderExpandableCell'
 import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { LabelsIcon } from '../components/labels-icon'
+import { hasUserReportedAllVotes } from '../helpers/utils-meeting'
 
 // Function to create expand all header for companies
 const createCompaniesExpandHeader = (
@@ -78,6 +79,42 @@ const createAgendasExpandHeader = (
       </Button>
       <span>סדר יום</span>
     </div>
+  )
+}
+
+// Component for nominal value client reported cell
+function NominalValueClientReportedCell({ row }: { row: MeetingTableDataType }) {
+  const userCompanyIds = row.companies.map((c) => c.id)
+
+  const hasReportedAll = hasUserReportedAllVotes(row, userCompanyIds)
+
+  // Always show nominalValueClientReported
+  // Color red only if there's a reported vote AND values don't match
+  const mismatch = hasReportedAll && row.nominalValue !== row.nominalValueClientReported
+
+  return (
+    <span className={mismatch ? 'text-red-600' : ''}>
+      {formatNumberWithLocale(row.nominalValueClientReported, 0, 'he-IL')}
+    </span>
+  )
+}
+
+// Component for nominal value actual cell
+function NominalValueActualCell({ row }: { row: MeetingTableDataType }) {
+  const userCompanyIds = row.companies.map((c) => c.id)
+
+  const hasReportedAll = hasUserReportedAllVotes(row, userCompanyIds)
+
+  if (!hasReportedAll) {
+    return <span className="text-gray-400">-</span>
+  }
+
+  const mismatch = row.nominalValue !== row.nominalValueClientReported
+
+  return (
+    <span className={mismatch ? 'text-red-600' : ''}>
+      {formatNumberWithLocale(row.nominalValue, 0, 'he-IL')}
+    </span>
   )
 }
 
@@ -227,28 +264,14 @@ export const createMeetingColumns = (
     key: 'nominalValueClientReported',
     header: 'ערך נקוב מדווח ',
     type: 'number',
-    render: (row) => {
-      const mismatch = row.nominalValue !== row.nominalValueClientReported
-      return (
-        <span className={mismatch ? 'text-red-600' : ''}>
-          {formatNumberWithLocale(row.nominalValueClientReported, 0, 'he-IL')}
-        </span>
-      )
-    },
+    render: (row) => <NominalValueClientReportedCell row={row} />,
     minWidth: 90,
   },
   {
     key: 'nominalValue',
     header: 'ערך נקוב בפועל',
     type: 'number',
-    render: (row) => {
-      const mismatch = row.nominalValue !== row.nominalValueClientReported
-      return (
-        <span className={mismatch ? 'text-red-600' : ''}>
-          {formatNumberWithLocale(row.nominalValue, 0, 'he-IL')}
-        </span>
-      )
-    },
+    render: (row) => <NominalValueActualCell row={row} />,
     minWidth: 90,
   },
   {
@@ -301,7 +324,14 @@ export const createMeetingColumns = (
     render: (row) => <VotingStatusCell row={row} />,
     minWidth: 50,
   },
-
+  {
+    key: 'votingPercentage',
+    header: 'הצבעות התקבלו בעמדה',
+    type: 'boolean',
+    positionCenter: true,
+    render: (row) => <BooleanIcon iconType={row.votingPercentage === 100} showX={false} />,
+    minWidth: 80,
+  },
   {
     key: 'researchDocuments',
     header: 'מחקר',

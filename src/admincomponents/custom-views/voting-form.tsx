@@ -23,11 +23,13 @@ import { OwnedQuantityInput } from './OwnedQuantityInput'
 import { sortFundsData } from '@/utils/companySort'
 import { Trash2, Copy } from 'lucide-react'
 import { toast } from '@payloadcms/ui'
+import { HoldingsDetailsTooltip } from './HoldingsDetailsTooltip'
 
 export interface VoteData {
   fundsData: Array<{
     company: { id: string; name: string; _order?: string }
     fund: { id: string; name: string; _order?: string }
+    holdingDate: string
     quantity: number
     ownedQuantity?: number
     verifiedHoldings: boolean
@@ -48,6 +50,7 @@ export interface VoteData {
   meeting: string
   meetingDate: string
   meetingStockNum: string
+  meetingStockId: string
   holdingsLimit: string
   isInterested: boolean
   interestedExplanation?: string
@@ -138,6 +141,26 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   const shouldDisplayRemoveColumn = useMemo(() => {
     return Array.from(fundRemoveability.values()).some((canRemove) => canRemove)
   }, [fundRemoveability])
+
+  const allHoldingsVerified = useMemo(() => {
+    if (!formData) return false
+
+    return formData.fundsData.every((fund) => {
+      const displayData = fund.original ?? fund
+
+      // If verified (true), it's valid
+      if (displayData?.verifiedHoldings === true) {
+        return true
+      }
+
+      // If not verified (false), it must have an ownedQuantity value
+      if (displayData?.verifiedHoldings === false) {
+        return displayData?.ownedQuantity && displayData.ownedQuantity > 0
+      }
+
+      return false
+    })
+  }, [formData])
 
   useEffect(() => {
     if (!voteData) return
@@ -434,13 +457,28 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
       <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
         <CardContent>
           <div className="flex items-center justify-start space-x-reverse space-x-2 pt-6 pb-4">
-            <Checkbox
-              checked={formData.reported}
-              onCheckedChange={(checked) => setFormData({ ...formData, reported: !!checked })}
-            />
-            <label className="text-base font-medium text-gray-900 dark:text-white mr-3">
-              הצבעה בפועל
-            </label>
+            <div
+              className="flex items-center"
+              title={
+                !allHoldingsVerified ? 'לא ניתן לסמן הצבעה בפועל לפני אימות החזקות לכל התיקים' : ''
+              }
+            >
+              <Checkbox
+                checked={formData.reported}
+                disabled={!allHoldingsVerified}
+                onCheckedChange={(checked) => setFormData({ ...formData, reported: !!checked })}
+              />
+              <label
+                className={`text-base font-medium mr-3 ${
+                  allHoldingsVerified
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                הצבעה בפועל
+              </label>
+            </div>
+
             <ReportApprovalUpload
               formData={formData}
               setFormDataAction={setFormData}
@@ -502,9 +540,16 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                       </TableCell>
                     )}
                     <TableCell>
-                      <span className="text-right text-gray-600 dark:text-gray-300 text-base">
-                        {displayData?.quantity && formatNumberWithLocale(displayData.quantity)}
-                      </span>
+                      <div className="flex items-center gap-1 justify-end w-fit">
+                        <HoldingsDetailsTooltip
+                          fundId={fund.fund.id}
+                          stockId={voteData.meetingStockId}
+                          holdingDate={fund.holdingDate || voteData.holdingsLimit}
+                        />
+                        <span className="text-gray-600 dark:text-gray-300 text-base">
+                          {displayData?.quantity && formatNumberWithLocale(displayData.quantity)}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">

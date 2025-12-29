@@ -171,7 +171,11 @@ export const Meetings: CollectionConfig = {
       limits: [100, 200, 300, 500],
     },
     components: {
-      beforeListTable: ['/collections/meetings/components/MeetingsListTableHeader'],
+      listMenuItems: [
+        '/collections/meetings/components/ExportMeetingsMenuItem',
+        '/collections/meetings/components/ProcessCompaniesMeetingsMenuItem',
+        '/collections/meetings/components/MigrateVoteCountsMenuItem',
+      ],
       edit: {
         beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
         PublishButton: '/components/buttons/CustomPublishButton',
@@ -406,7 +410,6 @@ export const Meetings: CollectionConfig = {
               on: 'meeting',
               defaultLimit: 0,
               maxDepth: 1,
-              _sanitized: true,
               admin: {
                 allowCreate: false,
                 disableListColumn: true,
@@ -475,6 +478,15 @@ export const Meetings: CollectionConfig = {
                   label: 'מספר נייר',
                   type: 'text',
                   virtual: 'stock.stockId',
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: 'stockName',
+                  label: 'שם נייר',
+                  type: 'text',
+                  virtual: 'stock.name',
                   admin: {
                     hidden: true,
                   },
@@ -1152,6 +1164,7 @@ export const Meetings: CollectionConfig = {
               type: 'upload',
               relationTo: 'research-documents',
               hasMany: true,
+              maxDepth: 0,
               admin: {
                 description:
                   'יש להעלות מסמך מחקר שמתחיל בשם נייר הערך ולאחר מכן בסוגריים שם החברה. ניתן להוסיף רק חברות שמוזמנות לאסיפה זו.',
@@ -1160,7 +1173,7 @@ export const Meetings: CollectionConfig = {
                 },
               },
               hooks: {
-                afterChange: [updateResearchDocumentsStatus],
+                beforeChange: [updateResearchDocumentsStatus],
               },
             },
             {
@@ -1248,6 +1261,18 @@ export const Meetings: CollectionConfig = {
                       type: 'checkbox',
                       defaultValue: false,
                       label: 'החזקה בנייר עוקב',
+                    },
+                    {
+                      name: 'holdingDate',
+                      type: 'date',
+                      label: 'תאריך החזקה',
+                      admin: {
+                        readOnly: true,
+                        date: {
+                          displayFormat: 'dd/MM/yyyy',
+                          pickerAppearance: 'default',
+                        },
+                      },
                     },
                     {
                       name: 'original',
@@ -1498,6 +1523,12 @@ export const Meetings: CollectionConfig = {
       path: '/export-excel',
       method: 'get',
       handler: ExportMeetingsExcelEndpoint,
+    },
+    {
+      path: '/recalculate-vote-counts',
+      method: 'post',
+      handler: async (req) =>
+        (await import('./endpoints/RecalculateVoteCountsEndpoint')).default(req),
     },
     {
       path: '/process-meetings',

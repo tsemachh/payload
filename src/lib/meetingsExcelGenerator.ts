@@ -74,6 +74,7 @@ export async function downloadMeetingsExcel(
     'סוג אסיפה': (m) => m.meetingType,
     'הצבעה בפועל': (m) => (m.reported ? '✅' : '❌'),
     'ניירות עוקבים': (m) => (m.fromRelatedStock ? '✅' : ''),
+    'הצבעות התקבלו בעמדה': (m) => (m.votingPercentage === 100 ? '✅' : ''),
   }
 
   const formatValue = (header: string, meeting: any) => {

@@ -1,97 +1,64 @@
 import { PayloadRequest, Where } from 'payload'
-import { ObjectId } from 'mongodb'
-import type {
-  FundWithHolding,
-  HistoricalHolding,
-  HoldingsPerDay,
-  Meeting,
-  StockValue,
-} from '@/payload-types'
-import {
-  getCompanyIdFromFundId,
-  getIdOfRelationField,
-  initFundIdToCompanyIdMap,
-} from '@/utils/utils'
+import type { FundWithHolding, HistoricalHolding, HoldingsPerDay, Meeting } from '@/payload-types'
+import { getIdOfRelationField } from '@/utils/utils'
 import { initPerformanceContext, PerfTimer } from '@/collections/meetings/hooks/perfTimer'
 import {
   getActiveFundsCache,
-  setActiveFundsCache,
-} from '@/collections/meetings/hooks/activeFundsCache'
+  getCompanyIdFromFundId,
+  getCompanyToFundsMap,
+  getFundToCompanyMap,
+} from '@/collections/meetings/hooks/activeCompaniesCache'
 
-// --- Extracted helper APIs (Step 1) ---
-async function fetchActiveFunds(req: PayloadRequest, mt?: PerfTimer): Promise<string[]> {
-  // Use direct Mongo driver for faster, projection-only fetch.
-  // First, try in-process cache
-  const cached = getActiveFundsCache()
-  if (cached && cached.length) {
-    return cached
-  }
-
-  mt?.start('query.funds.find')
-  try {
-    const db: any = (req as any)?.payload?.db
-    const companiesColl = db?.collections?.['companies'] || db?.collections?.companies
-    if (companiesColl && typeof companiesColl.find === 'function') {
-      const rawDocs = await companiesColl
-        .find({ type: 'fund', active: true }, { projection: { _id: 1 } })
-        .toArray()
-      const ids = rawDocs.map((doc: any) => String(doc._id))
-      mt?.end('query.funds.find')
-      // populate cache
-      setActiveFundsCache(ids)
-      return ids
-    }
-  } catch (e) {
-    // Fall back to Payload API if direct access fails
-  }
-
-  const { docs } = await req.payload.find({
-    collection: 'companies',
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { name: true },
-    where: {
-      type: { equals: 'fund' },
-      active: { equals: true },
-    },
-  })
-  mt?.end('query.funds.find')
-  const ids = docs.length > 0 ? (docs.map(getIdOfRelationField) as string[]) : []
-  // populate cache
-  setActiveFundsCache(ids)
-  return ids
-}
-
+// Historical fetch strategy v2:
+// Iterate company-by-company; for each company, determine its funds and query holdings
+// limited to those funds with limit:1, sorted by -valueDate. This narrows scans and
+// lets us early-stop per company quickly.
 async function fetchHistoricalHoldings(
   req: PayloadRequest,
   meeting: Meeting,
-  funds: string[],
+  companiesToCheck: string[],
   mt?: PerfTimer,
 ) {
-  return []
   // 30 days lookback window relative to meeting.holdingsLimit
   const historicalDate = new Date(meeting.holdingsLimit as string)
   historicalDate.setDate(historicalDate.getDate() - 30)
   const historicalDateStr = historicalDate.toISOString()
 
-  mt?.start('query.holdings.historical')
-  const { docs } = await req.payload.find({
-    collection: 'holdings',
-    depth: 0,
-    where: {
-      and: [
-        { valueDate: { greater_than_equal: historicalDateStr } },
-        { valueDate: { less_than: meeting.holdingsLimit } },
-        { fund: { in: funds } },
-        { 'holdings.stock': { equals: getIdOfRelationField(meeting.stock) } },
-      ],
-    },
-    sort: '-valueDate',
-    limit: 0,
-  })
-  mt?.end('query.holdings.historical')
-  return docs
+  // Pull mapping from cache to avoid extra queries
+  const cachedMap = getCompanyToFundsMap() || {}
+
+  debugger
+  const stockId = String(getIdOfRelationField(meeting.stock))
+  const results: any[] = []
+
+  // Process company by company; for each, query only its funds and limit to 1 newest doc
+  // Use paging batch size as a soft concurrency limiter per loop (sequential here for simplicity)
+  for (const companyId of companiesToCheck) {
+    const companyFunds = cachedMap[companyId] || []
+    if (!companyFunds.length) continue
+
+    mt?.start('query.holdings.historical')
+    const res = await req.payload.find({
+      collection: 'holdings',
+      depth: 0,
+      pagination: false,
+      limit: 1,
+      select: { fund: true, valueDate: true, holdings: true },
+      where: {
+        and: [
+          { valueDate: { greater_than_equal: historicalDateStr } },
+          { valueDate: { less_than: meeting.holdingsLimit } },
+          { fund: { in: companyFunds } },
+          { 'holdings.stock': { equals: stockId } },
+        ],
+      },
+      sort: '-valueDate',
+    })
+    mt?.end('query.holdings.historical')
+    if (res.docs && res.docs.length) results.push(res.docs[0])
+  }
+
+  return results
 }
 
 async function processMeeting(
@@ -100,12 +67,12 @@ async function processMeeting(
   funds: string[],
   isPartialUpdate = false,
   runAgg?: PerfTimer,
+  holdingDocsCache: Map<string, any> = new Map(),
 ): Promise<void> {
   // prefer shared timer if passed from caller; otherwise create local one
   const mt = runAgg ?? initPerformanceContext(req).mt
   mt.start('meetingTotal')
   let isDirty = false
-  // Structured log instead of console.log
   req.payload.logger.info(
     {
       timestamp: new Date().toISOString(),
@@ -115,9 +82,6 @@ async function processMeeting(
     },
     `Processing meeting ${meeting.id}`,
   )
-  // Cache for holding documents to avoid redundant API calls
-  const holdingDocsCache = new Map<string, any>()
-
   // Get holdings for each company
   mt.start('holdingsLookupTotal')
   // Precompute identifiers to avoid repeated conversions
@@ -151,12 +115,7 @@ async function processMeeting(
               holdings: true,
             },
             where: {
-              and: [
-                { valueDate: { less_than_equal: holdingsLimit } },
-                { fund: { equals: fund } },
-                // If adapter supports elemMatch-like filtering, this reduces returned holdings array size
-                { 'holdings.stock': { equals: stockDocId } },
-              ],
+              and: [{ valueDate: { less_than_equal: holdingsLimit } }, { fund: { equals: fund } }],
             },
             sort: '-valueDate',
             limit: 1,
@@ -188,6 +147,9 @@ async function processMeeting(
         return {
           fund,
           holdings: [matched],
+          // expose the valueDate of the holding document used for this fund so we can
+          // persist it on the meeting.fundsWithHolding.holdingDate for migrations
+          holdingDate: nearestHoldingsLimitDate,
         }
       }),
     )
@@ -200,21 +162,10 @@ async function processMeeting(
   const flattenedHoldings = holdings
 
   if (flattenedHoldings.length === 0) {
-    mt.start('query.stocks.findByID')
-    const stockDetails = await req.payload.findByID({
-      collection: 'stocks',
-      id: stockDocId || '',
-      depth: 0,
-    })
-    mt.end('query.stocks.findByID')
     req.payload.logger.error(
       {
         meetingId: meeting.id,
-        stock: {
-          id: stockDetails.id,
-          name: stockDetails.name,
-          isTracking: stockDetails.tradable,
-        },
+        stock: meeting.stock,
         holdingsLimit: meeting.holdingsLimit,
         totalFunds: funds.length,
       },
@@ -261,6 +212,8 @@ async function processMeeting(
         company: getCompanyIdFromFundId(fundId),
         fund: fundId,
         quantity: h.holdings[0]?.quantity ?? 0,
+        // Persist the exact holding date used for this fund (valueDate of the selected holding doc)
+        holdingDate: h?.holdingDate || null,
         fromRelatedStock,
         original: originalDataArray.filter(Boolean).map((item: any) => ({
           stockId: item.stockId,
@@ -285,60 +238,26 @@ async function processMeeting(
         `Partial update: kept ${existingFundsToKeep.length} existing funds, updated ${newFundsWithHolding.length} funds`,
       )
     }
-    let stockValue: string | StockValue | null = meeting.stockValue as string
-    if (!stockValue) {
-      mt.start('query.stock-values.find')
-      const { docs: stockValueDocs } = await req.payload.find({
-        collection: 'stock-values',
-        depth: 0,
-        where: {
-          and: [
-            { stockId: { equals: stockDocId } },
-            { valueDate: { less_than_equal: meeting.holdingsLimit } },
-          ],
-        },
-        limit: 1,
-        sort: '-valueDate',
-      })
-      mt.end('query.stock-values.find')
-      stockValue = stockValueDocs.length > 0 ? stockValueDocs[0].id : null
-    }
     // Get all unique fund IDs from fundsWithHolding (both new and existing)
     const allFundIdsInMeeting = Array.from(
       new Set(fundsWithHolding.map((f: any) => String(f.fund))),
     )
 
+    // Use cache mapping instead of querying companies to resolve parentCompany per fund
     mt.start('query.companies.find')
-    const companies = await req.payload.find({
-      collection: 'companies',
-      depth: 0,
-      limit: 0,
-      select: {
-        parentCompany: true,
-      },
-      where: {
-        id: {
-          in: allFundIdsInMeeting,
-        },
-      },
-    })
+    const fundToCompanyMap = getFundToCompanyMap() || {}
+    const compIds = allFundIdsInMeeting
+      .map((fundId) => fundToCompanyMap[String(fundId)])
+      .filter(Boolean)
     mt.end('query.companies.find')
-    const compIds = companies.docs.map((comp) => {
-      if (comp?.parentCompany) {
-        return comp.parentCompany
-      }
-    })
 
     // Filter out removed companies
     // removedCompanies is an array of company IDs (strings) or company objects
-    const removedCompanyIds = (meeting.removedCompanies || [])
-      .map((item) => (typeof item === 'string' ? item : item?.id))
-      .filter((id): id is string => typeof id === 'string')
+    const removedCompanyIds = (meeting.removedCompanies || []).map(getIdOfRelationField)
 
     const filteredCompIds = compIds.filter((compId) => {
       if (!compId) return false
-      const compIdStr = typeof compId === 'string' ? compId : compId.id
-      return compIdStr && !removedCompanyIds.includes(compIdStr)
+      return !removedCompanyIds.includes(compId)
     })
 
     // Filter out funds that belong to removed companies (from all funds in meeting)
@@ -359,11 +278,10 @@ async function processMeeting(
 
     // Calculate historical holdings (30 days before holdingsLimit)
     const historicalHoldings: NonNullable<HistoricalHolding> = []
-    if (meeting.holdingsLimit) {
+    const historicalEnabled = true
+    if (historicalEnabled && meeting.holdingsLimit) {
       const historicalDate = new Date(meeting.holdingsLimit)
       historicalDate.setDate(historicalDate.getDate() - 30)
-      const historicalDateStr = historicalDate.toISOString()
-
       // Get all companies that are currently invited (to exclude them)
       const invitedCompanyIds = new Set(
         filteredCompIds
@@ -374,10 +292,26 @@ async function processMeeting(
       // Track which company+fund combinations we've already found holdings for
       const processedCombinations = new Set<string>()
 
+      // Build the list of companies to check for historical (non-invited, not removed)
+      // Use ALL companyIds from the cache mapping values, not only those tied to current fundsWithHolding
+      const f2cMap = getFundToCompanyMap() || {}
+      const allCompanyIdsFromCache = Array.from(new Set(Object.values(f2cMap).map(String)))
+      const companiesToCheck = allCompanyIdsFromCache.filter(
+        (cid) => !invitedCompanyIds.has(cid) && !removedCompanyIds.includes(cid),
+      )
+
       // Query only holdings that contain the specific stock (extracted API)
-      const allHistoricalHoldings = await fetchHistoricalHoldings(req, meeting, funds, mt)
+      mt.start('historical.query')
+      const allHistoricalHoldings = await fetchHistoricalHoldings(
+        req,
+        meeting,
+        companiesToCheck,
+        mt,
+      )
+      mt.end('historical.query')
 
       // Process holdings from newest to oldest
+      mt.start('historical.process.js')
       for (const holdingDoc of allHistoricalHoldings) {
         const fundId = getIdOfRelationField(holdingDoc.fund) as string
         const companyId = getCompanyIdFromFundId(fundId)
@@ -401,7 +335,7 @@ async function processMeeting(
 
         // Find the matching holding (we know it exists because of the query filter)
         const matchedHolding = holdingDoc.holdings.find((holding: HoldingsPerDay[number]) => {
-          return holding.stock == getIdOfRelationField(meeting.stock)
+          return holding.stock == stockDocId
         })
 
         if (matchedHolding) {
@@ -413,8 +347,15 @@ async function processMeeting(
           })
 
           processedCombinations.add(combinationKey)
+          // track unique count
+          mt.inc('historical.unique.count', 1)
         }
+
+        // Optional early stop: if we've covered all possible pairs, break
+        // We approximate the target by number of non-invited and not-removed companies times 1 (per fund we only need first occurrence)
+        // Since funds can map to the same company, we simply allow full iteration; guard left for future refinement.
       }
+      mt.end('historical.process.js')
 
       req.payload.logger.info(
         `Found ${historicalHoldings.length} historical holdings for meeting ${meeting.id}`,
@@ -441,7 +382,45 @@ async function processMeeting(
       hasRelatedStocks,
     }
 
-    if (stockValue) data.stockValue = stockValue
+    // Skip-update guard: compute a deterministic hash of the payload and compare with stored value
+    try {
+      const stable = (obj: any): any => {
+        if (obj === null || typeof obj !== 'object') return obj
+        if (Array.isArray(obj)) return obj.map(stable)
+        return Object.keys(obj)
+          .sort()
+          .reduce((acc: any, k) => {
+            acc[k] = stable(obj[k])
+            return acc
+          }, {})
+      }
+      const payloadForHash = stable({
+        companies: data.companies,
+        funds: data.funds,
+        fundsWithHolding: data.fundsWithHolding,
+        historicalHoldings: data.historicalHoldings,
+      })
+      const json = JSON.stringify(payloadForHash)
+      // lightweight hash (FNV-1a 32-bit)
+      let h = 0x811c9dc5
+      for (let i = 0; i < json.length; i++) {
+        h ^= json.charCodeAt(i)
+        h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0
+      }
+      const processHash = `fnv1a32:${h.toString(16)}`
+      if ((meeting as any).processHash === processHash) {
+        req.payload.logger.info(
+          { meetingId: meeting.id },
+          'Skip update: no changes detected (processHash match)',
+        )
+        mt.inc('update.skipped', 1)
+        // still run cleanup to ensure votes stay consistent with current companies
+        await cleanupInvalidVotesForMeetings(req, [String(meeting.id)], mt)
+        mt.end('meetingTotal')
+        return
+      }
+      ;(data as any).processHash = processHash
+    } catch {}
     mt.start('mutation.meetings.update')
     await req.payload.update({
       collection: 'meetings',
@@ -488,12 +467,6 @@ export const processCompaniesMeetings = async (
     )
 
     // Initialize the map of fundId -> companyId
-    req.payload.logger.info('Initializing fundId -> companyId map')
-    mt.start('initFundCompanyMap')
-    await initFundIdToCompanyIdMap(req.payload)
-    mt.end('initFundCompanyMap')
-    req.payload.logger.info('Map initialized successfully')
-
     req.payload.logger.info('Starting to load funds')
     // Get all meetings or specific meetings if meetingIds is provided
     req.payload.logger.info('Starting to load meetings')
@@ -519,16 +492,20 @@ export const processCompaniesMeetings = async (
     mt.end('query.meetings.find')
     req.payload.logger.info('loaded meetings:' + meetings.length)
 
-    // Use provided funds or query all active funds
-    let funds: string[]
+    // Use provided funds or, else, preload via cache helper and use as-is per instruction
+    let funds: string[] = []
     if (fundsToProcess && fundsToProcess.length > 0) {
       funds = fundsToProcess
       req.payload.logger.info(`Using provided funds: ${funds.length} funds`)
     } else {
-      // Extracted API for querying active funds
-      funds = await fetchActiveFunds(req, mt)
-      req.payload.logger.info(`Queried all active funds: ${funds.length} funds`)
+      funds = (getActiveFundsCache() as string[] | undefined) || []
+      req.payload.logger.info(
+        `Preloaded active funds via helper: ${Array.isArray(funds) ? funds.length : 0} funds`,
+      )
     }
+
+    // Shared cache of holding documents for reuse across all meetings in this run
+    const holdingDocsCache = new Map<string, any>()
 
     // Process meetings in batches to avoid MongoDB session issues
     const batchSize = 10 // Process 10 meetings at a time
@@ -553,7 +530,7 @@ export const processCompaniesMeetings = async (
         console.log('meeting started', meeting.id)
         // If funds were provided, this is a partial update
         const isPartialUpdate = fundsToProcess && fundsToProcess.length > 0
-        const promise = processMeeting(meeting, req, funds, isPartialUpdate, mt)
+        const promise = processMeeting(meeting, req, funds, isPartialUpdate, mt, holdingDocsCache)
           .then(() => {
             console.log('meeting finished', meeting.id)
           })

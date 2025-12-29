@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig, Where } from 'payload'
 import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
+import cacheTestEndpoint from './cacheTestEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
 import {
   addTagToCompany,
@@ -10,7 +11,7 @@ import {
 } from './createLabels'
 import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
 import { logEvent } from '@/lib/audit/logEvent'
-import { invalidateActiveFundsCache } from '@/collections/meetings/hooks/activeFundsCache'
+import { invalidateActiveFundsCache } from '@/collections/meetings/hooks/activeCompaniesCache'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -76,6 +77,15 @@ export const Companies: CollectionConfig = {
   indexes: [
     {
       fields: ['type', 'active'],
+    },
+    {
+      fields: ['label.labels.labelId'],
+    },
+    {
+      fields: ['_order', 'createdAt'],
+    },
+    {
+      fields: ['type', 'active', '_order', 'createdAt'],
     },
   ],
   fields: [
@@ -200,63 +210,15 @@ export const Companies: CollectionConfig = {
                   index: true,
                   relationTo: 'companies',
                   hasMany: true,
-                  hooks: {
-                    afterChange: [
-                      async ({ req, siblingData, value, previousValue }) => {
-                        try {
-                          const added: string[] = []
-                          const removed: string[] = []
-
-                          const prev = Array.isArray(previousValue) ? previousValue : []
-                          const curr = Array.isArray(value) ? value : []
-
-                          // Determine additions and removals
-                          for (const id of curr) if (!prev.includes(id)) added.push(id)
-                          for (const id of prev) if (!curr.includes(id)) removed.push(id)
-
-                          // Set parentCompany for added children
-                          await Promise.all(
-                            added.map((childId) =>
-                              req.payload.update({
-                                collection: 'companies',
-                                id: String(childId),
-                                data: { parentCompany: (siblingData as any)?.id },
-                                req: { ...req, context: { ...req.context, from: 'relation-sync' } },
-                              }),
-                            ),
-                          )
-
-                          // Clear parentCompany for removed children if they still point to this parent
-                          await Promise.all(
-                            removed.map(async (childId) => {
-                              try {
-                                const child = await req.payload.findByID({
-                                  collection: 'companies',
-                                  id: String(childId),
-                                  depth: 0,
-                                })
-                                if (child?.parentCompany === (siblingData as any)?.id) {
-                                  await req.payload.update({
-                                    collection: 'companies',
-                                    id: String(childId),
-                                    data: { parentCompany: null },
-                                    req: {
-                                      ...req,
-                                      context: { ...req.context, from: 'relation-sync' },
-                                    },
-                                  })
-                                }
-                              } catch {}
-                            }),
-                          )
-                        } catch (e) {
-                          req?.payload?.logger?.warn?.(
-                            { e },
-                            'Failed to sync parentCompany on subCompanies change',
-                          )
+                  filterOptions: ({ siblingData }: any) => {
+                    if (siblingData?.type === 'parent') {
+                      return {
+                        type: {
+                          not_equals: 'fund'
                         }
-                      },
-                    ],
+                      }
+                    }
+                    return true
                   },
                   admin: {
                     className: 'subCompanies',
@@ -433,6 +395,7 @@ export const Companies: CollectionConfig = {
               collection: 'holdings',
               on: 'fund',
               name: 'holdings',
+              maxDepth: 0,
               admin: {
                 disableListColumn: true,
               },
@@ -513,6 +476,14 @@ export const Companies: CollectionConfig = {
               name: 'labels',
               type: 'array',
               fields: [
+                {
+                  name: 'labelId',
+                  label: 'מזהה תגית',
+                  type: 'text',
+                  admin: {
+                    hidden: true,
+                  },
+                },
                 {
                   name: 'label',
                   label: 'שם התגית',
@@ -625,6 +596,140 @@ export const Companies: CollectionConfig = {
           }
         }
 
+        try {
+          if (previousDoc && JSON.stringify(doc.subCompanies) !== JSON.stringify(previousDoc.subCompanies)) {
+            
+            const prevSubCompanies = Array.isArray(previousDoc.subCompanies) 
+              ? previousDoc.subCompanies.map((v: any) => typeof v === 'object' ? v.id : v).filter(Boolean)
+              : []
+            const currSubCompanies = Array.isArray(doc.subCompanies) 
+              ? doc.subCompanies.map((v: any) => typeof v === 'object' ? v.id : v).filter(Boolean)
+              : []
+            const added = currSubCompanies.filter((id: string) => !prevSubCompanies.includes(id))
+            const removed = prevSubCompanies.filter((id: string) => !currSubCompanies.includes(id))
+            if (added.length > 0) {
+              await Promise.all(
+                added.map(async (childId: string) => {
+                  try {
+                    await req.payload.update({
+                      collection: 'companies',
+                      id: String(childId),
+                      data: { parentCompany: doc.id },
+                      req: { ...req, context: { ...req.context, from: 'relation-sync' } },
+                    })
+                  } catch (e) {
+                    console.error(`Failed to set parentCompany for ${childId}:`, e)
+                  }
+                })
+              )
+            }
+
+            // Clear parentCompany for removed children
+            if (removed.length > 0) {
+              await Promise.all(
+                removed.map(async (childId: string) => {
+                  try {
+                    const child = await req.payload.findByID({
+                      collection: 'companies',
+                      id: String(childId),
+                      depth: 0,
+                    })
+                    
+                    if (child?.parentCompany === doc.id) {
+                      await req.payload.update({
+                        collection: 'companies',
+                        id: String(childId),
+                        data: { parentCompany: null },
+                        req: { ...req, context: { ...req.context, from: 'relation-sync' } },
+                      })
+                    }
+                  } catch (e) {
+                    console.error(`Failed to clear parentCompany for ${childId}:`, e)
+                  }
+                })
+              )
+            }
+          }
+        } catch (e) {
+          console.error('Failed to sync parentCompany relationships:', e)
+          req?.payload?.logger?.warn?.({ e }, 'Failed to sync parentCompany relationships')
+        }
+
+        // Sync parent-child relationships
+        if (req.context?.from !== 'relation-sync' && previousDoc) {
+          try {
+            // Handle subCompanies changes
+            if (JSON.stringify(doc.subCompanies) !== JSON.stringify(previousDoc.subCompanies)) {
+              const prevSubs = (previousDoc.subCompanies || []).map((v: any) => typeof v === 'object' ? v.id : v)
+              const currSubs = (doc.subCompanies || []).map((v: any) => typeof v === 'object' ? v.id : v)
+              
+              const added = currSubs.filter((id: string) => !prevSubs.includes(id))
+              const removed = prevSubs.filter((id: string) => !currSubs.includes(id))
+              
+              // Set parentCompany for added children
+              for (const childId of added) {
+                await req.payload.update({
+                  collection: 'companies',
+                  id: childId,
+                  data: { parentCompany: doc.id },
+                  req: { ...req, context: { ...req.context, from: 'relation-sync' } },
+                })
+              }
+              
+              // Clear parentCompany for removed children
+              for (const childId of removed) {
+                await req.payload.update({
+                  collection: 'companies',
+                  id: childId,
+                  data: { parentCompany: null },
+                  req: { ...req, context: { ...req.context, from: 'relation-sync' } },
+                })
+              }
+            }
+
+            // Handle parentCompany changes
+            if (JSON.stringify(doc.parentCompany) !== JSON.stringify(previousDoc.parentCompany)) {
+              const prevParentId = typeof previousDoc.parentCompany === 'object' ? previousDoc.parentCompany?.id : previousDoc.parentCompany
+              const currParentId = typeof doc.parentCompany === 'object' ? doc.parentCompany?.id : doc.parentCompany
+              
+              // Remove from old parent's subCompanies
+              if (prevParentId && prevParentId !== currParentId) {
+                const prevParent = await req.payload.findByID({ collection: 'companies', id: prevParentId, depth: 0 })
+                if (prevParent?.subCompanies) {
+                  const updatedSubs = (prevParent.subCompanies || [])
+                    .map((v: any) => typeof v === 'object' ? v.id : v)
+                    .filter((id: string) => id !== doc.id)
+                  
+                  await req.payload.update({
+                    collection: 'companies',
+                    id: prevParentId,
+                    data: { subCompanies: updatedSubs },
+                    req: { ...req, context: { ...req.context, from: 'relation-sync' } },
+                  })
+                }
+              }
+              
+              // Add to new parent's subCompanies
+              if (currParentId && currParentId !== prevParentId) {
+                const currParent = await req.payload.findByID({ collection: 'companies', id: currParentId, depth: 0 })
+                if (currParent) {
+                  const currentSubs = (currParent.subCompanies || []).map((v: any) => typeof v === 'object' ? v.id : v)
+                  if (!currentSubs.includes(doc.id)) {
+                    await req.payload.update({
+                      collection: 'companies',
+                      id: currParentId,
+                      data: { subCompanies: [...currentSubs, doc.id] },
+                      req: { ...req, context: { ...req.context, from: 'relation-sync' } },
+                    })
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Sync error:', e)
+          }
+        }
+
         // Invalidate active funds cache when relevant changes occur on funds
         try {
           const isFund = doc?.type === 'fund' || previousDoc?.type === 'fund'
@@ -633,7 +738,7 @@ export const Companies: CollectionConfig = {
           const createdOrDeleted = operation === 'create'
           if (isFund && (activeChanged || typeChanged || createdOrDeleted)) {
             // Invalidate so next run refreshes the cache
-            invalidateActiveFundsCache()
+            await invalidateActiveFundsCache(req?.payload)
             req?.payload?.logger?.info?.('Invalidated active funds cache due to company change')
           }
         } catch (e) {
@@ -677,6 +782,11 @@ export const Companies: CollectionConfig = {
       path: '/updateLabel',
       method: 'post',
       handler: updateTagInCompany,
+    },
+    {
+      path: '/cache-test',
+      method: 'get',
+      handler: cacheTestEndpoint,
     },
   ],
 }

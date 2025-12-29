@@ -8,61 +8,107 @@ export const addTagToCompany = async (req: PayloadRequest) => {
 
   try {
     const body = await req.json()
-    const { companyIds, label, color, stocks: stock, labelId } = body
+    let { companyIds, label, color, stocks: stock, labelId } = body
+    
+    // Generate labelId if not provided (for new tags)
+    if (!labelId) {
+      labelId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+    }
     if (!Array.isArray(companyIds) || companyIds.length === 0 || !label || !color || !stock) {
       return Response.json({ error: 'Missing fields' }, { status: 400 })
     }
 
-    const results = []
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        id: { in: companyIds }
+      },
+      select: {
+        label: true
+      },
+      limit: companyIds.length,
+      pagination: false 
+    })
+
+    const companiesMap = new Map(companies.docs.map(company => [company.id, company]))
+    const bulkUpdates = []
 
     for (const companyId of companyIds) {
       try {
-        const company = await req.payload.findByID({
-          collection: 'companies',
-          id: companyId,
-        })
+        const company = companiesMap.get(companyId)
+        if (!company) {
+          continue
+        }
 
         const existingLabels = company?.label?.labels || []
-
-        const updatedLabels = existingLabels.map((lbl: any) => {
-          if (lbl.labelId === labelId) {
-            return {
-              ...lbl,
+        
+        // Check if label already exists
+        const existingLabelIndex = existingLabels.findIndex((lbl: any) => lbl.labelId === labelId)
+        
+        let updatedLabels
+        if (existingLabelIndex !== -1) {
+          // Update existing label
+          updatedLabels = [...existingLabels]
+          updatedLabels[existingLabelIndex] = {
+            ...existingLabels[existingLabelIndex],
+            label,
+            color,
+            stock,
+            companiesWithSameLabel: companyIds,
+          }
+        } else {
+          // Add new label
+          updatedLabels = [
+            ...existingLabels,
+            {
+              labelId,
               label,
               color,
               stock,
               companiesWithSameLabel: companyIds,
             }
-          }
-          return lbl
-        })
-
-        const isExisting = existingLabels.some((lbl: any) => lbl.labelId === labelId)
-        if (!isExisting) {
-          updatedLabels.push({
-            labelId,
-            label,
-            color,
-            stock,
-            companiesWithSameLabel: companyIds,
-          })
+          ]
         }
-        const updatedCompany = await req.payload.update({
-          collection: 'companies',
-          id: companyId,
-          data: {
-            label: { labels: updatedLabels },
-          },
+
+        bulkUpdates.push({
+          companyId,
+          updatedLabels
         })
 
-        results.push({ success: true, companyId, updatedCompany })
       } catch (err) {
-        results.push({ success: false, companyId, error: (err as Error).message })
+        console.error(`Error processing company ${companyId}:`, err)
       }
     }
 
-    return Response.json({ results })
+    const batchSize = 5
+    const updateResults = []
+
+    for (let i = 0; i < bulkUpdates.length; i += batchSize) {
+      const batch = bulkUpdates.slice(i, i + batchSize)
+      
+      const updatePromises = batch.map(async ({ companyId, updatedLabels }) => {
+        try {
+          const updatedCompany = await req.payload.update({
+            collection: 'companies',
+            id: companyId,
+            data: {
+              label: { labels: updatedLabels },
+            },
+            depth: 0, // No population needed
+          })
+          return { success: true, companyId, updatedCompany }
+        } catch (err) {
+          return { success: false, companyId, error: (err as Error).message }
+        }
+      })
+
+      const batchResults = await Promise.all(updatePromises)
+      updateResults.push(...batchResults)
+    }
+
+    return Response.json({ results: updateResults, labelId })
   } catch (error) {
+    console.error('❌ addTagToCompany error:', error)
     return Response.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -84,13 +130,25 @@ export const deleteTagFromCompany = async (req: PayloadRequest) => {
       return Response.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const results = []
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        id: { in: companyIds }
+      },
+      select: {
+        id: true,
+        label: true
+      },
+      limit: companyIds.length
+    })
 
+    const companiesMap = new Map(companies.docs.map(company => [company.id, company]))
+    const bulkUpdates = []
+
+    // 🚀 Prepare all updates in memory first
     for (const companyId of companyIds) {
-      const company = await req.payload.findByID({
-        collection: 'companies',
-        id: companyId,
-      })
+      const company = companiesMap.get(companyId)
+      if (!company) continue
 
       const existingLabels = company?.label?.labels || []
 
@@ -98,20 +156,32 @@ export const deleteTagFromCompany = async (req: PayloadRequest) => {
         (lbl: any) => !(lbl.label === tagLabel && lbl.color === tagColor),
       )
 
-      const updatedCompany = await req.payload.update({
-        collection: 'companies',
-        id: companyId,
-        data: {
-          label: {
-            labels: updatedLabels,
-          },
-        },
+      bulkUpdates.push({
+        companyId,
+        updatedLabels
       })
-
-      results.push(updatedCompany)
     }
 
-    return Response.json({ success: true, updated: results })
+    const updatePromises = bulkUpdates.map(async ({ companyId, updatedLabels }) => {
+      try {
+        return await req.payload.update({
+          collection: 'companies',
+          id: companyId,
+          data: {
+            label: { labels: updatedLabels },
+          },
+        })
+      } catch (err) {
+        console.error(`Failed to update company ${companyId}:`, err)
+        return null
+      }
+    })
+
+    // Wait for all updates to complete
+    const results = await Promise.all(updatePromises)
+    const successfulUpdates = results.filter(result => result !== null)
+
+    return Response.json({ success: true, updated: successfulUpdates })
   } catch (error) {
     console.error('❌ Failed to delete tag:', error)
     return Response.json({ error: 'Internal Server Error' }, { status: 500 })
@@ -132,19 +202,26 @@ export const getLabelsForCompanies = async (req: PayloadRequest) => {
       return Response.json({ error: 'Missing companyIds' }, { status: 400 })
     }
 
-    const results = []
-    for (const companyObj of companyIds) {
-      const id = companyObj.id
-      const company = await req.payload.findByID({
-        collection: 'companies',
-        id,
-      })
+    const companyIdsArray = companyIds.map((companyObj: any) => companyObj.id)
+    
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        id: { in: companyIdsArray }
+      },
+      select: {
+        label: true
+      },
+      limit: companyIdsArray.length
+    })
 
-      results.push({
-        companyId: id,
-        labels: company?.label?.labels || [],
-      })
-    }
+    // 🚀 Create results from batch query using Map for O(1) lookup
+    const companiesMap = new Map(companies.docs.map(c => [c.id, c]))
+    
+    const results = companyIdsArray.map(companyId => ({
+      companyId,
+      labels: companiesMap.get(companyId)?.label?.labels || [],
+    }))
 
     return Response.json({ results })
   } catch (err) {
@@ -170,6 +247,7 @@ export const updateTagInCompany = async (req: PayloadRequest) => {
       color,
       stocks,
     } = body
+
     if (
       !Array.isArray(companyIds) ||
       companyIds.length === 0 ||
@@ -183,75 +261,134 @@ export const updateTagInCompany = async (req: PayloadRequest) => {
     }
 
     const prevCompIds: string[] = prevComp || []
+    const allCompanyIds = [...new Set([...companyIds, ...prevCompIds])]
 
-    const removedCompanyIds = prevCompIds.filter((id) => !companyIds.includes(id))
-    const removeStockIds = prevStocks.filter((id: any) => !stocks.includes(id))
-    if (removedCompanyIds.length && removeStockIds.length) {
-      await deleteTagFromCompany({
-        ...req,
-        json: async () => ({
-          companyIds: prevCompIds,
-          stocks: removeStockIds,
+    // 🚀 Early exit if no companies to process
+    if (allCompanyIds.length === 0) {
+      return Response.json({ success: true, results: [], updatedCount: 0 })
+    }
+
+    // 1️⃣ Fetch all companies that might be affected - minimal fields only
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        id: { in: allCompanyIds }
+      },
+      select: {
+        label: true // Get the whole label object
+      },
+      limit: allCompanyIds.length,
+      pagination: false // Disable pagination for better performance
+    })
+
+    // 🚀 Early exit if no companies found
+    if (!companies.docs || companies.docs.length === 0) {
+      return Response.json({ success: true, results: [], updatedCount: 0 })
+    }
+
+    const companiesMap = new Map(companies.docs.map(company => [company.id, company]))
+    const bulkUpdates = []
+
+    // 2️⃣ Process each company and check for actual changes
+    for (const companyId of allCompanyIds) {
+      const company = companiesMap.get(companyId)
+      if (!company) continue
+
+      const existingLabels = company?.label?.labels || []
+      let updatedLabels = [...existingLabels]
+      let hasChanges = false
+
+
+      // Find the existing label by the PREVIOUS values (not labelId!)
+      const existingLabelIndex = updatedLabels.findIndex((lbl: any) => 
+        lbl.label === prevLabel && lbl.color === prevColor
+      )
+      
+
+      if (companyIds.includes(companyId)) {
+        // Company should have this label
+        const newLabelData = {
           labelId,
-          action: 'delete',
-          tagLabel: prevLabel,
-          tagColor: prevColor,
-        }),
-      } as any)
-    } else {
-      if (removedCompanyIds.length) {
-        await deleteTagFromCompany({
-          ...req,
-          json: async () => ({
-            companyIds: prevCompIds,
-            stocks: prevStocks,
-            labelId,
-            action: 'delete',
-            tagLabel: prevLabel,
-            tagColor: prevColor,
-          }),
-        } as any)
-      } else {
-        if (removeStockIds.length) {
-          await deleteTagFromCompany({
-            ...req,
-            json: async () => ({
-              companyIds: prevCompIds,
-              stocks: removeStockIds,
-              labelId,
-              action: 'delete',
-              tagLabel: prevLabel,
-              tagColor: prevColor,
-            }),
-          } as any)
-        } else {
-          await deleteTagFromCompany({
-            ...req,
-            json: async () => ({
-              companyIds: prevCompIds,
-              stocks: prevStocks,
-              labelId,
-              action: 'delete',
-              tagLabel: prevLabel,
-              tagColor: prevColor,
-            }),
-          } as any)
+          label,
+          color,
+          stock: stocks,
+          companiesWithSameLabel: companyIds,
         }
+
+        if (existingLabelIndex !== -1) {
+          // 🔥 UPDATE existing label (replace the old one with new values!)
+          const existingLabel = updatedLabels[existingLabelIndex]
+          
+          
+          // Replace the existing label completely with new data but keep the same labelId
+          updatedLabels[existingLabelIndex] = {
+            labelId: existingLabel.labelId, // Keep the original labelId
+            label,
+            color,
+            stock: stocks,
+            companiesWithSameLabel: companyIds,
+          }
+          hasChanges = true
+        } else {
+          // Add new label only if it doesn't exist
+          updatedLabels.push(newLabelData)
+          hasChanges = true
+        }
+      } else if (prevCompIds.includes(companyId)) {
+        // Company should NOT have this label - remove it by PREVIOUS values
+        const labelToRemoveIndex = updatedLabels.findIndex((lbl: any) => 
+          lbl.label === prevLabel && lbl.color === prevColor
+        )
+        if (labelToRemoveIndex !== -1) {
+          updatedLabels.splice(labelToRemoveIndex, 1)
+          hasChanges = true
+        }
+      }
+
+      // 3️⃣ Only update if there are actual changes
+      if (hasChanges) {
+        bulkUpdates.push({
+          companyId,
+          updatedLabels
+        })
       }
     }
 
-    await addTagToCompany({
-      ...req,
-      json: async () => ({
-        companyIds,
-        label,
-        color,
-        stocks,
-        labelId,
-      }),
-    } as any)
+    // 🚀 Early exit if no updates needed
+    if (bulkUpdates.length === 0) {
+      return Response.json({ success: true, results: [], updatedCount: 0, message: 'No changes detected' })
+    }
 
-    return Response.json({ success: true })
+    // 4️⃣ Batch updates with smaller batches for better performance
+    const batchSize = 5 // Smaller batches for faster individual updates
+    const results = []
+
+    for (let i = 0; i < bulkUpdates.length; i += batchSize) {
+      const batch = bulkUpdates.slice(i, i + batchSize)
+      
+      const batchPromises = batch.map(async ({ companyId, updatedLabels }) => {
+        try {
+          await req.payload.update({
+            collection: 'companies',
+            id: companyId,
+            data: {
+              label: { labels: updatedLabels },
+            },
+            depth: 0, // 🚀 No population needed
+          })
+          return { success: true, companyId }
+        } catch (err) {
+          console.error(`Failed to update company ${companyId}:`, err)
+          return { success: false, companyId, error: (err as Error).message }
+        }
+      })
+
+      const batchResults = await Promise.all(batchPromises)
+      results.push(...batchResults)
+    }
+
+    console.log(`✅ Updated ${bulkUpdates.length} companies with tag changes in ${results.length} operations`)
+    return Response.json({ success: true, results, updatedCount: bulkUpdates.length })
   } catch (error) {
     console.error('❌ Failed to update tag:', error)
     return Response.json({ error: 'Internal Server Error' }, { status: 500 })

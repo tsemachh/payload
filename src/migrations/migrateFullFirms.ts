@@ -833,6 +833,79 @@ async function migrateParentCompanies({ payload, req }: MigrateUpArgs): Promise<
 
     // Process the JSON file and create companies
     await processJsonFile(payload)
+    // Extra step (per request @ line 836):
+    // For every regular company that has no parentCompany (null or not exists),
+    // create a parent company with name prefixed by 'קבוצת ' and link both ways.
+    console.log('Running extra step: ensure regular companies have parent groups...')
+    const regularWithoutParent = await payload.find({
+      collection: 'companies',
+      limit: 0,
+      depth: 0,
+      where: {
+        and: [
+          { type: { equals: 'regular' } },
+          { active: { equals: true } },
+          {
+            or: [{ parentCompany: { exists: false } }, { parentCompany: { equals: null } }],
+          },
+        ],
+      },
+      req,
+    })
+
+    console.log(`Found ${regularWithoutParent.docs.length} regular companies without a parent`)
+
+    let createdParents = 0
+    let linkedChildren = 0
+    let stepErrors = 0
+
+    for (const child of regularWithoutParent.docs as Company[]) {
+      try {
+        const parentName = ` קבוצת ${child.name}`
+
+        // Create the parent group
+        runningIndex++
+        const data = {
+          name: parentName,
+          type: 'parent',
+          active: true,
+          _order: String(runningIndex),
+          subCompanies: [child.id],
+        } as Partial<Company>
+
+        const parent = await payload.create({
+          collection: 'companies',
+          data: data as Company,
+          req: {
+            ...req,
+            context: { ...req?.context, from: 'migration', process: 'migrateFullFirms' },
+          },
+        })
+        createdParents++
+        const parentId = parent.id
+
+        // Ensure child points to its parent
+        await payload.update({
+          collection: 'companies',
+          id: child.id,
+          data: { parentCompany: parentId },
+          req: {
+            ...req,
+            context: { ...req?.context, from: 'migration', process: 'migrateFullFirms' },
+          },
+        })
+
+        linkedChildren++
+        console.log(`Linked child '${child.name}' -> parent '${parentName}'`)
+      } catch (err) {
+        stepErrors++
+        console.error('Error creating/linking parent for', child?.name, err)
+      }
+    }
+
+    console.log(
+      `Extra step completed. Created parents: ${createdParents}, Linked children: ${linkedChildren}, Errors: ${stepErrors}`,
+    )
 
     console.log('=== Parent Companies Migration Completed ===\n')
   } catch (error) {
@@ -1404,7 +1477,14 @@ async function recalcCompaniesFractionalOrder(payload: any, req: any): Promise<v
           collection: 'companies',
           id,
           data: { _order },
-          req: { ...req, context: { ...req?.context, from: 'migration', process: 'recalcCompaniesFractionalOrder' } },
+          req: {
+            ...req,
+            context: {
+              ...req?.context,
+              from: 'migration',
+              process: 'recalcCompaniesFractionalOrder',
+            },
+          },
         }),
       ),
     )

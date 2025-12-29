@@ -55,7 +55,9 @@ export const useVotingData = () => {
   const { data } = useDocumentInfo() //meeting data
   const [votedCompanies, setVotedCompanies] = useState<CompanyVoted[]>([])
   const [notVotedCompanies, setNotVotedCompanies] = useState<Company[]>([])
-  const [loading, setLoading] = useState(true)
+  const [votedLoading, setVotedLoading] = useState(true)
+  const [notVotedLoading, setNotVotedLoading] = useState(true)
+  const [historicalLoading, setHistoricalLoading] = useState(true)
   const [companyOrderMap, setCompanyOrderMap] = useState<Map<string, string>>(new Map())
   const [historicalHoldings, setHistoricalHoldings] = useState<HistoricalHoldingUi[]>([])
 
@@ -82,45 +84,16 @@ export const useVotingData = () => {
     const fetchCompaniesData = async () => {
       if (!Array.isArray(data.companies)) {
         setVotedCompanies([])
-        setLoading(false)
+        setVotedLoading(false)
+        setNotVotedLoading(false)
+        setHistoricalLoading(false)
         return
       }
 
       try {
-        // Fetch all funds to create passiveMap
-        let passiveMap = new Map<string, boolean>()
+        // Initialize passiveMap
+        const passiveMap = new Map<string, boolean>()
         const meetingFundIds = (data.funds || []) as string[]
-        if (meetingFundIds.length > 0) {
-          const fundsQuery = stringify(
-            {
-              where: {
-                id: { in: meetingFundIds },
-              },
-              select: {
-                id: true,
-                passiveFund: true,
-              },
-              depth: 0,
-              limit: 0,
-            },
-            { addQueryPrefix: true },
-          )
-
-          const fundsResponse = await fetch(`/api/companies${fundsQuery}`, {
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-          })
-
-          if (fundsResponse.ok) {
-            const fundsJson = await fundsResponse.json()
-            passiveMap = new Map<string, boolean>(
-              fundsJson.docs?.map((fund: any) => [fund.id as string, fund.passiveFund || false]) ||
-                [],
-            )
-          } else {
-            console.error('Error fetching funds:', fundsResponse.statusText)
-          }
-        }
 
         let votesDetails: any[] = []
         try {
@@ -130,6 +103,20 @@ export const useVotingData = () => {
               where: {
                 meeting: { equals: meetingId },
               },
+              select: {
+                id: true,
+                company: true,
+                companyName: true,
+                parentCompany: true,
+                creator: true,
+                updatedAt: true,
+                createdAt: true,
+                notes: true,
+                reported: true,
+                checksum: true,
+              },
+              joins: false,
+              paging: false,
               depth: 0,
               limit: 0,
             })
@@ -164,20 +151,39 @@ export const useVotingData = () => {
         const companyNamesMap = new Map<string, { name: string; parentCompanyId: string }>()
         const tempCompanyOrderMap = new Map<string, string>()
 
-        if (meetingCompanyIds.length > 0) {
+        // Collect unique parent company IDs from votes
+        const parentCompanyIds = new Set<string>()
+        votesDetails.forEach((vote: any) => {
+          const parentId = getParentCompanyId(vote.parentCompany)
+          if (parentId) {
+            parentCompanyIds.add(parentId)
+          }
+        })
+
+        // Prepare combined company IDs query (meeting companies + parent companies + funds)
+        const allCompanyIdsToFetch = new Set([
+          ...meetingCompanyIds,
+          ...Array.from(parentCompanyIds),
+          ...meetingFundIds,
+        ])
+
+        if (allCompanyIdsToFetch.size > 0) {
           try {
             const companiesQuery = stringify(
               {
                 where: {
-                  id: { in: meetingCompanyIds },
+                  id: { in: Array.from(allCompanyIdsToFetch) },
                 },
                 select: {
                   name: true,
                   parentCompany: true,
                   _order: true,
+                  passiveFund: true,
                 },
                 depth: 0,
                 limit: 0,
+                joins: false,
+                paging: false,
                 sort: '_order',
               },
               { addQueryPrefix: true },
@@ -186,17 +192,24 @@ export const useVotingData = () => {
             if (companiesResponse.ok) {
               const companiesData = await companiesResponse.json()
               companiesData.docs?.forEach((company: any, index: number) => {
-                const parentId = getParentCompanyId(company.parentCompany) || ''
-                companyNamesMap.set(company.id, {
-                  name: company.name,
-                  parentCompanyId: parentId,
-                })
                 tempCompanyOrderMap.set(
                   company.id,
                   company._order !== undefined
                     ? String(company._order)
                     : String(index).padStart(10, '0'),
                 )
+                // Populate passiveMap for funds
+                if (meetingFundIds.includes(company.id)) {
+                  passiveMap.set(company.id, company.passiveFund || false)
+                }
+                // Only add to companyNamesMap if it's a meeting company
+                if (meetingCompanyIds.includes(company.id)) {
+                  const parentId = getParentCompanyId(company.parentCompany) || ''
+                  companyNamesMap.set(company.id, {
+                    name: company.name,
+                    parentCompanyId: parentId,
+                  })
+                }
               })
             }
           } catch (error) {
@@ -204,58 +217,12 @@ export const useVotingData = () => {
           }
         }
 
-        // Collect unique parent company IDs from votes and companies
-        const parentCompanyIds = new Set<string>()
-        votesDetails.forEach((vote: any) => {
-          const parentId = getParentCompanyId(vote.parentCompany)
-          if (parentId) {
-            parentCompanyIds.add(parentId)
-          }
-        })
-        companyNamesMap.forEach((info) => {
-          if (info.parentCompanyId) {
-            parentCompanyIds.add(info.parentCompanyId)
-          }
-        })
-
         // Fetch parent company names
         const parentCompanyNamesMap = await getParentCompanyNamesByIds(Array.from(parentCompanyIds))
-
-        if (parentCompanyIds.size > 0) {
-          try {
-            const parentCompaniesQuery = stringify(
-              {
-                where: {
-                  id: { in: Array.from(parentCompanyIds) },
-                },
-                select: {
-                  id: true,
-                  _order: true,
-                },
-                depth: 0,
-                limit: 0,
-              },
-              { addQueryPrefix: true },
-            )
-            const parentCompaniesResponse = await fetch(`/api/companies${parentCompaniesQuery}`)
-            if (parentCompaniesResponse.ok) {
-              const parentCompaniesData = await parentCompaniesResponse.json()
-              parentCompaniesData.docs?.forEach((parentCompany: any, index: number) => {
-                // Store parent company order
-                tempCompanyOrderMap.set(
-                  parentCompany.id,
-                  parentCompany._order !== undefined
-                    ? String(parentCompany._order)
-                    : String(index).padStart(10, '0'),
-                )
-              })
-            }
-          } catch (error) {
-            console.error('Error fetching parent companies order:', error)
-          }
-        }
         setCompanyOrderMap(tempCompanyOrderMap)
+
         // Map companies with voting status and calculate holding values
+        setVotedLoading(true)
         const processedCompanies = votesDetails.map((vote: any) => {
           // Calculate holding values for this company
           let calculatedValues = {
@@ -324,8 +291,10 @@ export const useVotingData = () => {
           }
         })
         setVotedCompanies(processedCompanies)
+        setVotedLoading(false)
 
         // Calculate not voted companies
+        setNotVotedLoading(true)
         const votedCompanyIds = new Set(processedCompanies.map((c) => c.id))
         const notVoted = meetingCompanyIds
           .filter((companyId) => !votedCompanyIds.has(companyId))
@@ -390,11 +359,13 @@ export const useVotingData = () => {
           })
           .filter((company) => company !== null) as Company[]
         setNotVotedCompanies(notVoted)
+        setNotVotedLoading(false)
 
         // Process historical holdings (companies that held 30 days before but not invited)
         const raw = data.historicalHoldings
         const historicalHoldingsData = Array.isArray(raw) ? raw : ([] as HistoricalHolding)
         if (historicalHoldingsData && historicalHoldingsData.length > 0) {
+          setHistoricalLoading(true)
           // Get unique company IDs from historical holdings
           const historicalCompanyIds = [
             ...new Set(historicalHoldingsData.map((h) => h.company)),
@@ -406,7 +377,7 @@ export const useVotingData = () => {
           ] as string[]
 
           // Fetch company names and fund names for historical holdings
-          if (historicalCompanyIds.length > 0) {
+          if (historicalCompanyIds.length > 0 || historicalFundIds.length > 0) {
             try {
               // Combine company IDs and fund IDs into a single query since both are in companies collection
               const allIds = [...new Set([...historicalCompanyIds, ...historicalFundIds])]
@@ -417,9 +388,10 @@ export const useVotingData = () => {
                     id: { in: allIds },
                   },
                   select: {
-                    id: true,
                     name: true,
                   },
+                  joins: false,
+                  paging: false,
                   depth: 0,
                   limit: 0,
                 },
@@ -523,12 +495,13 @@ export const useVotingData = () => {
               console.error('Error fetching historical holdings company names:', error)
             }
           }
+          setHistoricalLoading(false)
+        } else {
+          setHistoricalLoading(false)
         }
       } catch (error) {
         console.error('Error fetching companies data:', error)
         setVotedCompanies([])
-      } finally {
-        setLoading(false)
       }
     }
 
@@ -745,12 +718,11 @@ export const useVotingData = () => {
         })
       }
     })
-
     return result
   }, [votedCompanies, groupByVoted, collapsedVotedGroups, votedSort, companyOrderMap])
 
-  const exportToCSV = (data: any[], filename: string, columns: any) => {
-    const exportData = data.filter((item) => !item.isGroupHeader)
+  const exportToCSV = (exportData: any[], filename: string, columns: any) => {
+    const filteredData = exportData.filter((item) => !item.isGroupHeader)
 
     const columnMapping: any = {
       company: { header: 'חברה', field: 'name' },
@@ -766,10 +738,40 @@ export const useVotingData = () => {
 
     const selectedColumns = Object.keys(columns).filter((key) => columns[key] && columnMapping[key])
     const headers = selectedColumns.map((key) => columnMapping[key].header)
+    // Extract meeting metadata from the data variable (meeting data from useDocumentInfo)
+    const stockName = data?.stockName
+    const stockId = data?.stockId
+    const meetingDate = data?.meetingDate
+      ? new Date(data.meetingDate).toLocaleDateString('he-IL')
+      : ''
+    const meetingTime = data?.meetingDate
+      ? new Date(data.meetingDate).toLocaleTimeString('he-IL', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : ''
+    const holdingsLimit = data?.holdingsLimit
+      ? new Date(data.holdingsLimit).toLocaleDateString('he-IL')
+      : ''
+    const meetingType = data?.type || ''
+    const comments = data?.comments || ''
+
+    // Create metadata rows - field name in first cell, value in second cell
+    const metadataRows = [
+      `שם נייר,"${stockName}"`,
+      `מספר נייר,"${stockId}"`,
+      `תאריך אסיפה,"${meetingDate}"`,
+      `שעת אסיפה,"${meetingTime}"`,
+      `מועד קובע,"${holdingsLimit}"`,
+      `סוג אסיפה,"${meetingType}"`,
+      `הערות,"${comments.replace(/"/g, '""')}"`, // Escape quotes in comments
+      '', // Empty row separator
+    ]
 
     const csvContent = [
+      ...metadataRows,
       headers.join(','),
-      ...exportData.map((row) =>
+      ...filteredData.map((row) =>
         selectedColumns
           .map((columnKey) => {
             const field = columnMapping[columnKey].field
@@ -863,7 +865,9 @@ export const useVotingData = () => {
     processedNotVotedData,
     processedVotedData,
     historicalHoldings,
-    loading,
+    votedLoading,
+    notVotedLoading,
+    historicalLoading,
     exportToCSV,
     // Grouping state and controls
     groupByNotVoted,

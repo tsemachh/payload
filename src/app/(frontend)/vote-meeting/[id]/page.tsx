@@ -70,6 +70,22 @@ export default function VotingForm() {
   const { toast } = useToast()
   const { user } = useAuth()
 
+  useEffect(() => {
+    if (user === null) {
+      const currentPath = window.location.pathname + window.location.search
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(currentPath)}`)
+      return
+    }
+  }, [user, router])
+
+  if (user === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinnerDiamond />
+      </div>
+    )
+  }
+
   const meetingIdFromUrl = params?.id || '-'
 
   const [isReadOnly, setIsReadOnly] = useState(false)

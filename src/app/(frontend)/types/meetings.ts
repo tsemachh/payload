@@ -1,4 +1,4 @@
-import { MeetingState, StockOrigin } from '@/payload-types'
+import { MeetingState, StockOrigin, Vote } from '@/payload-types'
 import { TreeCompanyType } from '@/types/companies'
 
 export type MeetingTableDataType = {
@@ -36,7 +36,7 @@ export type MeetingTableDataType = {
   electronicVotingEnabled: boolean //האם האסיפה מופיעה במערכת האלקטרונית?
   resultsConfirmationStatus: boolean //אימות תוצאות האסיפה
   committeeInitiated: boolean //האם פיננסי דורש ועדה?
-  votes: any
+  votes?: { docs?: (string | Vote)[]; hasNextPage?: boolean; totalDocs?: number } //הצבעות
   displayMode?: string
   selectedCompanyIds?: string[]
   labels: { id: string; label: string; color: string }[]
