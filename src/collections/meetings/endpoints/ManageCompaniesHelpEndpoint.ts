@@ -1,8 +1,5 @@
 import { PayloadRequest, addDataAndFileToRequest } from 'payload'
-import {
-  getCompanyFundIds,
-  getCompanyNameById,
-} from '../hooks/activeCompaniesCache'
+import { getCompanyFundIds, getCompanyNameById } from '../hooks/activeCompaniesCache'
 
 /**
  * Endpoint to help manage companies in meetings
@@ -76,7 +73,26 @@ async function getMeetingData(req: PayloadRequest) {
     },
   })
 
-  return Response.json(meeting)
+  // Enhance companies and removedCompanies with names from cache
+  const enhancedMeeting = {
+    ...meeting,
+    companies: ((meeting.companies as string[]) || []).map((companyId: string) => {
+      const companyName = getCompanyNameById(companyId)
+      return {
+        id: companyId,
+        name: companyName || '',
+      }
+    }),
+    removedCompanies: ((meeting.removedCompanies as string[]) || []).map((companyId: string) => {
+      const companyName = getCompanyNameById(companyId)
+      return {
+        id: companyId,
+        name: companyName || '',
+      }
+    }),
+  }
+
+  return Response.json(enhancedMeeting)
 }
 
 /**
