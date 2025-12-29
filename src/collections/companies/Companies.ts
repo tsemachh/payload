@@ -200,6 +200,16 @@ export const Companies: CollectionConfig = {
                   index: true,
                   relationTo: 'companies',
                   hasMany: true,
+                  filterOptions: ({ siblingData }: any) => {
+                    if (siblingData?.type === 'parent') {
+                      return {
+                        type: {
+                          not_in: ['fund', 'parent']
+                        }
+                      }
+                    }
+                    return true
+                  },
                   hooks: {
                     afterChange: [
                       async ({ req, siblingData, value, previousValue }) => {
