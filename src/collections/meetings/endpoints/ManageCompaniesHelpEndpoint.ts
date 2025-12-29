@@ -1,4 +1,8 @@
 import { PayloadRequest, addDataAndFileToRequest } from 'payload'
+import {
+  getCompanyFundIds,
+  getCompanyNameById,
+} from '../hooks/activeCompaniesCache'
 
 /**
  * Endpoint to help manage companies in meetings
@@ -61,7 +65,7 @@ async function getMeetingData(req: PayloadRequest) {
   const meeting = await req.payload.findByID({
     collection: 'meetings',
     id: meetingId,
-    depth: 1,
+    depth: 0,
     select: {
       companies: true,
       removedCompanies: true,
@@ -90,7 +94,6 @@ async function getRegularCompanies(req: PayloadRequest) {
       id: true,
       name: true,
       active: true,
-      subCompanies: true,
     },
   })
 
@@ -132,32 +135,24 @@ async function getStockDetails(req: PayloadRequest) {
  * Get funds (sub-companies of type 'fund') for a specific company
  */
 async function getFundsForCompany(req: PayloadRequest) {
-  const companySubCompanies = req.query.subCompanies as string
+  const companySubCompanies = getCompanyFundIds(req.query.companyId as string) || []
 
-  if (!companySubCompanies) {
-    return Response.json({ error: 'Missing subCompanies parameter' }, { status: 400 })
-  }
+  // Get company data for the funds
+  const docs = companySubCompanies
+    .map((id) => {
+      const companyName = getCompanyNameById(id)
+      return companyName
+        ? {
+            id,
+            name: companyName,
+          }
+        : null
+    })
+    .filter((doc) => doc !== null)
 
-  // Parse the subCompanies - it can be a comma-separated string or a single ID
-  const subCompaniesArray = companySubCompanies.includes(',')
-    ? companySubCompanies.split(',')
-    : [companySubCompanies]
-
-  const funds = await req.payload.find({
-    collection: 'companies',
-    where: {
-      type: { equals: 'fund' },
-      id: { in: subCompaniesArray },
-    },
-    limit: 0,
-    depth: 0,
-    select: {
-      id: true,
-      name: true,
-    },
+  return Response.json({
+    docs,
   })
-
-  return Response.json(funds)
 }
 
 export default manageCompaniesHelpEndpoint

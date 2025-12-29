@@ -173,14 +173,9 @@ export const ManageMeetingCompanies = () => {
   const fetchFundsForCompany = async (company: Company) => {
     setIsLoadingFunds(true)
     try {
-      // Convert subCompanies array to comma-separated string
-      const subCompaniesParam = Array.isArray(company.subCompanies)
-        ? company.subCompanies.map((sc: any) => (typeof sc === 'string' ? sc : sc.id)).join(',')
-        : company.subCompanies
-
       // Fetch funds using the new endpoint
       const res = await fetch(
-        `/api/meetings/manage-companies-help?action=getFundsForCompany&subCompanies=${subCompaniesParam}`,
+        `/api/meetings/manage-companies-help?action=getFundsForCompany&companyId=${company.id}`,
         {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
