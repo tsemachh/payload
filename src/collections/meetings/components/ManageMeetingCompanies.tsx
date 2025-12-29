@@ -101,6 +101,11 @@ export const ManageMeetingCompanies = () => {
 
   // Fetch regular companies - called after stock selection
   const fetchRegularCompanies = async () => {
+    // Skip if already have companies loaded
+    if (availableCompanies.length > 0) {
+      return
+    }
+
     // Prevent duplicate calls using ref
     if (isFetchingCompanies.current) {
       return
@@ -126,11 +131,17 @@ export const ManageMeetingCompanies = () => {
 
   // Fetch stock details and check if foreign
   const fetchStockDetails = async () => {
+    const stockId =
+      typeof meetingData.stock === 'string' ? meetingData.stock : meetingData.stock?.id
+
+    // Skip if already have stocks loaded
+    if (availableStocks.length > 0) {
+      setSelectedStockId(stockId)
+      return
+    }
+
     setIsLoadingStocks(true)
     try {
-      const stockId =
-        typeof meetingData.stock === 'string' ? meetingData.stock : meetingData.stock?.id
-
       // Fetch stock details using the new endpoint
       const res = await fetch(`/api/meetings/get-stock-details?stockId=${stockId}`, {
         credentials: 'include',
@@ -266,7 +277,6 @@ export const ManageMeetingCompanies = () => {
         setFundHoldingValues({})
         setSelectedStockId('')
         setShowStockSelection(false)
-        setAvailableStocks([])
         // Refresh the page to update Payload's document state
         const currentPath = window.location.pathname
         router.push(currentPath)
@@ -478,7 +488,6 @@ export const ManageMeetingCompanies = () => {
             setFundHoldingValues({})
             setSelectedStockId('')
             setShowStockSelection(false)
-            setAvailableStocks([])
             setOpenAdd(false)
           }
         }}
@@ -727,7 +736,6 @@ export const ManageMeetingCompanies = () => {
                 setFundHoldingValues({})
                 setSelectedStockId('')
                 setShowStockSelection(false)
-                setAvailableStocks([])
                 setOpenAdd(false)
               }}
               disabled={isProcessing}
