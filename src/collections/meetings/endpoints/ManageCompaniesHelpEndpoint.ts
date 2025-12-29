@@ -2,173 +2,189 @@ import { PayloadRequest, addDataAndFileToRequest } from 'payload'
 import { getCompanyFundIds, getCompanyNameById } from '../hooks/activeCompaniesCache'
 
 /**
- * Endpoint to help manage companies in meetings
- * Consolidates multiple API calls into a single endpoint with action mapping
+ * Get meeting data with companies, removedCompanies, stock, holdingsLimit
+ * URL: /api/meetings/get-meeting-data?meetingId=xxx
  */
-export const manageCompaniesHelpEndpoint = async (req: PayloadRequest) => {
+export const getMeetingDataEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
 
-    // Check if user is logged in
     if (!req.user) {
       return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
     }
 
-    const action = req.query.action as string
+    const meetingId = req.query.meetingId as string
 
-    if (!action) {
-      return Response.json({ error: 'Missing action parameter' }, { status: 400 })
+    if (!meetingId) {
+      return Response.json({ error: 'Missing meetingId parameter' }, { status: 400 })
     }
 
-    switch (action) {
-      case 'getMeetingData':
-        return await getMeetingData(req)
-
-      case 'getRegularCompanies':
-        return await getRegularCompanies(req)
-
-      case 'getStockDetails':
-        return await getStockDetails(req)
-
-      case 'getFundsForCompany':
-        return await getFundsForCompany(req)
-
-      default:
-        return Response.json({ error: `Unknown action: ${action}` }, { status: 400 })
-    }
-  } catch (error) {
-    console.error('Error in manageCompaniesHelpEndpoint:', error)
-    return Response.json(
-      {
-        success: false,
-        error: 'Failed to process request',
-        details: error,
+    const meeting = await req.payload.findByID({
+      collection: 'meetings',
+      id: meetingId,
+      depth: 0,
+      select: {
+        companies: true,
+        removedCompanies: true,
+        stock: true,
+        holdingsLimit: true,
+        stockName: true,
+        stockNumber: true,
       },
+    })
+
+    // Enhance companies and removedCompanies with names from cache
+    const enhancedMeeting = {
+      ...meeting,
+      companies: ((meeting.companies as string[]) || []).map((companyId: string) => {
+        const companyName = getCompanyNameById(companyId)
+        return {
+          id: companyId,
+          name: companyName || '',
+        }
+      }),
+      removedCompanies: ((meeting.removedCompanies as string[]) || []).map((companyId: string) => {
+        const companyName = getCompanyNameById(companyId)
+        return {
+          id: companyId,
+          name: companyName || '',
+        }
+      }),
+    }
+
+    return Response.json(enhancedMeeting)
+  } catch (error) {
+    console.error('Error in getMeetingDataEndpoint:', error)
+    return Response.json(
+      { success: false, error: 'Failed to get meeting data', details: error },
       { status: 500 },
     )
   }
 }
 
 /**
- * Get meeting data with companies, removedCompanies, stock, holdingsLimit, stockName, stockNumber
- */
-async function getMeetingData(req: PayloadRequest) {
-  const meetingId = req.query.meetingId as string
-
-  if (!meetingId) {
-    return Response.json({ error: 'Missing meetingId parameter' }, { status: 400 })
-  }
-
-  const meeting = await req.payload.findByID({
-    collection: 'meetings',
-    id: meetingId,
-    depth: 0,
-    select: {
-      companies: true,
-      removedCompanies: true,
-      stock: true,
-      holdingsLimit: true,
-      stockName: true,
-      stockNumber: true,
-    },
-  })
-
-  // Enhance companies and removedCompanies with names from cache
-  const enhancedMeeting = {
-    ...meeting,
-    companies: ((meeting.companies as string[]) || []).map((companyId: string) => {
-      const companyName = getCompanyNameById(companyId)
-      return {
-        id: companyId,
-        name: companyName || '',
-      }
-    }),
-    removedCompanies: ((meeting.removedCompanies as string[]) || []).map((companyId: string) => {
-      const companyName = getCompanyNameById(companyId)
-      return {
-        id: companyId,
-        name: companyName || '',
-      }
-    }),
-  }
-
-  return Response.json(enhancedMeeting)
-}
-
-/**
  * Get all regular companies (type: 'regular') that are active
+ * URL: /api/meetings/get-regular-companies
  */
-async function getRegularCompanies(req: PayloadRequest) {
-  const companies = await req.payload.find({
-    collection: 'companies',
-    where: {
-      type: { equals: 'regular' },
-    },
-    limit: 0,
-    depth: 0,
-    select: {
-      id: true,
-      name: true,
-      active: true,
-    },
-  })
+export const getRegularCompaniesEndpoint = async (req: PayloadRequest) => {
+  try {
+    await addDataAndFileToRequest(req)
 
-  // Filter only active companies
-  const activeCompanies = companies.docs.filter((company: any) => company.active)
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
 
-  return Response.json({
-    docs: activeCompanies,
-    totalDocs: activeCompanies.length,
-  })
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        type: { equals: 'regular' },
+      },
+      limit: 0,
+      depth: 0,
+      select: {
+        id: true,
+        name: true,
+        active: true,
+      },
+    })
+
+    // Filter only active companies
+    const activeCompanies = companies.docs.filter((company: any) => company.active)
+
+    return Response.json({
+      docs: activeCompanies,
+      totalDocs: activeCompanies.length,
+    })
+  } catch (error) {
+    console.error('Error in getRegularCompaniesEndpoint:', error)
+    return Response.json(
+      { success: false, error: 'Failed to get companies', details: error },
+      { status: 500 },
+    )
+  }
 }
 
 /**
  * Get stock details including relations
+ * URL: /api/meetings/get-stock-details?stockId=xxx
  */
-async function getStockDetails(req: PayloadRequest) {
-  const stockId = req.query.stockId as string
+export const getStockDetailsEndpoint = async (req: PayloadRequest) => {
+  try {
+    await addDataAndFileToRequest(req)
 
-  if (!stockId) {
-    return Response.json({ error: 'Missing stockId parameter' }, { status: 400 })
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
+    const stockId = req.query.stockId as string
+
+    if (!stockId) {
+      return Response.json({ error: 'Missing stockId parameter' }, { status: 400 })
+    }
+
+    const stock = await req.payload.findByID({
+      collection: 'stocks',
+      id: stockId,
+      depth: 1,
+      select: {
+        id: true,
+        name: true,
+        stockId: true,
+        relations: true,
+      },
+    })
+
+    return Response.json(stock)
+  } catch (error) {
+    console.error('Error in getStockDetailsEndpoint:', error)
+    return Response.json(
+      { success: false, error: 'Failed to get stock details', details: error },
+      { status: 500 },
+    )
   }
-
-  const stock = await req.payload.findByID({
-    collection: 'stocks',
-    id: stockId,
-    depth: 1,
-    select: {
-      id: true,
-      name: true,
-      stockId: true,
-      relations: true,
-    },
-  })
-
-  return Response.json(stock)
 }
 
 /**
  * Get funds (sub-companies of type 'fund') for a specific company
+ * URL: /api/meetings/get-funds-for-company?companyId=xxx
  */
-async function getFundsForCompany(req: PayloadRequest) {
-  const companySubCompanies = getCompanyFundIds(req.query.companyId as string) || []
+export const getFundsForCompanyEndpoint = async (req: PayloadRequest) => {
+  try {
+    await addDataAndFileToRequest(req)
 
-  // Get company data for the funds
-  const docs = companySubCompanies
-    .map((id) => {
-      const companyName = getCompanyNameById(id)
-      return companyName
-        ? {
-            id,
-            name: companyName,
-          }
-        : null
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
+    const companyId = req.query.companyId as string
+
+    if (!companyId) {
+      return Response.json({ error: 'Missing companyId parameter' }, { status: 400 })
+    }
+
+    const companySubCompanies = getCompanyFundIds(companyId) || []
+
+    // Get company data for the funds
+    const docs = companySubCompanies
+      .map((id) => {
+        const companyName = getCompanyNameById(id)
+        return companyName
+          ? {
+              id,
+              name: companyName,
+            }
+          : null
+      })
+      .filter((doc) => doc !== null)
+
+    return Response.json({
+      docs,
     })
-    .filter((doc) => doc !== null)
-
-  return Response.json({
-    docs,
-  })
+  } catch (error) {
+    console.error('Error in getFundsForCompanyEndpoint:', error)
+    return Response.json(
+      { success: false, error: 'Failed to get funds', details: error },
+      { status: 500 },
+    )
+  }
 }
-
-export default manageCompaniesHelpEndpoint

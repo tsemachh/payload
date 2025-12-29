@@ -80,13 +80,10 @@ export const ManageMeetingCompanies = () => {
     isFetchingMeetingData.current = true
     try {
       // Fetch meeting data using the new endpoint
-      const res = await fetch(
-        `/api/meetings/manage-companies-help?action=getMeetingData&meetingId=${id}`,
-        {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        },
-      )
+      const res = await fetch(`/api/meetings/get-meeting-data?meetingId=${id}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
       const data = await res.json()
       setMeetingData(data)
 
@@ -112,7 +109,7 @@ export const ManageMeetingCompanies = () => {
     isFetchingCompanies.current = true
     setIsLoadingCompanies(true)
     try {
-      const allRes = await fetch(`/api/meetings/manage-companies-help?action=getRegularCompanies`, {
+      const allRes = await fetch(`/api/meetings/get-regular-companies`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       })
@@ -135,13 +132,10 @@ export const ManageMeetingCompanies = () => {
         typeof meetingData.stock === 'string' ? meetingData.stock : meetingData.stock?.id
 
       // Fetch stock details using the new endpoint
-      const res = await fetch(
-        `/api/meetings/manage-companies-help?action=getStockDetails&stockId=${stockId}`,
-        {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        },
-      )
+      const res = await fetch(`/api/meetings/get-stock-details?stockId=${stockId}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
       const stockData = await res.json()
 
       // Build available stocks list: main stock + related stocks
@@ -174,13 +168,10 @@ export const ManageMeetingCompanies = () => {
     setIsLoadingFunds(true)
     try {
       // Fetch funds using the new endpoint
-      const res = await fetch(
-        `/api/meetings/manage-companies-help?action=getFundsForCompany&companyId=${company.id}`,
-        {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        },
-      )
+      const res = await fetch(`/api/meetings/get-funds-for-company?companyId=${company.id}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
       const data = await res.json()
       setAvailableFunds(data.docs || [])
       setShowFundSelection(true)
