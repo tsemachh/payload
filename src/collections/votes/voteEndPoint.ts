@@ -199,6 +199,38 @@ export const publishVotes = async (req: PayloadRequest) => {
       votesToPublish.docs = await upsertVotesInternal({ req, meetingId, companiesIds, votingData })
     }
 
+    // Get published votes to compare checksums
+    const publishedVotes = await req.payload.find({
+      collection: 'votes',
+      select: {
+        id: true,
+        company: true,
+        checksum: true,
+        publishedchecksum: true,
+      },
+      where: {
+        and: [
+          { meeting: { equals: meetingId } },
+          { company: { in: votesToPublish.docs.map((v) => v.company) } },
+          { _status: { equals: 'published' } },
+        ],
+      },
+      depth: 0,
+      limit: votesToPublish.docs.length,
+      overrideAccess: true,
+    })
+
+    // Determine which votes actually changed
+    const updatedVotes = votesToPublish.docs.filter((vote) => {
+      const publishedVote = publishedVotes.docs.find(
+        (pv) =>
+          (typeof pv.company === 'string' ? pv.company : pv.company?.id) ===
+          (typeof vote.company === 'string' ? vote.company : vote.company?.id),
+      )
+      // Vote is considered updated if it's new or if checksum changed
+      return !publishedVote || publishedVote.publishedchecksum !== vote.checksum
+    })
+
     await Promise.all(
       votesToPublish.docs.map((vote) =>
         req.payload.update({
@@ -206,6 +238,7 @@ export const publishVotes = async (req: PayloadRequest) => {
           id: vote.id,
           data: {
             _status: 'published',
+            publishedchecksum: vote.checksum,
           },
           draft: false,
           overrideAccess: true,
@@ -284,10 +317,38 @@ export const publishVotes = async (req: PayloadRequest) => {
       console.error('Error creating notification for published votes:', error)
     }
 
+    // Get company names for updated votes
+    const updatedCompanyNames = await Promise.all(
+      updatedVotes.map(async (vote) => {
+        const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
+        if (!companyId) return null
+        try {
+          const company = await req.payload.findByID({
+            collection: 'companies',
+            id: companyId,
+            select: { name: true },
+            depth: 0,
+          })
+          return company?.name || null
+        } catch {
+          return null
+        }
+      }),
+    )
+
+    const validCompanyNames = updatedCompanyNames.filter((name) => name !== null)
+
     return Response.json(
-      votesToPublish.docs.length === 1
-        ? { success: true, message: 'פורסמה בהצלחה הצבעה אחת' }
-        : { success: true, message: `פורסמו בהצלחה ${votesToPublish.docs.length} הצבעות` },
+      {
+        success: true,
+        totalPublished: votesToPublish.docs.length,
+        actuallyUpdated: updatedVotes.length,
+        updatedCompanyNames: validCompanyNames,
+        message:
+          votesToPublish.docs.length === 1
+            ? 'פורסמה בהצלחה הצבעה אחת'
+            : `פורסמו בהצלחה ${votesToPublish.docs.length} הצבעות`,
+      },
       { status: 200 },
     )
   } catch (error: any) {
@@ -556,8 +617,6 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
 
     return Response.json({ success: true }, { status: 200 })
   } catch (error: any) {
-    console.log('!!!!err', error)
-
     return Response.json(
       { error: 'Internal server error', message: error.message },
       { status: 500 },
