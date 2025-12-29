@@ -740,7 +740,7 @@ export default function VotingForm() {
         setValidationErrors([])
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [votingData, companiesWithErrors, validateForm])
 
   const savePublish = useCallback(
@@ -1658,13 +1658,13 @@ export default function VotingForm() {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div>
+                        <div className="ml-2">
                           <Button
                             onClick={() => savePublishAll()}
                             disabled={
                               !isAnyCompanyDirty || isSubmitting || isUploading || isReadOnly
                             }
-                            className="px-8"
+                            className="px-8 border border-gray-300 dark:border-gray-600"
                             variant="secondary"
                           >
                             {isSubmitting ? 'שולח...' : 'שלח את כל ההצבעות'}
