@@ -10,7 +10,7 @@ import {
 } from './createLabels'
 import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
 import { logEvent } from '@/lib/audit/logEvent'
-import { invalidateActiveFundsCache } from '@/collections/meetings/hooks/activeFundsCache'
+import { invalidateActiveFundsCache } from '@/collections/meetings/hooks/activeCompaniesCache'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -651,7 +651,7 @@ export const Companies: CollectionConfig = {
           const createdOrDeleted = operation === 'create'
           if (isFund && (activeChanged || typeChanged || createdOrDeleted)) {
             // Invalidate so next run refreshes the cache
-            invalidateActiveFundsCache()
+            await invalidateActiveFundsCache(req?.payload)
             req?.payload?.logger?.info?.('Invalidated active funds cache due to company change')
           }
         } catch (e) {
