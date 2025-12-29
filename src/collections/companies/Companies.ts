@@ -204,7 +204,7 @@ export const Companies: CollectionConfig = {
                     if (siblingData?.type === 'parent') {
                       return {
                         type: {
-                          not_in: ['fund', 'parent']
+                          not_equals: 'fund'
                         }
                       }
                     }
