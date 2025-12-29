@@ -46,7 +46,7 @@ import { handleImpersonationEnd, handleImpersonationStart } from './plugins/impe
 import { CollectionResetPreferencesPlugin } from '@shefing/reset-list-view'
 import versionsPlugin from '@shefing/custom-version-view'
 import { MeetingQuestions } from './collections/questions/MeetingQuestions'
-import { preloadFundsCache } from '@/collections/meetings/hooks/activeFundsCache'
+import { preloadCompaniesCache } from '@/collections/meetings/hooks/activeCompaniesCache'
 // import mongoose from 'mongoose';
 // mongoose.set('debug', true);
 const filename = fileURLToPath(import.meta.url)
@@ -114,7 +114,7 @@ export default buildConfig({
   onInit: async (payload) => {
     // warm up active funds cache on boot
     try {
-      await preloadFundsCache(payload)
+      await preloadCompaniesCache(payload)
     } catch (e: any) {
       payload.logger.error('Failed to preload active funds cache', e)
     }

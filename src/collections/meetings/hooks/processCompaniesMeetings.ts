@@ -7,7 +7,7 @@ import {
   getCompanyIdFromFundId,
   getCompanyToFundsMap,
   getFundToCompanyMap,
-} from '@/collections/meetings/hooks/activeFundsCache'
+} from '@/collections/meetings/hooks/activeCompaniesCache'
 
 // Historical fetch strategy v2:
 // Iterate company-by-company; for each company, determine its funds and query holdings
