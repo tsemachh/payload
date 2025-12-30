@@ -129,10 +129,11 @@ const AcquireTaskCell: React.FC<DefaultCellComponentProps<TextFieldClient>> = (p
     <>
       {user?.id === rowData?.assignee ? (
         <div className="flex gap-2">
-          {/*          <Button variant={'secondary'} onClick={handleReturnTask}>
-            להחזיר
-          </Button>*/}
-          <Button variant={'secondary'} onClick={handleFinishTask}>
+          <Button 
+            variant={'secondary'} 
+            onClick={handleFinishTask}
+            disabled={rowData?.handled}
+          >
             לסיים
           </Button>
         </div>
