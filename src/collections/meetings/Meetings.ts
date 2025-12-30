@@ -8,6 +8,12 @@ import {
   futureMeetingsEndpoint,
   meetingForVotingEndPoint,
 } from './endpoints/MeetingsEndpoints'
+import {
+  getVotedCompaniesEndpoint,
+  getNotVotedCompaniesEndpoint,
+  getHistoricalHoldingsEndpoint,
+  getCompaniesOrderEndpoint,
+} from './endpoints/VotingDataEndpoints'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
 import uploadMeetingsCsvEndPoint from './feeds/uploadMeetingsCsvEndPoint'
@@ -1593,6 +1599,26 @@ export const Meetings: CollectionConfig = {
       path: '/removeFund',
       method: 'post',
       handler: removeFundEndpoint,
+    },
+    {
+      path: '/voting-data/voted-companies',
+      method: 'get',
+      handler: getVotedCompaniesEndpoint,
+    },
+    {
+      path: '/voting-data/not-voted-companies',
+      method: 'get',
+      handler: getNotVotedCompaniesEndpoint,
+    },
+    {
+      path: '/voting-data/companies-order',
+      method: 'get',
+      handler: getCompaniesOrderEndpoint,
+    },
+    {
+      path: '/voting-data/historical-holdings',
+      method: 'get',
+      handler: getHistoricalHoldingsEndpoint,
     },
   ],
 }

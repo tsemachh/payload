@@ -1,21 +1,12 @@
 import { useEffect, useState, useMemo } from 'react'
-import { stringify } from 'qs-esm'
 import { useDocumentInfo } from '@payloadcms/ui'
-import { calculateHoldingValues } from '@/utils/dataUtils'
-import {
-  getParentCompanyId,
-  groupCompaniesByParent,
-  groupCompaniesByParentAndChecksum,
-} from '@/utils/voteGrouping'
-import { getParentCompanyNamesByIds } from '@/utils/utils'
+import { groupCompaniesByParent, groupCompaniesByParentAndChecksum } from '@/utils/voteGrouping'
 import {
   sortGroupsByParentOrder,
   sortNestedGroupsByParentOrder,
   sortCompaniesWithinGroup,
   sortChecksumGroupsByFirstCompanyOrder,
 } from '@/utils/companySort'
-import { FundWithHolding } from '@/payload-types'
-import { HistoricalHolding } from '@/payload-types'
 
 interface Company {
   id: string
@@ -78,12 +69,77 @@ export const useVotingData = () => {
     direction: 'asc' | 'desc'
   }>({ field: null, direction: 'asc' })
 
+  const fetchCompanyOrderMap = async () => {
+    try {
+      const response = await fetch(`/api/meetings/voting-data/companies-order`)
+      if (response.ok) {
+        const data: [string, string][] = await response.json()
+        const companyOrderMap = new Map<string, string>(data)
+        return companyOrderMap
+      }
+      return new Map<string, string>()
+    } catch (e) {
+      console.error('Error fetching company order map:', e)
+      return new Map<string, string>()
+    }
+  }
+
+  // Fetch voted companies data
+  const fetchVotedCompaniesData = async (meetingId: string) => {
+    try {
+      const votedResponse = await fetch(
+        `/api/meetings/voting-data/voted-companies?meetingId=${meetingId}`,
+      )
+      if (votedResponse.ok) {
+        return await votedResponse.json()
+      }
+      return []
+    } catch (e) {
+      console.error('Error fetching voted companies:', e)
+      return []
+    }
+  }
+
+  // Fetch not voted companies data
+  const fetchNotVotedCompaniesData = async (meetingId: string) => {
+    try {
+      const notVotedResponse = await fetch(
+        `/api/meetings/voting-data/not-voted-companies?meetingId=${meetingId}`,
+      )
+      if (notVotedResponse.ok) {
+        return await notVotedResponse.json()
+      }
+      return []
+    } catch (e) {
+      console.error('Error fetching not voted companies:', e)
+      return []
+    }
+  }
+
+  // Fetch historical holdings data
+  const fetchHistoricalHoldingsData = async (meetingId: string) => {
+    try {
+      const historicalResponse = await fetch(
+        `/api/meetings/voting-data/historical-holdings?meetingId=${meetingId}`,
+      )
+      if (historicalResponse.ok) {
+        return await historicalResponse.json()
+      }
+      return []
+    } catch (e) {
+      console.error('Error fetching historical holdings:', e)
+      return []
+    }
+  }
+
   useEffect(() => {
     if (!data) return
 
     const fetchCompaniesData = async () => {
       if (!Array.isArray(data.companies)) {
         setVotedCompanies([])
+        setNotVotedCompanies([])
+        setHistoricalHoldings([])
         setVotedLoading(false)
         setNotVotedLoading(false)
         setHistoricalLoading(false)
@@ -91,419 +147,41 @@ export const useVotingData = () => {
       }
 
       try {
-        // Initialize passiveMap
-        const passiveMap = new Map<string, boolean>()
-        const meetingFundIds = (data.funds || []) as string[]
+        const meetingId = data?.id
+        if (!meetingId) return
 
-        let votesDetails: any[] = []
-        try {
-          const meetingId = data?.id
-          if (meetingId) {
-            const votesQuery = stringify({
-              where: {
-                meeting: { equals: meetingId },
-              },
-              select: {
-                id: true,
-                company: true,
-                companyName: true,
-                parentCompany: true,
-                creator: true,
-                updatedAt: true,
-                createdAt: true,
-                notes: true,
-                reported: true,
-                checksum: true,
-              },
-              joins: false,
-              paging: false,
-              depth: 0,
-              limit: 0,
-            })
-            const votesResponse = await fetch(`/api/votes?${votesQuery}`)
-            if (votesResponse.ok) {
-              const votesResponseData = await votesResponse.json()
-              votesDetails = votesResponseData.docs || []
-            }
-          }
-        } catch (e) {
-          console.error('Error fetching votes:', e)
-        }
+        // Fetch all three data sources in parallel
+        const [companyOrderMap, votedCompaniesData, notVotedCompaniesData, historicalHoldingsData] =
+          await Promise.all([
+            fetchCompanyOrderMap(),
+            fetchVotedCompaniesData(meetingId),
+            fetchNotVotedCompaniesData(meetingId),
+            fetchHistoricalHoldingsData(meetingId),
+          ])
 
-        // Fetch stock value data if we have a stock value ID
-        let stockValueData = null
-        if (data.stockValue && typeof data.stockValue === 'string') {
-          try {
-            const stockValueResponse = await fetch(`/api/stock-values/${data.stockValue}`)
-            if (stockValueResponse.ok) {
-              stockValueData = await stockValueResponse.json()
-            }
-          } catch (error) {
-            console.error('Error fetching stock value:', error)
-          }
-        } else if (typeof data.stockValue === 'object') {
-          stockValueData = data.stockValue
-        }
-
-        // Get all company IDs from the meeting
-        const meetingCompanyIds = (data.companies || []) as string[]
-
-        const companyNamesMap = new Map<string, { name: string; parentCompanyId: string }>()
-        const tempCompanyOrderMap = new Map<string, string>()
-
-        // Collect unique parent company IDs from votes
-        const parentCompanyIds = new Set<string>()
-        votesDetails.forEach((vote: any) => {
-          const parentId = getParentCompanyId(vote.parentCompany)
-          if (parentId) {
-            parentCompanyIds.add(parentId)
-          }
-        })
-
-        // Prepare combined company IDs query (meeting companies + parent companies + funds)
-        const allCompanyIdsToFetch = new Set([
-          ...meetingCompanyIds,
-          ...Array.from(parentCompanyIds),
-          ...meetingFundIds,
-        ])
-
-        if (allCompanyIdsToFetch.size > 0) {
-          try {
-            const companiesQuery = stringify(
-              {
-                where: {
-                  id: { in: Array.from(allCompanyIdsToFetch) },
-                },
-                select: {
-                  name: true,
-                  parentCompany: true,
-                  _order: true,
-                  passiveFund: true,
-                },
-                depth: 0,
-                limit: 0,
-                joins: false,
-                paging: false,
-                sort: '_order',
-              },
-              { addQueryPrefix: true },
-            )
-            const companiesResponse = await fetch(`/api/companies${companiesQuery}`)
-            if (companiesResponse.ok) {
-              const companiesData = await companiesResponse.json()
-              companiesData.docs?.forEach((company: any, index: number) => {
-                tempCompanyOrderMap.set(
-                  company.id,
-                  company._order !== undefined
-                    ? String(company._order)
-                    : String(index).padStart(10, '0'),
-                )
-                // Populate passiveMap for funds
-                if (meetingFundIds.includes(company.id)) {
-                  passiveMap.set(company.id, company.passiveFund || false)
-                }
-                // Only add to companyNamesMap if it's a meeting company
-                if (meetingCompanyIds.includes(company.id)) {
-                  const parentId = getParentCompanyId(company.parentCompany) || ''
-                  companyNamesMap.set(company.id, {
-                    name: company.name,
-                    parentCompanyId: parentId,
-                  })
-                }
-              })
-            }
-          } catch (error) {
-            console.error('Error fetching companies details:', error)
-          }
-        }
-
-        // Fetch parent company names
-        const parentCompanyNamesMap = await getParentCompanyNamesByIds(Array.from(parentCompanyIds))
-        setCompanyOrderMap(tempCompanyOrderMap)
-
-        // Map companies with voting status and calculate holding values
-        setVotedLoading(true)
-        const processedCompanies = votesDetails.map((vote: any) => {
-          // Calculate holding values for this company
-          let calculatedValues = {
-            nominalValue: 0,
-            percentageHolding: 0,
-            holdingValueInMillions: 0,
-          }
-
-          let hasRelatedStock = false
-          if (Array.isArray(data.fundsWithHolding)) {
-            // Filter fundsWithHolding by company id to get quantity
-            const companyHoldings = data.fundsWithHolding.filter((holding: any) => {
-              return holding.company === vote.company
-            })
-            if (companyHoldings.length > 0) {
-              // Sum up quantities for this company
-              const totalQuantity = companyHoldings.reduce((sum: number, holding: any) => {
-                return sum + (holding.ownedQuantity || holding.quantity || 0)
-              }, 0)
-              // Calculate holding values using the imported function
-              calculatedValues = calculateHoldingValues(totalQuantity, stockValueData)
-              // Check if any holding has fromRelatedStock set to true
-              hasRelatedStock = companyHoldings.some(
-                (holding: any) => holding.fromRelatedStock === true,
-              )
-            }
-          }
-
-          const parentCompanyId = getParentCompanyId(vote.parentCompany) || ''
-          const parentCompanyName = parentCompanyId
-            ? parentCompanyNamesMap.get(parentCompanyId) || vote.companyName
-            : vote.companyName
-
-          // Check if all funds holding this company are passive
-          const companyFunds =
-            data.fundsWithHolding?.filter(
-              (holding: NonNullable<FundWithHolding>[number]) => holding.company === vote.company,
-            ) || []
-          const hasOnlyPassiveFunds =
-            companyFunds.length > 0 &&
-            companyFunds.every(
-              (holding: NonNullable<FundWithHolding>[number]) =>
-                passiveMap.get(holding.fund || '') === true,
-            )
-
-          return {
-            id: vote.company,
-            name: vote.companyName,
-            parentCompany: parentCompanyName,
-            parentCompanyId: parentCompanyId,
-            nominalValue: calculatedValues.nominalValue,
-            percentageHolding: calculatedValues.percentageHolding,
-            hasRelatedStock,
-            passiveFunds: hasOnlyPassiveFunds,
-            vote: {
-              id: vote.id,
-              voter:
-                typeof vote.creator === 'string'
-                  ? vote.creator
-                  : vote.creator?.name || vote.creator?.email || 'Unknown',
-              votedAt: vote.updatedAt || vote.createdAt || new Date().toISOString(),
-              notes: vote.notes || '',
-              reported: vote.reported || false,
-              checksum: vote.checksum || '',
-            },
-          }
-        })
-        setVotedCompanies(processedCompanies)
+        // Update all state at once to avoid multiple re-renders
+        setCompanyOrderMap(companyOrderMap)
+        setVotedCompanies(votedCompaniesData)
+        setNotVotedCompanies(notVotedCompaniesData)
+        setHistoricalHoldings(historicalHoldingsData)
         setVotedLoading(false)
-
-        // Calculate not voted companies
-        setNotVotedLoading(true)
-        const votedCompanyIds = new Set(processedCompanies.map((c) => c.id))
-        const notVoted = meetingCompanyIds
-          .filter((companyId) => !votedCompanyIds.has(companyId))
-          .map((companyId) => {
-            const companyInfo = companyNamesMap.get(companyId)
-            if (!companyInfo) return null
-
-            // Calculate holding values for this company
-            let calculatedValues = {
-              nominalValue: 0,
-              percentageHolding: 0,
-              holdingValueInMillions: 0,
-            }
-
-            let hasRelatedStock = false
-            if (Array.isArray(data.fundsWithHolding)) {
-              // Filter fundsWithHolding by company id to get quantity
-              const companyHoldings = data.fundsWithHolding.filter((holding: any) => {
-                return holding.company === companyId
-              })
-              if (companyHoldings.length > 0) {
-                // Sum up quantities for this company
-                const totalQuantity = companyHoldings.reduce((sum: number, holding: any) => {
-                  return sum + (holding.ownedQuantity || holding.quantity || 0)
-                }, 0)
-                // Calculate holding values using the imported function
-                calculatedValues = calculateHoldingValues(totalQuantity, stockValueData)
-                // Check if any holding has fromRelatedStock set to true
-                hasRelatedStock = companyHoldings.some(
-                  (holding: any) => holding.fromRelatedStock === true,
-                )
-              }
-            }
-
-            const parentCompanyName = companyInfo.parentCompanyId
-              ? parentCompanyNamesMap.get(companyInfo.parentCompanyId) || companyInfo.name
-              : companyInfo.name
-
-            // Check if all funds holding this company are passive
-            const companyFunds =
-              data.fundsWithHolding?.filter(
-                (holding: NonNullable<FundWithHolding>[number]) => holding.company === companyId,
-              ) || []
-
-            const hasOnlyPassiveFunds =
-              companyFunds.length > 0 &&
-              companyFunds.every(
-                (holding: NonNullable<FundWithHolding>[number]) =>
-                  passiveMap.get(holding.fund || '') === true,
-              )
-
-            return {
-              id: companyId,
-              name: companyInfo.name,
-              parentCompany: parentCompanyName,
-              parentCompanyId: companyInfo.parentCompanyId,
-              nominalValue: calculatedValues.nominalValue,
-              percentageHolding: calculatedValues.percentageHolding,
-              hasRelatedStock,
-              passiveFunds: hasOnlyPassiveFunds,
-            }
-          })
-          .filter((company) => company !== null) as Company[]
-        setNotVotedCompanies(notVoted)
         setNotVotedLoading(false)
-
-        // Process historical holdings (companies that held 30 days before but not invited)
-        const raw = data.historicalHoldings
-        const historicalHoldingsData = Array.isArray(raw) ? raw : ([] as HistoricalHolding)
-        if (historicalHoldingsData && historicalHoldingsData.length > 0) {
-          setHistoricalLoading(true)
-          // Get unique company IDs from historical holdings
-          const historicalCompanyIds = [
-            ...new Set(historicalHoldingsData.map((h) => h.company)),
-          ] as string[]
-
-          // Get unique fund IDs from historical holdings
-          const historicalFundIds = [
-            ...new Set(historicalHoldingsData.map((h) => h.fund)),
-          ] as string[]
-
-          // Fetch company names and fund names for historical holdings
-          if (historicalCompanyIds.length > 0 || historicalFundIds.length > 0) {
-            try {
-              // Combine company IDs and fund IDs into a single query since both are in companies collection
-              const allIds = [...new Set([...historicalCompanyIds, ...historicalFundIds])]
-
-              const companiesQuery = stringify(
-                {
-                  where: {
-                    id: { in: allIds },
-                  },
-                  select: {
-                    name: true,
-                  },
-                  joins: false,
-                  paging: false,
-                  depth: 0,
-                  limit: 0,
-                },
-                { addQueryPrefix: true },
-              )
-              const companiesResponse = await fetch(`/api/companies${companiesQuery}`)
-
-              const namesMap = new Map<string, string>()
-
-              if (companiesResponse.ok) {
-                const companiesData = await companiesResponse.json()
-                companiesData.docs?.forEach((item: { id: string; name: string }) => {
-                  namesMap.set(item.id, item.name)
-                })
-              }
-
-              // Group historical holdings by company and aggregate quantities
-              const groupedByCompany = new Map<
-                string,
-                {
-                  lastDate: string
-                  totalQuantity: number
-                  fundDetails: Map<
-                    string,
-                    { fundName: string; quantity: number; lastHoldingDate: string }
-                  >
-                }
-              >()
-              historicalHoldingsData.forEach((holding: NonNullable<HistoricalHolding>[number]) => {
-                const companyId = holding.company
-                const fundId = holding.fund
-
-                // Skip if companyId or fundId is null/undefined
-                if (!companyId || !fundId) return
-
-                const existing = groupedByCompany.get(companyId)
-                const holdingDate = holding.lastHoldingDate || ''
-                const quantity = holding.quantity || 0
-
-                if (!existing) {
-                  const fundDetailsMap = new Map<
-                    string,
-                    { fundName: string; quantity: number; lastHoldingDate: string }
-                  >()
-                  fundDetailsMap.set(fundId, {
-                    fundName: namesMap.get(fundId) || fundId,
-                    quantity,
-                    lastHoldingDate: holdingDate,
-                  })
-                  groupedByCompany.set(companyId, {
-                    lastDate: holdingDate,
-                    totalQuantity: quantity,
-                    fundDetails: fundDetailsMap,
-                  })
-                } else {
-                  // Update last date if this holding is more recent
-                  if (new Date(holdingDate) > new Date(existing.lastDate)) {
-                    existing.lastDate = holdingDate
-                  }
-                  // Add to total quantity
-                  existing.totalQuantity += quantity
-                  // Add or update fund details
-                  const existingFund = existing.fundDetails.get(fundId)
-                  if (existingFund) {
-                    existingFund.quantity += quantity
-                    // Update fund's last holding date if this one is more recent
-                    if (new Date(holdingDate) > new Date(existingFund.lastHoldingDate)) {
-                      existingFund.lastHoldingDate = holdingDate
-                    }
-                  } else {
-                    existing.fundDetails.set(fundId, {
-                      fundName: namesMap.get(fundId) || fundId,
-                      quantity,
-                      lastHoldingDate: holdingDate,
-                    })
-                  }
-                }
-              })
-
-              // Create historical holdings array
-              const processedHistoricalHoldings: HistoricalHoldingUi[] = Array.from(
-                groupedByCompany.entries(),
-              ).map(([companyId, holdingData]) => ({
-                id: companyId,
-                companyId,
-                companyName: namesMap.get(companyId) || companyId,
-                lastHoldingDate: holdingData.lastDate,
-                quantity: holdingData.totalQuantity,
-                fundDetails: Array.from(holdingData.fundDetails.entries()).map(
-                  ([fundId, fundData]) => ({
-                    fundId,
-                    fundName: fundData.fundName,
-                    quantity: fundData.quantity,
-                    lastHoldingDate: fundData.lastHoldingDate,
-                  }),
-                ),
-              }))
-
-              setHistoricalHoldings(processedHistoricalHoldings)
-            } catch (error) {
-              console.error('Error fetching historical holdings company names:', error)
-            }
-          }
-          setHistoricalLoading(false)
-        } else {
-          setHistoricalLoading(false)
-        }
+        setHistoricalLoading(false)
       } catch (error) {
         console.error('Error fetching companies data:', error)
         setVotedCompanies([])
+        setNotVotedCompanies([])
+        setHistoricalHoldings([])
+        setVotedLoading(false)
+        setNotVotedLoading(false)
+        setHistoricalLoading(false)
       }
     }
+
+    // Set all loading states to true before fetching
+    setVotedLoading(true)
+    setNotVotedLoading(true)
+    setHistoricalLoading(true)
 
     fetchCompaniesData()
   }, [data])
@@ -670,7 +348,7 @@ export const useVotingData = () => {
           companyOrderMap,
         )
 
-        sortedChecksumEntries.forEach(([checksum, checksumCompanies]) => {
+        sortedChecksumEntries.forEach(([, checksumCompanies]) => {
           const groupColor = colorPalette[checksumGroupIndex % colorPalette.length]
           checksumGroupIndex++
 
@@ -783,7 +461,6 @@ export const useVotingData = () => {
             } else {
               value = row[field] || ''
             }
-
             if (columnKey === 'nominalValue' && value) {
               value = Number(value).toLocaleString()
             } else if (columnKey === 'percentageHolding' && value) {

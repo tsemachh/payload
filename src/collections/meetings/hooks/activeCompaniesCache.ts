@@ -2,6 +2,7 @@
 // Shared between Companies collection hooks and meetings processing
 
 import { Payload } from 'payload'
+import { createCompanyOrderMap } from '@/utils/utils'
 
 // Minimal company shape we want to cache and expose
 export type CachedCompany = {
@@ -36,6 +37,7 @@ type ActiveCompaniesCache = {
   fundToCompany: Record<string, string>
   // map of any company id -> minimal cached data
   byId: Record<string, CachedCompany>
+  orderMap: Map<string, string>
 } | null
 
 let __activeFundsCache: ActiveCompaniesCache = null
@@ -45,6 +47,7 @@ export function setActiveFundsCache(
   companyToFunds?: Record<string, string[]>,
   fundToCompany?: Record<string, string>,
   byId?: Record<string, CachedCompany>,
+  orderMap?: Map<string, string>,
 ) {
   const uniqueIds = Array.from(new Set(ids)).map(String)
   __activeFundsCache = {
@@ -52,6 +55,7 @@ export function setActiveFundsCache(
     companyToFunds: companyToFunds || {},
     fundToCompany: fundToCompany || {},
     byId: byId || {},
+    orderMap: orderMap || new Map(),
   }
 }
 
@@ -77,9 +81,15 @@ export function getCompanyDataById(id: string): CachedCompany | null {
   return __activeFundsCache.byId[String(id)] || null
 }
 
+// --- New getters for standardized access to cached company data ---
+export function getCompanyOrderMap(): Map<string, string> | null {
+  if (!__activeFundsCache) return null
+  return __activeFundsCache.orderMap || new Map()
+}
+
 export function getRegularCompanies(): CachedCompany[] {
   if (!__activeFundsCache) return []
-  return Object.values(__activeFundsCache.byId).filter(company => company.type === 'regular')
+  return Object.values(__activeFundsCache.byId).filter((company) => company.type === 'regular')
 }
 
 export function getCompanyNameById(id: string): string | null {
@@ -120,11 +130,14 @@ export async function preloadCompaniesCache(payload: Payload) {
         type: true,
       },
       pagination: false,
+      sort: '_order',
       limit: 0,
       depth: 0,
     })
 
     const docs: any[] = Array.isArray(res?.docs) ? res.docs : []
+
+    const orderMap = createCompanyOrderMap(docs)
 
     // Only funds go to ids; byId will include all active companies
     const ids: string[] = []
@@ -157,7 +170,7 @@ export async function preloadCompaniesCache(payload: Payload) {
       }
     }
 
-    setActiveFundsCache(ids, companyToFunds, fundToCompany, byId)
+    setActiveFundsCache(ids, companyToFunds, fundToCompany, byId, orderMap)
   } catch (e) {
     console.error('preloadCompaniesCache', e)
     throw e
