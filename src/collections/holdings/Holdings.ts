@@ -211,6 +211,12 @@ export const Holdings: CollectionConfig = {
       fields: ['fund', 'valueDate'],
     },
     {
+      fields: ['fund', 'createdAt'],
+    },
+    {
+      fields: ['company', 'valueDate', 'fund'],
+    },
+    {
       fields: ['fund', 'valueDate', 'holdings.stock'],
     },
   ],

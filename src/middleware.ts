@@ -14,8 +14,14 @@ export async function middleware(request: NextRequest) {
 
     if (!hasPayloadToken && search) {
       const url = request.nextUrl.clone()
+      const redirect = url.searchParams.get('redirect')
+      if (redirect) {
+        const [path] = redirect.split('?')
+        url.searchParams.set('redirect', path)
+        return NextResponse.rewrite(url)
+      }
       url.search = ''
-      return NextResponse.redirect(url)
+      return NextResponse.rewrite(url)
     }
   }
 

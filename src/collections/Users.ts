@@ -174,6 +174,11 @@ export const Users: CollectionConfig = {
       },
     },
   },
+  indexes: [
+    {
+      fields: ['companies.companyId', 'companies.permission', 'createdAt'],
+    },
+  ],
   fields: [
     {
       type: 'tabs',
