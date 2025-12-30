@@ -187,10 +187,9 @@ export function DataTableStatic<T extends Record<string, any>>({
         displayMode === 'companies' ? setCompaniesExpandedRowsWithScroll : () => {}
       const setFundsState = displayMode === 'companies' ? setFundsExpandedRowsWithScroll : () => {}
 
-      // Pass agendas state only if displayMode is 'agenda'
-      const agendasState = displayMode === 'agenda' ? agendasExpandedRows : undefined
-      const setAgendasState =
-        displayMode === 'agenda' ? setAgendasExpandedRowsWithScroll : undefined
+      // Always pass agendas state - it's needed for both display modes
+      const agendasState = agendasExpandedRows
+      const setAgendasState = setAgendasExpandedRowsWithScroll
 
       return createColumnsWithExpand(
         companiesState,
@@ -202,7 +201,7 @@ export function DataTableStatic<T extends Record<string, any>>({
       )
     }
     return initialColumns
-  }, [createColumnsWithExpand, data, initialColumns, displayMode])
+  }, [createColumnsWithExpand, data, initialColumns, displayMode, companiesExpandedRows, agendasExpandedRows, setCompaniesExpandedRowsWithScroll, setFundsExpandedRowsWithScroll, setAgendasExpandedRowsWithScroll])
 
   useEffect(() => {
     setInputSearchTerm(searchTerm)
