@@ -35,6 +35,9 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
       collection: 'meetings',
       id: meetingId,
       depth: 0,
+      select: {
+        removedCompanies: true,
+      },
     })
 
     if (!meeting) {
@@ -52,6 +55,10 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
       collection: 'companies',
       id: companyId,
       depth: 0,
+      select: {
+        name: true,
+        subCompanies: true,
+      },
     })
 
     // Check if company is already in removedCompanies
@@ -150,6 +157,9 @@ export const restoreCompanyEndpoint = async (req: PayloadRequest) => {
       collection: 'meetings',
       id: meetingId,
       depth: 0,
+      select: {
+        removedCompanies: true,
+      },
     })
 
     if (!meeting) {
@@ -167,6 +177,10 @@ export const restoreCompanyEndpoint = async (req: PayloadRequest) => {
       collection: 'companies',
       id: companyId,
       depth: 0,
+      select: {
+        name: true,
+        subCompanies: true,
+      },
     })
 
     // Check if company is in removedCompanies

@@ -21,10 +21,12 @@ import {
   CommandItem,
   CommandList,
 } from '@/app/(frontend)/components/ui/command'
-import { Company } from '@/payload-types'
-
+type companyIdName = {
+  id: string
+  name: string
+}
 export const ManageMeetingCompanies = () => {
-  const { id, data: dataChange } = useDocumentInfo()
+  const { id, data } = useDocumentInfo()
 
   const router = useRouter()
 
@@ -35,14 +37,14 @@ export const ManageMeetingCompanies = () => {
   const [selectedAddId, setSelectedAddId] = useState('')
   const [selectedRemoveId, setSelectedRemoveId] = useState('')
   const [selectedRestoreId, setSelectedRestoreId] = useState('')
-  const [availableCompanies, setAvailableCompanies] = useState<any[]>([])
-  const [currentCompanies, setCurrentCompanies] = useState<any[]>([])
-  const [removedCompanies, setRemovedCompanies] = useState<any[]>([])
+  const [availableCompanies, setAvailableCompanies] = useState<companyIdName[]>([])
+  const [currentCompanies, setCurrentCompanies] = useState<companyIdName[]>([])
+  const [removedCompanies, setRemovedCompanies] = useState<companyIdName[]>([])
   const [meetingData, setMeetingData] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
   // Fund selection state
-  const [availableFunds, setAvailableFunds] = useState<any[]>([])
+  const [availableFunds, setAvailableFunds] = useState<companyIdName[]>([])
   const [selectedFunds, setSelectedFunds] = useState<string[]>([])
   const [showFundSelection, setShowFundSelection] = useState(false)
   const [fundHoldingValues, setFundHoldingValues] = useState<Record<string, number>>({})
@@ -63,47 +65,88 @@ export const ManageMeetingCompanies = () => {
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(false)
 
   // Refs to prevent duplicate calls
-  const isFetchingMeetingData = useRef(false)
   const isFetchingCompanies = useRef(false)
 
   // Fetch data
   useEffect(() => {
-    if (id) fetchMeetingData()
-  }, [dataChange])
-
-  const fetchMeetingData = async () => {
-    // Prevent duplicate calls using ref
-    if (isFetchingMeetingData.current) {
-      return
-    }
-
-    isFetchingMeetingData.current = true
-    try {
-      // Fetch meeting data using the new endpoint
-      const res = await fetch(
-        `/api/meetings/manage-companies-help?action=getMeetingData&meetingId=${id}`,
-        {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        },
-      )
-      const data = await res.json()
+    const fetchCompanyData = async () => {
       setMeetingData(data)
+      const companiesInMeeting = data?.companies || []
+      const removedCompaniesList = data?.removedCompanies || []
 
-      const companiesInMeeting = data.companies || []
-      setCurrentCompanies(companiesInMeeting)
+      // Collect all company IDs
+      const allCompanyIds = [...companiesInMeeting, ...removedCompaniesList]
 
-      const removedCompaniesList = data.removedCompanies || []
-      setRemovedCompanies(removedCompaniesList)
-    } catch (err) {
-      console.error('Error fetching meeting data:', err)
-    } finally {
-      isFetchingMeetingData.current = false
+      if (allCompanyIds.length > 0) {
+        try {
+          const response = await fetch('/api/companies/get-company-names', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ companyids: allCompanyIds }),
+          })
+
+          if (response.ok) {
+            const result = await response.json()
+            const companyMap = new Map(
+              result.data.map((company: { id: string; name: string | null }) => [
+                company.id,
+                { id: company.id, name: company.name ?? 'Unknown' },
+              ]),
+            )
+
+            // Set current companies with id and name
+            const currentWithNames = companiesInMeeting.map(
+              (id: string) => companyMap.get(id) || { id, name: 'Unknown' },
+            )
+            setCurrentCompanies(currentWithNames)
+
+            // Set removed companies with id and name
+            const removedWithNames = removedCompaniesList.map(
+              (id: string) => companyMap.get(id) || { id, name: 'Unknown' },
+            )
+            setRemovedCompanies(removedWithNames)
+          } else {
+            // Fallback to original IDs if fetch fails
+            const currentWithNames = companiesInMeeting.map((id: string) => ({
+              id,
+              name: 'Unknown',
+            }))
+            setCurrentCompanies(currentWithNames)
+            const removedWithNames = removedCompaniesList.map((id: string) => ({
+              id,
+              name: 'Unknown',
+            }))
+            setRemovedCompanies(removedWithNames)
+          }
+        } catch (error) {
+          console.error('Error fetching company names:', error)
+          // Fallback to original IDs if fetch fails
+          const currentWithNames = companiesInMeeting.map((id: string) => ({ id, name: 'Unknown' }))
+          setCurrentCompanies(currentWithNames)
+          const removedWithNames = removedCompaniesList.map((id: string) => ({
+            id,
+            name: 'Unknown',
+          }))
+          setRemovedCompanies(removedWithNames)
+        }
+      } else {
+        setCurrentCompanies([])
+        setRemovedCompanies([])
+      }
     }
-  }
+
+    fetchCompanyData()
+  }, [id, data])
 
   // Fetch regular companies - called after stock selection
   const fetchRegularCompanies = async () => {
+    // Skip if already have companies loaded
+    if (availableCompanies.length > 0) {
+      return
+    }
+
     // Prevent duplicate calls using ref
     if (isFetchingCompanies.current) {
       return
@@ -112,12 +155,15 @@ export const ManageMeetingCompanies = () => {
     isFetchingCompanies.current = true
     setIsLoadingCompanies(true)
     try {
-      const allRes = await fetch(`/api/meetings/manage-companies-help?action=getRegularCompanies`, {
+      const allRes = await fetch(`/api/companies/get-regular-companies`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       })
       const allData = await allRes.json()
-      setAvailableCompanies(allData.docs || [])
+      // Normalize available companies so `name` is always a string
+      setAvailableCompanies(
+        (allData.docs || []).map((c: companyIdName) => ({ id: c.id, name: c.name ?? 'Unknown' })),
+      )
     } catch (err) {
       console.error('Error fetching companies:', err)
       toast.error('שגיאה בטעינת חברות')
@@ -129,19 +175,22 @@ export const ManageMeetingCompanies = () => {
 
   // Fetch stock details and check if foreign
   const fetchStockDetails = async () => {
+    const stockId =
+      typeof meetingData?.stock === 'string' ? meetingData.stock : meetingData?.stock?.id
+
+    // Skip if already have stocks loaded
+    if (availableStocks.length > 0) {
+      setSelectedStockId(stockId || '')
+      return
+    }
+
     setIsLoadingStocks(true)
     try {
-      const stockId =
-        typeof meetingData.stock === 'string' ? meetingData.stock : meetingData.stock?.id
-
       // Fetch stock details using the new endpoint
-      const res = await fetch(
-        `/api/meetings/manage-companies-help?action=getStockDetails&stockId=${stockId}`,
-        {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        },
-      )
+      const res = await fetch(`/api/companies/get-stock-details?stockId=${stockId}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
       const stockData = await res.json()
 
       // Build available stocks list: main stock + related stocks
@@ -170,22 +219,14 @@ export const ManageMeetingCompanies = () => {
   }
 
   // Fetch funds for selected company
-  const fetchFundsForCompany = async (company: Company) => {
+  const fetchFundsForCompany = async (companyId: string) => {
     setIsLoadingFunds(true)
     try {
-      // Convert subCompanies array to comma-separated string
-      const subCompaniesParam = Array.isArray(company.subCompanies)
-        ? company.subCompanies.map((sc: any) => (typeof sc === 'string' ? sc : sc.id)).join(',')
-        : company.subCompanies
-
       // Fetch funds using the new endpoint
-      const res = await fetch(
-        `/api/meetings/manage-companies-help?action=getFundsForCompany&subCompanies=${subCompaniesParam}`,
-        {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        },
-      )
+      const res = await fetch(`/api/companies/get-funds-for-company?companyId=${companyId}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
       const data = await res.json()
       setAvailableFunds(data.docs || [])
       setShowFundSelection(true)
@@ -208,11 +249,12 @@ export const ManageMeetingCompanies = () => {
   }
 
   // Handle company selection - show fund selection
-  const handleCompanySelect = (company: Company) => {
-    setSelectedAddId(company.id)
+  const handleCompanySelect = (companyId: string) => {
+    setSelectedAddId(companyId)
     setOpenAdd(false)
 
-    fetchFundsForCompany(company)
+    // Fetch funds for the selected company
+    fetchFundsForCompany(companyId)
   }
 
   // Move from stock selection to company selection
@@ -247,7 +289,7 @@ export const ManageMeetingCompanies = () => {
           meetingId: id,
           companyId: selectedAddId,
           stockId: stockToUse,
-          holdingLimit: meetingData.holdingsLimit,
+          holdingLimit: meetingData?.holdingsLimit,
           funds: selectedFunds.map((fundId) => ({
             fundId,
             holdingValue: fundHoldingValues[fundId] || 1,
@@ -280,7 +322,6 @@ export const ManageMeetingCompanies = () => {
         setFundHoldingValues({})
         setSelectedStockId('')
         setShowStockSelection(false)
-        setAvailableStocks([])
         // Refresh the page to update Payload's document state
         const currentPath = window.location.pathname
         router.push(currentPath)
@@ -411,20 +452,14 @@ export const ManageMeetingCompanies = () => {
 
   // Helper: get name for remove
   const getRemoveName = () => {
-    const company = currentCompanies.find((c) => {
-      const cid = typeof c === 'string' ? c : c.id
-      return cid === selectedRemoveId
-    })
-    return typeof company === 'string' ? company : company?.name || selectedRemoveId
+    const company = currentCompanies.find((c) => c.id === selectedRemoveId)
+    return company?.name || selectedRemoveId
   }
 
   // Helper: get name for restore
   const getRestoreName = () => {
-    const company = removedCompanies.find((c) => {
-      const cid = typeof c === 'string' ? c : c.id
-      return cid === selectedRestoreId
-    })
-    return typeof company === 'string' ? company : company?.name || selectedRestoreId
+    const company = removedCompanies.find((c) => c.id === selectedRestoreId)
+    return company?.name || selectedRestoreId
   }
 
   // Helper: get selected stock name
@@ -492,7 +527,6 @@ export const ManageMeetingCompanies = () => {
             setFundHoldingValues({})
             setSelectedStockId('')
             setShowStockSelection(false)
-            setAvailableStocks([])
             setOpenAdd(false)
           }
         }}
@@ -592,7 +626,7 @@ export const ManageMeetingCompanies = () => {
                                 key={company.id}
                                 value={company.id}
                                 keywords={[company.name]}
-                                onSelect={() => handleCompanySelect(company)}
+                                onSelect={() => handleCompanySelect(company.id)}
                                 className="cursor-pointer"
                               >
                                 <Check
@@ -741,7 +775,6 @@ export const ManageMeetingCompanies = () => {
                 setFundHoldingValues({})
                 setSelectedStockId('')
                 setShowStockSelection(false)
-                setAvailableStocks([])
                 setOpenAdd(false)
               }}
               disabled={isProcessing}
@@ -803,15 +836,13 @@ export const ManageMeetingCompanies = () => {
                       }
                     >
                       {currentCompanies.map((company) => {
-                        const cid = typeof company === 'string' ? company : company.id
-                        const cname = typeof company === 'string' ? company : company.name
                         return (
                           <CommandItem
-                            key={cid}
-                            value={cid}
-                            keywords={[cname]}
+                            key={company.id}
+                            value={company.id}
+                            keywords={[company.name]}
                             onSelect={() => {
-                              setSelectedRemoveId(cid)
+                              setSelectedRemoveId(company.id)
                               setOpenRemove(false)
                             }}
                             className="cursor-pointer"
@@ -819,10 +850,10 @@ export const ManageMeetingCompanies = () => {
                             <Check
                               className={cn(
                                 'mr-2 h-4 w-4',
-                                selectedRemoveId === cid ? 'opacity-100' : 'opacity-0',
+                                selectedRemoveId === company.id ? 'opacity-100' : 'opacity-0',
                               )}
                             />
-                            {cname}
+                            {company.name}
                           </CommandItem>
                         )
                       })}
@@ -910,15 +941,13 @@ export const ManageMeetingCompanies = () => {
                       }
                     >
                       {removedCompanies.map((company) => {
-                        const cid = typeof company === 'string' ? company : company.id
-                        const cname = typeof company === 'string' ? company : company.name
                         return (
                           <CommandItem
-                            key={cid}
-                            value={cid}
-                            keywords={[cname]}
+                            key={company.id}
+                            value={company.id}
+                            keywords={[company.name]}
                             onSelect={() => {
-                              setSelectedRestoreId(cid)
+                              setSelectedRestoreId(company.id)
                               setOpenRestore(false)
                             }}
                             className="cursor-pointer"
@@ -926,10 +955,10 @@ export const ManageMeetingCompanies = () => {
                             <Check
                               className={cn(
                                 'mr-2 h-4 w-4',
-                                selectedRestoreId === cid ? 'opacity-100' : 'opacity-0',
+                                selectedRestoreId === company.id ? 'opacity-100' : 'opacity-0',
                               )}
                             />
-                            {cname}
+                            {company.name}
                           </CommandItem>
                         )
                       })}

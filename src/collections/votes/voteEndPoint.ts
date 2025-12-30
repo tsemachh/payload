@@ -11,6 +11,7 @@ import {
   groupVotesByParentAndChecksum,
   createCompanyToParentMapFromVotes,
 } from '@/utils/voteGrouping'
+import { getCompanyNameById } from '@/collections/meetings/hooks/activeCompaniesCache'
 
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
@@ -317,24 +318,12 @@ export const publishVotes = async (req: PayloadRequest) => {
       console.error('Error creating notification for published votes:', error)
     }
 
-    // Get company names for updated votes
-    const updatedCompanyNames = await Promise.all(
-      updatedVotes.map(async (vote) => {
-        const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
-        if (!companyId) return null
-        try {
-          const company = await req.payload.findByID({
-            collection: 'companies',
-            id: companyId,
-            select: { name: true },
-            depth: 0,
-          })
-          return company?.name || null
-        } catch {
-          return null
-        }
-      }),
-    )
+    // Get company names for updated votes//TODO: reachelBra
+    const updatedCompanyNames = updatedVotes.map((vote) => {
+      const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
+      if (!companyId) return null
+      return getCompanyNameById(companyId)
+    })
 
     const validCompanyNames = updatedCompanyNames.filter((name) => name !== null)
 
