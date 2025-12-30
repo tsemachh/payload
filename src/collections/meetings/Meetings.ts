@@ -12,6 +12,7 @@ import {
   getVotedCompaniesEndpoint,
   getNotVotedCompaniesEndpoint,
   getHistoricalHoldingsEndpoint,
+  getCompaniesOrderEndpoint,
 } from './endpoints/VotingDataEndpoints'
 import { IconLinkProps } from '@/admincomponents/link/IconLinkProps'
 import { updateCompaniesMeetingsOnMeetingChange } from './hooks/updateCompaniesMeetings'
@@ -193,9 +194,6 @@ export const Meetings: CollectionConfig = {
   indexes: [
     {
       fields: ['_status', 'meetingDate'],
-    },
-    {
-      fields: ['companies', 'meetingDate'],
     },
   ],
   fields: [
@@ -1611,6 +1609,11 @@ export const Meetings: CollectionConfig = {
       path: '/voting-data/not-voted-companies',
       method: 'get',
       handler: getNotVotedCompaniesEndpoint,
+    },
+    {
+      path: '/voting-data/companies-order',
+      method: 'get',
+      handler: getCompaniesOrderEndpoint,
     },
     {
       path: '/voting-data/historical-holdings',

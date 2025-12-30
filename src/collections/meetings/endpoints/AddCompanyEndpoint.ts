@@ -1,6 +1,7 @@
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { getIdOfRelationField } from '@/utils/utils'
 import { processCompaniesMeetings } from '../hooks/processCompaniesMeetings'
+import { getCompanyDataById } from '../hooks/activeCompaniesCache'
 
 /**
  * Endpoint to add a company to a meeting
@@ -53,14 +54,14 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
     const fundHoldingMap = new Map(funds.map((f) => [f.fundId, f.holdingValue]))
 
     // Use the selected portfolios instead of finding all funds
-    const fundsForCompany = await req.payload.find({
-      collection: 'companies',
-      where: {
-        and: [{ type: { equals: 'fund' } }, { id: { in: fundIds } }],
-      },
-      limit: 0,
-      depth: 0,
-    })
+    const fundsForCompany = {
+      docs: fundIds
+        .map((id) => {
+          const data = getCompanyDataById(id)
+          return data ? { id: data.id, name: data.name } : null
+        })
+        .filter(Boolean),
+    }
 
     if (fundsForCompany.docs.length === 0) {
       return Response.json(
@@ -83,10 +84,14 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
     const existingFunds: Array<{ id: string; name: string }> = []
 
     for (const fund of fundsForCompany.docs) {
-      const fundId = fund.id
-      const fundName = fund.name
-      const holdingValue = fundHoldingMap.get(fundId) || 1 // Get custom value or default to 1
+      const fundId = fund?.id
+      const fundName = fund?.name
+      const holdingValue = fundHoldingMap.get(fundId || '') || 1 // Get custom value or default to 1
       let holdingDoc: any = null
+
+      if (!fundId || !fundName) {
+        continue
+      }
 
       const { docs: lessThanEqualHolding } = await req.payload.find({
         collection: 'holdings',

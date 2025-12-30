@@ -144,19 +144,25 @@ export function toggleAllCompanies(
   setFundsExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
 ) {
   const allMeetingIds = data.map((row) => row.meetingId)
+  // Filter out meetings that have no companies or empty companies array
+  const validMeetingIds = allMeetingIds.filter(id => {
+    const meeting = data.find(row => row.meetingId === id)
+    return meeting && meeting.companies && meeting.companies.length > 0
+  })
+  
   const allCompanyIds = data.flatMap(
     (row) => row.companies?.map((company: any) => company.id) || [],
   )
 
-  // Check if all are expanded
-  const allExpanded = allMeetingIds.every((id) => companiesExpandedRows[id])
+  // Check if all valid meetings are expanded
+  const allExpanded = validMeetingIds.length > 0 && validMeetingIds.every((id) => companiesExpandedRows[id])
 
   // Toggle all to opposite state
   const newState = !allExpanded
 
   setCompaniesExpandedRows((prev) => {
     const updated = { ...prev }
-    allMeetingIds.forEach((id) => {
+    validMeetingIds.forEach((id) => {
       updated[id] = newState
     })
     return updated
@@ -179,16 +185,21 @@ export function toggleAllAgendas(
   setAgendasExpandedRows: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
 ) {
   const allMeetingIds = data.map((row) => row.meetingId)
+  // Filter out meetings that have no agendas or empty agendas array
+  const validMeetingIds = allMeetingIds.filter(id => {
+    const meeting = data.find(row => row.meetingId === id)
+    return meeting && meeting.agendas && meeting.agendas.length > 0
+  })
 
-  // Check if all are expanded
-  const allExpanded = allMeetingIds.every((id) => agendasExpandedRows[id])
+  // Check if all valid meetings are expanded
+  const allExpanded = validMeetingIds.length > 0 && validMeetingIds.every((id) => agendasExpandedRows[id])
 
   // Toggle all to opposite state
   const newState = !allExpanded
 
   setAgendasExpandedRows((prev) => {
     const updated = { ...prev }
-    allMeetingIds.forEach((id) => {
+    validMeetingIds.forEach((id) => {
       updated[id] = newState
     })
     return updated

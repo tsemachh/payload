@@ -1,8 +1,7 @@
 import {
-  getActiveFundsCache,
   getCompanyDataById,
   getManyCompanyDataByIds,
-  getCompanyToFundsMap,
+  getCompanyOrderMap,
 } from '@/collections/meetings/hooks/activeCompaniesCache'
 import { calculateHoldingValues } from '@/utils/dataUtils'
 import { getIdOfRelationField } from '@/utils/utils'
@@ -70,6 +69,12 @@ export async function getVotedCompaniesEndpoint(req: any) {
     const meeting = await req.payload.findByID({
       collection: 'meetings',
       id: meetingId,
+      select: {
+        companies: true,
+        funds: true,
+        stockValue: true,
+        fundsWithHolding: true,
+      },
       depth: 0,
     })
 
@@ -107,8 +112,7 @@ export async function getVotedCompaniesEndpoint(req: any) {
     // Get stock value data if available
     let stockValueData = null
     if (meeting.stockValue) {
-      const stockValueId =
-        typeof meeting.stockValue === 'string' ? meeting.stockValue : meeting.stockValue.id
+      const stockValueId = meeting.stockValue
       try {
         stockValueData = await req.payload.findByID({
           collection: 'stock-values',
@@ -223,6 +227,12 @@ export async function getNotVotedCompaniesEndpoint(req: any) {
     const meeting = await req.payload.findByID({
       collection: 'meetings',
       id: meetingId,
+      select: {
+        companies: true,
+        funds: true,
+        stockValue: true,
+        fundsWithHolding: true,
+      },
       depth: 0,
     })
 
@@ -249,8 +259,7 @@ export async function getNotVotedCompaniesEndpoint(req: any) {
     // Get stock value data if available
     let stockValueData = null
     if (meeting.stockValue) {
-      const stockValueId =
-        typeof meeting.stockValue === 'string' ? meeting.stockValue : meeting.stockValue.id
+      const stockValueId = meeting.stockValue
       try {
         stockValueData = await req.payload.findByID({
           collection: 'stock-values',
@@ -346,6 +355,25 @@ export async function getNotVotedCompaniesEndpoint(req: any) {
   } catch (error) {
     console.error('Error fetching not voted companies:', error)
     return new Response(JSON.stringify({ error: 'Failed to fetch not voted companies' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+}
+/**
+ * Endpoint: GET /api/meetings/voting-data/companies-order?meetingId=xxx
+ * Fetches companies order map
+ */
+export async function getCompaniesOrderEndpoint(req: any) {
+  try {
+    // Get the companies order map
+    const companyOrderMap = getCompanyOrderMap() || new Map<string, string>()
+    return new Response(JSON.stringify(Array.from(companyOrderMap.entries())), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  } catch (error) {
+    console.error('Error fetching companies order:', error)
+    return new Response(JSON.stringify({ error: 'Failed to fetch companies order' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })

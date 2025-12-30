@@ -7,9 +7,18 @@ import { useEffect, useState } from 'react'
 interface CustomSuccessPopupProps {
   isOpen: boolean
   onCloseAction: () => void
+  updatedCount?: number
+  companyNames?: string[]
+  isPrivateVote?: boolean
 }
 
-export function PublishSuccessPopup({ isOpen, onCloseAction }: CustomSuccessPopupProps) {
+export function PublishSuccessPopup({
+  isOpen,
+  onCloseAction,
+  updatedCount,
+  companyNames = [],
+  isPrivateVote = false,
+}: CustomSuccessPopupProps) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -34,6 +43,25 @@ export function PublishSuccessPopup({ isOpen, onCloseAction }: CustomSuccessPopu
 
   if (!isOpen) return null
 
+  // Generate the success message based on the type of vote
+  const getSuccessMessage = () => {
+    if (isPrivateVote && companyNames.length > 0) {
+      return `נשלחה הצבעה פרטנית עבור חברה ${companyNames[0]}`
+    }
+
+    if (updatedCount !== undefined) {
+      if (updatedCount === 0) {
+        return 'אין שינויים חדשים לשליחה'
+      }
+      if (updatedCount === 1) {
+        return 'נשלחה הצבעה עבור חברה אחת'
+      }
+      return `נשלחו הצבעות עבור ${updatedCount} חברות`
+    }
+
+    return 'ההצבעה נשלחה בהצלחה למערכת'
+  }
+
   return (
     <>
       <style>{customStyle}</style>
@@ -49,10 +77,10 @@ export function PublishSuccessPopup({ isOpen, onCloseAction }: CustomSuccessPopu
             style={{
               background:
                 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.8) 100%)',
-              borderRadius: '12px', // יותר עקבי עם הפרויקט
-              padding: '32px 24px', // פחות padding
+              borderRadius: '12px',
+              padding: '32px 24px',
               minWidth: '300px',
-              maxWidth: '380px',
+              maxWidth: '480px',
               boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
               backdropFilter: 'blur(8px)',
             }}
@@ -72,8 +100,22 @@ export function PublishSuccessPopup({ isOpen, onCloseAction }: CustomSuccessPopu
             {/* Success message */}
             <div className="text-center mb-6">
               <h2 className="text-lg font-medium text-foreground leading-relaxed">
-                ההצבעה נשלחה בהצלחה למערכת
+                {getSuccessMessage()}
               </h2>
+
+              {/* Show company names if there are any */}
+              {companyNames.length > 0 && !isPrivateVote && (
+                <div className="mt-4 text-sm text-muted-foreground">
+                  <p className="mb-2">חברות שנשלחו:</p>
+                  <ul className="text-right list-none">
+                    {companyNames.map((name, index) => (
+                      <li key={index} className="mb-1">
+                        • {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Confirm button */}

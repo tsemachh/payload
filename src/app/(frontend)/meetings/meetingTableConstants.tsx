@@ -28,7 +28,14 @@ const createCompaniesExpandHeader = (
   data: MeetingTableDataType[],
 ) => {
   const allMeetingIds = data.map((row) => row.meetingId)
-  const allExpanded = allMeetingIds.every((id) => companiesExpandedRows[id])
+  // Filter out meetings that have no companies or empty companies array
+  const validMeetingIds = allMeetingIds.filter(id => {
+    const meeting = data.find(row => row.meetingId === id)
+    return meeting && meeting.companies && meeting.companies.length > 0
+  })
+  
+  // Check if all valid meetings are expanded
+  const allExpanded = validMeetingIds.length > 0 && validMeetingIds.every((id) => companiesExpandedRows[id])
 
   return (
     <div className="flex items-center gap-1">
@@ -61,7 +68,14 @@ const createAgendasExpandHeader = (
   data: MeetingTableDataType[],
 ) => {
   const allMeetingIds = data.map((row) => row.meetingId)
-  const allExpanded = allMeetingIds.every((id) => agendasExpandedRows[id])
+  // Filter out meetings that have no agendas or empty agendas array
+  const validMeetingIds = allMeetingIds.filter(id => {
+    const meeting = data.find(row => row.meetingId === id)
+    return meeting && meeting.agendas && meeting.agendas.length > 0
+  })
+  
+  // Check if all valid meetings are expanded
+  const allExpanded = validMeetingIds.length > 0 && validMeetingIds.every((id) => agendasExpandedRows[id])
 
   return (
     <div className="flex items-center gap-1">

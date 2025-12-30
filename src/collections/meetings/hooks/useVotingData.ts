@@ -1,21 +1,12 @@
 import { useEffect, useState, useMemo } from 'react'
-import { stringify } from 'qs-esm'
 import { useDocumentInfo } from '@payloadcms/ui'
-import { calculateHoldingValues } from '@/utils/dataUtils'
-import {
-  getParentCompanyId,
-  groupCompaniesByParent,
-  groupCompaniesByParentAndChecksum,
-} from '@/utils/voteGrouping'
-import { getParentCompanyNamesByIds } from '@/utils/utils'
+import { groupCompaniesByParent, groupCompaniesByParentAndChecksum } from '@/utils/voteGrouping'
 import {
   sortGroupsByParentOrder,
   sortNestedGroupsByParentOrder,
   sortCompaniesWithinGroup,
   sortChecksumGroupsByFirstCompanyOrder,
 } from '@/utils/companySort'
-import { FundWithHolding } from '@/payload-types'
-import { HistoricalHolding } from '@/payload-types'
 
 interface Company {
   id: string
@@ -78,47 +69,19 @@ export const useVotingData = () => {
     direction: 'asc' | 'desc'
   }>({ field: null, direction: 'asc' })
 
-  // Fetch company order map for sorting
-  const fetchCompanyOrderMap = async (meetingFundIds: string[], meetingCompanyIds: string[]) => {
-    const tempCompanyOrderMap = new Map<string, string>()
-    const allCompanyIdsToFetch = new Set(meetingCompanyIds.concat(meetingFundIds))
-
-    if (allCompanyIdsToFetch.size > 0) {
-      try {
-        const companiesQuery = stringify(
-          {
-            where: {
-              id: { in: Array.from(allCompanyIdsToFetch) },
-            },
-            select: {
-              _order: true,
-            },
-            depth: 0,
-            limit: 0,
-            joins: false,
-            paging: false,
-            sort: '_order',
-          },
-          { addQueryPrefix: true },
-        )
-        const companiesResponse = await fetch(`/api/companies${companiesQuery}`)
-        if (companiesResponse.ok) {
-          const companiesData = await companiesResponse.json()
-          companiesData.docs?.forEach((company: any, index: number) => {
-            tempCompanyOrderMap.set(
-              company.id,
-              company._order !== undefined
-                ? String(company._order)
-                : String(index).padStart(10, '0'),
-            )
-          })
-        }
-      } catch (error) {
-        console.error('Error fetching companies order details:', error)
+  const fetchCompanyOrderMap = async () => {
+    try {
+      const response = await fetch(`/api/meetings/voting-data/companies-order`)
+      if (response.ok) {
+        const data: [string, string][] = await response.json()
+        const companyOrderMap = new Map<string, string>(data)
+        return companyOrderMap
       }
+      return new Map<string, string>()
+    } catch (e) {
+      console.error('Error fetching company order map:', e)
+      return new Map<string, string>()
     }
-
-    return tempCompanyOrderMap
   }
 
   // Fetch voted companies data
@@ -185,28 +148,19 @@ export const useVotingData = () => {
 
       try {
         const meetingId = data?.id
-        const meetingFundIds = (data.funds || []) as string[]
-        const meetingCompanyIds = (data.companies || []) as string[]
-
         if (!meetingId) return
 
-        // Fetch company order map first
-        const tempCompanyOrderMap = await fetchCompanyOrderMap(meetingFundIds, meetingCompanyIds)
-        setCompanyOrderMap(tempCompanyOrderMap)
-
         // Fetch all three data sources in parallel
-        const [votedCompaniesData, notVotedCompaniesData, historicalHoldingsData] =
+        const [companyOrderMap, votedCompaniesData, notVotedCompaniesData, historicalHoldingsData] =
           await Promise.all([
+            fetchCompanyOrderMap(),
             fetchVotedCompaniesData(meetingId),
             fetchNotVotedCompaniesData(meetingId),
             fetchHistoricalHoldingsData(meetingId),
           ])
 
-        console.log('Voted companies data:', votedCompaniesData)
-        console.log('Not voted companies data:', notVotedCompaniesData)
-        console.log('Historical holdings data:', historicalHoldingsData)
-
         // Update all state at once to avoid multiple re-renders
+        setCompanyOrderMap(companyOrderMap)
         setVotedCompanies(votedCompaniesData)
         setNotVotedCompanies(notVotedCompaniesData)
         setHistoricalHoldings(historicalHoldingsData)
@@ -236,10 +190,6 @@ export const useVotingData = () => {
   const processedNotVotedData = useMemo(() => {
     const processedCompanies = [...notVotedCompanies]
 
-    if (processedCompanies.length > 0) {
-      console.log('Processing not voted companies:', processedCompanies)
-    }
-
     // Apply sorting if not grouped
     if (!groupByNotVoted && notVotedSort.field) {
       processedCompanies.sort((a, b) => {
@@ -263,7 +213,6 @@ export const useVotingData = () => {
     }
 
     const grouped = groupCompaniesByParent(processedCompanies)
-    console.log('Grouped not voted companies:', grouped)
 
     // ✅ Sort groups by parent company order using utility function
     const sortedGroupEntries = sortGroupsByParentOrder(
@@ -399,7 +348,7 @@ export const useVotingData = () => {
           companyOrderMap,
         )
 
-        sortedChecksumEntries.forEach(([checksum, checksumCompanies]) => {
+        sortedChecksumEntries.forEach(([, checksumCompanies]) => {
           const groupColor = colorPalette[checksumGroupIndex % colorPalette.length]
           checksumGroupIndex++
 
@@ -512,7 +461,6 @@ export const useVotingData = () => {
             } else {
               value = row[field] || ''
             }
-
             if (columnKey === 'nominalValue' && value) {
               value = Number(value).toLocaleString()
             } else if (columnKey === 'percentageHolding' && value) {

@@ -12,6 +12,12 @@ import {
 import { syncMeetingsOnCompanyChange } from './hooks/syncMeetings'
 import { logEvent } from '@/lib/audit/logEvent'
 import { invalidateActiveFundsCache } from '@/collections/meetings/hooks/activeCompaniesCache'
+import {
+  getCompanyNamesEndpoint,
+  getFundsForCompanyEndpoint,
+  getRegularCompaniesEndpoint,
+  getStockDetailsEndpoint,
+} from './manageCompaniesMeetingEndpoint'
 
 const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation == 'create') {
@@ -214,8 +220,8 @@ export const Companies: CollectionConfig = {
                     if (siblingData?.type === 'parent') {
                       return {
                         type: {
-                          not_equals: 'fund'
-                        }
+                          not_equals: 'fund',
+                        },
                       }
                     }
                     return true
@@ -599,10 +605,10 @@ export const Companies: CollectionConfig = {
         try {
           if (previousDoc && JSON.stringify(doc.subCompanies) !== JSON.stringify(previousDoc.subCompanies)) {
             
-            const prevSubCompanies = Array.isArray(previousDoc.subCompanies) 
+            const prevSubCompanies = Array.isArray(previousDoc.subCompanies)
               ? previousDoc.subCompanies.map((v: any) => typeof v === 'object' ? v.id : v).filter(Boolean)
               : []
-            const currSubCompanies = Array.isArray(doc.subCompanies) 
+            const currSubCompanies = Array.isArray(doc.subCompanies)
               ? doc.subCompanies.map((v: any) => typeof v === 'object' ? v.id : v).filter(Boolean)
               : []
             const added = currSubCompanies.filter((id: string) => !prevSubCompanies.includes(id))
@@ -634,7 +640,7 @@ export const Companies: CollectionConfig = {
                       id: String(childId),
                       depth: 0,
                     })
-                    
+
                     if (child?.parentCompany === doc.id) {
                       await req.payload.update({
                         collection: 'companies',
@@ -662,10 +668,10 @@ export const Companies: CollectionConfig = {
             if (JSON.stringify(doc.subCompanies) !== JSON.stringify(previousDoc.subCompanies)) {
               const prevSubs = (previousDoc.subCompanies || []).map((v: any) => typeof v === 'object' ? v.id : v)
               const currSubs = (doc.subCompanies || []).map((v: any) => typeof v === 'object' ? v.id : v)
-              
+
               const added = currSubs.filter((id: string) => !prevSubs.includes(id))
               const removed = prevSubs.filter((id: string) => !currSubs.includes(id))
-              
+
               // Set parentCompany for added children
               for (const childId of added) {
                 await req.payload.update({
@@ -675,7 +681,7 @@ export const Companies: CollectionConfig = {
                   req: { ...req, context: { ...req.context, from: 'relation-sync' } },
                 })
               }
-              
+
               // Clear parentCompany for removed children
               for (const childId of removed) {
                 await req.payload.update({
@@ -691,7 +697,7 @@ export const Companies: CollectionConfig = {
             if (JSON.stringify(doc.parentCompany) !== JSON.stringify(previousDoc.parentCompany)) {
               const prevParentId = typeof previousDoc.parentCompany === 'object' ? previousDoc.parentCompany?.id : previousDoc.parentCompany
               const currParentId = typeof doc.parentCompany === 'object' ? doc.parentCompany?.id : doc.parentCompany
-              
+
               // Remove from old parent's subCompanies
               if (prevParentId && prevParentId !== currParentId) {
                 const prevParent = await req.payload.findByID({ collection: 'companies', id: prevParentId, depth: 0 })
@@ -699,7 +705,7 @@ export const Companies: CollectionConfig = {
                   const updatedSubs = (prevParent.subCompanies || [])
                     .map((v: any) => typeof v === 'object' ? v.id : v)
                     .filter((id: string) => id !== doc.id)
-                  
+
                   await req.payload.update({
                     collection: 'companies',
                     id: prevParentId,
@@ -708,7 +714,7 @@ export const Companies: CollectionConfig = {
                   })
                 }
               }
-              
+
               // Add to new parent's subCompanies
               if (currParentId && currParentId !== prevParentId) {
                 const currParent = await req.payload.findByID({ collection: 'companies', id: currParentId, depth: 0 })
@@ -787,6 +793,26 @@ export const Companies: CollectionConfig = {
       path: '/cache-test',
       method: 'get',
       handler: cacheTestEndpoint,
+    },
+    {
+      path: '/get-regular-companies',
+      method: 'get',
+      handler: getRegularCompaniesEndpoint,
+    },
+    {
+      path: '/get-stock-details',
+      method: 'get',
+      handler: getStockDetailsEndpoint,
+    },
+    {
+      path: '/get-funds-for-company',
+      method: 'get',
+      handler: getFundsForCompanyEndpoint,
+    },
+    {
+      path: '/get-company-names',
+      method: 'post',
+      handler: getCompanyNamesEndpoint,
     },
   ],
 }

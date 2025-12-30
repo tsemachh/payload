@@ -210,48 +210,15 @@ export const getCollectionDoc = async (req: any, collectionType: string, id: str
 export const getIdOfRelationField = (item: TypeWithID | string) => {
   return typeof item == 'string' ? item : typeof item == 'object' ? item?.id : null
 }
-
-/**
- * Fetches parent company names by their IDs
- * @param parentCompanyIds - Array of parent company IDs
- * @returns Map of parent company ID to parent company name
- */
-export const getParentCompanyNamesByIds = async (
-  parentCompanyIds: string[],
-): Promise<Map<string, string>> => {
-  const result = new Map<string, string>()
-
-  if (parentCompanyIds.length === 0) {
-    return result
-  }
-
-  try {
-    const companiesQuery = stringify(
-      {
-        where: {
-          id: { in: parentCompanyIds },
-        },
-        select: {
-          name: true,
-        },
-        depth: 0,
-        limit: 0,
-      },
-      { addQueryPrefix: true },
+export const createCompanyOrderMap = (companies: any[]): Map<string, string> => {
+  const orderMap = new Map<string, string>()
+  companies.forEach((company: any, index: number) => {
+    orderMap.set(
+      company.id,
+      company._order !== undefined ? String(company._order) : String(index).padStart(10, '0'),
     )
-    const response = await fetch(`/api/companies/${companiesQuery}`)
-
-    if (response.ok) {
-      const data = await response.json()
-      data.docs.forEach((company: { id: string; name: string }) => {
-        result.set(company.id, company.name)
-      })
-    }
-  } catch (error) {
-    console.error('Error fetching parent company names:', error)
-  }
-
-  return result
+  })
+  return orderMap
 }
 
 /**
