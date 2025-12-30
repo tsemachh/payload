@@ -176,9 +176,9 @@ export function DataTableServer<T extends Record<string, any>>({
   // Create columns with expand functionality if provided
   const columns = useMemo(() => {
     if (createColumnsWithExpand) {
-      // Pass agendas state only if displayMode is 'agenda'
-      const agendasState = displayMode === 'agenda' ? agendasExpandedRows : undefined
-      const setAgendasState = displayMode === 'agenda' ? setAgendasExpandedRows : undefined
+      // Always pass agendas state - it's needed for both display modes
+      const agendasState = agendasExpandedRows
+      const setAgendasState = setAgendasExpandedRows
 
       return createColumnsWithExpand(
         companiesExpandedRows,
