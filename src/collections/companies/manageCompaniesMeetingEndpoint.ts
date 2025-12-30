@@ -1,66 +1,10 @@
 import { PayloadRequest, addDataAndFileToRequest } from 'payload'
-import { getCompanyFundIds, getCompanyNameById } from '../hooks/activeCompaniesCache'
-
-/**
- * Get meeting data with companies, removedCompanies, stock, holdingsLimit
- * URL: /api/meetings/get-meeting-data?meetingId=xxx
- */
-export const getMeetingDataEndpoint = async (req: PayloadRequest) => {
-  try {
-    await addDataAndFileToRequest(req)
-
-    if (!req.user) {
-      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
-    }
-
-    const meetingId = req.query.meetingId as string
-
-    if (!meetingId) {
-      return Response.json({ error: 'Missing meetingId parameter' }, { status: 400 })
-    }
-
-    const meeting = await req.payload.findByID({
-      collection: 'meetings',
-      id: meetingId,
-      depth: 0,
-      select: {
-        companies: true,
-        removedCompanies: true,
-        stock: true,
-        holdingsLimit: true,
-        stockName: true,
-        stockNumber: true,
-      },
-    })
-
-    // Enhance companies and removedCompanies with names from cache
-    const enhancedMeeting = {
-      ...meeting,
-      companies: ((meeting.companies as string[]) || []).map((companyId: string) => {
-        const companyName = getCompanyNameById(companyId)
-        return {
-          id: companyId,
-          name: companyName || '',
-        }
-      }),
-      removedCompanies: ((meeting.removedCompanies as string[]) || []).map((companyId: string) => {
-        const companyName = getCompanyNameById(companyId)
-        return {
-          id: companyId,
-          name: companyName || '',
-        }
-      }),
-    }
-
-    return Response.json(enhancedMeeting)
-  } catch (error) {
-    console.error('Error in getMeetingDataEndpoint:', error)
-    return Response.json(
-      { success: false, error: 'Failed to get meeting data', details: error },
-      { status: 500 },
-    )
-  }
-}
+import {
+  getCompanyFundIds,
+  getCompanyNameById,
+  getCompanyNamesByIds,
+  getRegularCompanies,
+} from '../meetings/hooks/activeCompaniesCache'
 
 /**
  * Get all regular companies (type: 'regular') that are active
@@ -74,26 +18,18 @@ export const getRegularCompaniesEndpoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
     }
 
-    const companies = await req.payload.find({
-      collection: 'companies',
-      where: {
-        type: { equals: 'regular' },
-      },
-      limit: 0,
-      depth: 0,
-      select: {
-        id: true,
-        name: true,
-        active: true,
-      },
-    })
+    // Get regular companies from cache (already filtered to active and type: 'regular')
+    const regularCompanies = getRegularCompanies()
 
-    // Filter only active companies
-    const activeCompanies = companies.docs.filter((company: any) => company.active)
+    // Format to match the expected response structure
+    const docs = regularCompanies.map((company) => ({
+      id: company.id,
+      name: company.name,
+    }))
 
     return Response.json({
-      docs: activeCompanies,
-      totalDocs: activeCompanies.length,
+      docs,
+      totalDocs: docs.length,
     })
   } catch (error) {
     console.error('Error in getRegularCompaniesEndpoint:', error)
@@ -168,6 +104,7 @@ export const getFundsForCompanyEndpoint = async (req: PayloadRequest) => {
     const docs = companySubCompanies
       .map((id) => {
         const companyName = getCompanyNameById(id)
+
         return companyName
           ? {
               id,
@@ -184,6 +121,48 @@ export const getFundsForCompanyEndpoint = async (req: PayloadRequest) => {
     console.error('Error in getFundsForCompanyEndpoint:', error)
     return Response.json(
       { success: false, error: 'Failed to get funds', details: error },
+      { status: 500 },
+    )
+  }
+}
+
+/**
+ * Endpoint to get company names by IDs
+ * Accepts an array of company IDs and returns an array of objects with id and name
+ */
+export const getCompanyNamesEndpoint = async (req: PayloadRequest) => {
+  try {
+    await addDataAndFileToRequest(req)
+
+    if (!req.user) {
+      return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
+    }
+
+    const data = req.data as { companyids?: string[] } | undefined
+    const { companyids } = data || {}
+
+    if (!companyids || !Array.isArray(companyids) || companyids.length === 0) {
+      return Response.json(
+        {
+          success: false,
+          message: 'Missing or invalid companyids array',
+        },
+        { status: 400 },
+      )
+    }
+
+    const companies = getCompanyNamesByIds(companyids)
+    return Response.json({
+      success: true,
+      data: companies,
+    })
+  } catch (error) {
+    req.payload.logger.error(`Error getting company names: ${error}`)
+    return Response.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 },
     )
   }

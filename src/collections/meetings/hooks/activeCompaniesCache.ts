@@ -10,6 +10,7 @@ export type CachedCompany = {
   parentCompany: string | null
   _order: string | null
   passiveFund: boolean | null
+  type: string | null
 }
 
 export function getCompanyIdFromFundId(fundId: string): string | null {
@@ -76,8 +77,17 @@ export function getCompanyDataById(id: string): CachedCompany | null {
   return __activeFundsCache.byId[String(id)] || null
 }
 
+export function getRegularCompanies(): CachedCompany[] {
+  if (!__activeFundsCache) return []
+  return Object.values(__activeFundsCache.byId).filter(company => company.type === 'regular')
+}
+
 export function getCompanyNameById(id: string): string | null {
   return getCompanyDataById(id)?.name ?? null
+}
+
+export function getCompanyNamesByIds(ids: string[]): Array<{ id: string; name: string | null }> {
+  return ids.map((id) => ({ id, name: getCompanyNameById(id) }))
 }
 
 export function getManyCompanyDataByIds(ids: string[]): Record<string, CachedCompany | null> {
@@ -132,6 +142,7 @@ export async function preloadCompaniesCache(payload: Payload) {
         parentCompany: companyId || null,
         _order: typeof d?._order === 'string' ? d._order : null,
         passiveFund: typeof d?.passiveFund === 'boolean' ? d.passiveFund : null,
+        type: typeof d?.type === 'string' ? d.type : null,
       }
 
       // Build active funds ids and maps only for fund-type docs
