@@ -131,7 +131,6 @@ export const Meetings: CollectionConfig = {
       [
         { name: 'electronicVotingEnabled', width: '130px' },
         { name: 'hasVoteRecommendation', width: '130px' },
-        { name: 'hasResearchDoc', width: '130px' },
         { name: 'votesStatus', width: '130px' },
         { name: 'votesReportStatus', width: '130px' },
         { name: 'researchDocumentsStatus', width: '130px' },
@@ -370,21 +369,6 @@ export const Meetings: CollectionConfig = {
                       votes: data?.votesCount || 0,
                       reportedVotes: data?.reportVotesCount || 0,
                     })
-                  },
-                ],
-              },
-            },
-            {
-              name: 'hasResearchDoc',
-              label: 'יש מסמך מחקר',
-              type: 'checkbox',
-              admin: {
-                hidden: true,
-              },
-              hooks: {
-                afterRead: [
-                  async ({ data }) => {
-                    return data?.researchDocuments?.length > 0
                   },
                 ],
               },
