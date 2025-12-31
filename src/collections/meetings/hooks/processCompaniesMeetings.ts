@@ -2,6 +2,7 @@ import { PayloadRequest, Where } from 'payload'
 import type { FundWithHolding, HistoricalHolding, HoldingsPerDay, Meeting } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
 import { initPerformanceContext, PerfTimer } from '@/collections/meetings/hooks/perfTimer'
+import { recalculateMeetingVoteCounts } from '@/collections/meetings/hooks/votesCountHooks'
 import {
   getActiveFundsCache,
   getCompanyIdFromFundId,
@@ -422,6 +423,10 @@ async function processMeeting(
       ;(data as any).processHash = processHash
     } catch {}
     mt.start('mutation.meetings.update')
+
+    // Recalculate meeting vote counts once after bulk deletion
+    //TODO - do it as part of the meeting update
+    await recalculateMeetingVoteCounts(req, meeting.id)
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
@@ -614,8 +619,10 @@ export const cleanupInvalidVotesForMeetings = async (
             { company: { not_in: validCompanyIds.length > 0 ? validCompanyIds : ['__NONE__'] } },
           ],
         },
+        context: { ...req.context, from: 'process' },
         req,
       } as any)
+
       runAgg?.inc('deleteCalls', 1)
       req.payload.logger.info(
         `meeting ${meetingId}: cleanup completed (${idx + 1} of ${total}) - removed votes for companies not in [${validCompanyIds.join(
