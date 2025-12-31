@@ -8,7 +8,6 @@ import {
   getCompanyIdFromFundId,
   getCompanyToFundsMap,
   getFundToCompanyMap,
-  checkAndReloadCache,
 } from '@/collections/meetings/hooks/activeCompaniesCache'
 
 // Historical fetch strategy v2:
@@ -27,7 +26,7 @@ async function fetchHistoricalHoldings(
   const historicalDateStr = historicalDate.toISOString()
 
   // Pull mapping from cache to avoid extra queries
-  const cachedMap = getCompanyToFundsMap() || {}
+  const cachedMap = getCompanyToFundsMap(req.payload) || {}
 
   debugger
   const stockId = String(getIdOfRelationField(meeting.stock))
@@ -211,7 +210,7 @@ async function processMeeting(
       const fundId = String(getIdOfRelationField(h.fund))
       fromRelatedStock = originalDataArray.some((o) => o.stockId != meeting.stockId)
       const base = {
-        company: getCompanyIdFromFundId(fundId),
+        company: getCompanyIdFromFundId(fundId, req.payload),
         fund: fundId,
         quantity: h.holdings[0]?.quantity ?? 0,
         // Persist the exact holding date used for this fund (valueDate of the selected holding doc)
@@ -247,7 +246,7 @@ async function processMeeting(
 
     // Use cache mapping instead of querying companies to resolve parentCompany per fund
     mt.start('query.companies.find')
-    const fundToCompanyMap = getFundToCompanyMap() || {}
+    const fundToCompanyMap = getFundToCompanyMap(req.payload) || {}
     const compIds = allFundIdsInMeeting
       .map((fundId) => fundToCompanyMap[String(fundId)])
       .filter(Boolean)
@@ -263,10 +262,12 @@ async function processMeeting(
     })
 
     // Filter out funds that belong to removed companies (from all funds in meeting)
-    const filteredFunds = allFundIdsInMeeting.filter((fundId) => {
-      const companyId = getCompanyIdFromFundId(fundId)
-      return companyId && !removedCompanyIds.includes(companyId)
-    })
+    const filteredFunds = allFundIdsInMeeting
+      .map((fundId) => {
+        const companyId = getCompanyIdFromFundId(fundId, req.payload)
+        return companyId && !removedCompanyIds.includes(companyId) ? fundId : null
+      })
+      .filter((f): f is string => f !== null)
 
     // Filter out fundsWithHolding that belong to removed companies
     const filteredFundsWithHolding = fundsWithHolding.filter((fwh: any) => {
@@ -296,7 +297,7 @@ async function processMeeting(
 
       // Build the list of companies to check for historical (non-invited, not removed)
       // Use ALL companyIds from the cache mapping values, not only those tied to current fundsWithHolding
-      const f2cMap = getFundToCompanyMap() || {}
+      const f2cMap = getFundToCompanyMap(req.payload) || {}
       const allCompanyIdsFromCache = Array.from(new Set(Object.values(f2cMap).map(String)))
       const companiesToCheck = allCompanyIdsFromCache.filter(
         (cid) => !invitedCompanyIds.has(cid) && !removedCompanyIds.includes(cid),
@@ -316,7 +317,7 @@ async function processMeeting(
       mt.start('historical.process.js')
       for (const holdingDoc of allHistoricalHoldings) {
         const fundId = getIdOfRelationField(holdingDoc.fund) as string
-        const companyId = getCompanyIdFromFundId(fundId)
+        const companyId = getCompanyIdFromFundId(fundId, req.payload)
 
         // Skip if company is invited or removed
         if (
@@ -504,8 +505,7 @@ export const processCompaniesMeetings = async (
       funds = fundsToProcess
       req.payload.logger.info(`Using provided funds: ${funds.length} funds`)
     } else {
-      await checkAndReloadCache(req.payload)
-      funds = (getActiveFundsCache() as string[] | undefined) || []
+      funds = (getActiveFundsCache(req.payload) as string[] | undefined) || []
       req.payload.logger.info(
         `Preloaded active funds via helper: ${Array.isArray(funds) ? funds.length : 0} funds`,
       )

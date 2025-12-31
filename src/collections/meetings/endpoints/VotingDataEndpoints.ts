@@ -2,7 +2,6 @@ import {
   getCompanyDataById,
   getManyCompanyDataByIds,
   getCompanyOrderMap,
-  checkAndReloadCache,
 } from '@/collections/meetings/hooks/activeCompaniesCache'
 import { calculateHoldingValues } from '@/utils/dataUtils'
 import { getIdOfRelationField } from '@/utils/utils'
@@ -66,8 +65,6 @@ export async function getVotedCompaniesEndpoint(req: any) {
       })
     }
 
-    await checkAndReloadCache(req.payload)
-
     // Fetch the meeting document
     const meeting = await req.payload.findByID({
       collection: 'meetings',
@@ -130,12 +127,12 @@ export async function getVotedCompaniesEndpoint(req: any) {
 
     // Build company data map from cache
     const meetingCompanyIds = (meeting.companies || []).map(getIdOfRelationField) as string[]
-    const companyDataMap = getManyCompanyDataByIds(meetingCompanyIds)
+    const companyDataMap = getManyCompanyDataByIds(meetingCompanyIds, req.payload)
 
     // Build passive funds map
     const passiveMap = new Map<string, boolean>()
     const meetingFundIds = (meeting.funds || []).map(getIdOfRelationField) as string[]
-    const fundDataMap = getManyCompanyDataByIds(meetingFundIds)
+    const fundDataMap = getManyCompanyDataByIds(meetingFundIds, req.payload)
     meetingFundIds.forEach((fundId) => {
       passiveMap.set(fundId, fundDataMap[fundId]?.passiveFund || false)
     })
@@ -166,7 +163,7 @@ export async function getVotedCompaniesEndpoint(req: any) {
 
       const companyData = companyDataMap[vote.company]
       const parentCompanyId = companyData?.parentCompany || ''
-      const parentData = parentCompanyId ? getCompanyDataById(parentCompanyId) : null
+      const parentData = parentCompanyId ? getCompanyDataById(parentCompanyId, req.payload) : null
       const parentCompanyName = parentData?.name || vote.companyName
 
       // Check if all funds holding this company are passive
@@ -226,8 +223,6 @@ export async function getNotVotedCompaniesEndpoint(req: any) {
         headers: { 'Content-Type': 'application/json' },
       })
     }
-
-    await checkAndReloadCache(req.payload)
 
     // Fetch the meeting document
     const meeting = await req.payload.findByID({
@@ -289,12 +284,12 @@ export async function getNotVotedCompaniesEndpoint(req: any) {
     }
 
     // Use cache to get company data
-    const companyDataMap = getManyCompanyDataByIds(notVotedIds)
+    const companyDataMap = getManyCompanyDataByIds(notVotedIds, req.payload)
 
     // Build passive funds map from cache
     const passiveMap = new Map<string, boolean>()
     const meetingFundIds = (meeting.funds || []).map(getIdOfRelationField) as string[]
-    const fundDataMap = getManyCompanyDataByIds(meetingFundIds)
+    const fundDataMap = getManyCompanyDataByIds(meetingFundIds, req.payload)
     meetingFundIds.forEach((fundId) => {
       passiveMap.set(fundId, fundDataMap[fundId]?.passiveFund || false)
     })
@@ -331,7 +326,7 @@ export async function getNotVotedCompaniesEndpoint(req: any) {
         }
 
         const parentCompanyId = companyData.parentCompany || ''
-        const parentData = parentCompanyId ? getCompanyDataById(parentCompanyId) : null
+        const parentData = parentCompanyId ? getCompanyDataById(parentCompanyId, req.payload) : null
         const parentCompanyName = parentData?.name || companyData.name
 
         // Check if all funds holding this company are passive
@@ -372,9 +367,8 @@ export async function getNotVotedCompaniesEndpoint(req: any) {
  */
 export async function getCompaniesOrderEndpoint(req: any) {
   try {
-    await checkAndReloadCache(req.payload)
     // Get the companies order map
-    const companyOrderMap = getCompanyOrderMap() || new Map<string, string>()
+    const companyOrderMap = getCompanyOrderMap(req.payload) || new Map<string, string>()
     return new Response(JSON.stringify(Array.from(companyOrderMap.entries())), {
       headers: { 'Content-Type': 'application/json' },
     })
@@ -401,8 +395,6 @@ export async function getHistoricalHoldingsEndpoint(req: any) {
         headers: { 'Content-Type': 'application/json' },
       })
     }
-
-    await checkAndReloadCache(req.payload)
 
     // Fetch the meeting document
     const meeting = await req.payload.findByID({
@@ -436,7 +428,7 @@ export async function getHistoricalHoldingsEndpoint(req: any) {
 
     // Get all IDs and fetch from cache
     const allIds = [...new Set([...historicalCompanyIds, ...historicalFundIds])]
-    const companyDataMap = getManyCompanyDataByIds(allIds)
+    const companyDataMap = getManyCompanyDataByIds(allIds, req.payload)
 
     // Group historical holdings by company and aggregate quantities
     const groupedByCompany = new Map<
