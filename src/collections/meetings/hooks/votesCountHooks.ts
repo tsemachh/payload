@@ -103,7 +103,7 @@ export async function recalculateMeetingVoteCounts(
           },
           req: {
             ...req,
-            context: { ...req.context, from: 'migration', process: 'voteCountHooks' },
+            context: { ...req.context, from: 'process', process: 'recalculateMeetingVoteCounts' },
           },
         })
 
@@ -202,7 +202,7 @@ export const updateVoteStatusOnCompaniesChange: CollectionBeforeChangeHook<Meeti
     } catch (error) {
       req.payload.logger.error(
         { error },
-        `Error updating vote statuses after companies change for meeting ${data.id}:`
+        `Error updating vote statuses after companies change for meeting ${data.id}:`,
       )
       // Don't throw error to avoid breaking the meeting save operation
     }

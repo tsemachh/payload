@@ -35,7 +35,10 @@ const MarkAllReadEndpoint = async (req: PayloadRequest) => {
       data: {
         readStatus: true,
       },
-      req,
+      req: {
+        ...req,
+        context: { ...req.context, process: 'markAllNotificationsRead' },
+      },
     })
 
     return Response.json({

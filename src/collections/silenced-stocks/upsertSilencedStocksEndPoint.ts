@@ -50,7 +50,10 @@ const updateCompanySilencedStocks = async (
       data: {
         silencedStocks: updatedSilencedStocks,
       },
-      req,
+      req: {
+        ...req,
+        context: { ...req.context, from: 'process', process: 'updateCompanySilencedStocks' },
+      },
     })
 
     return {

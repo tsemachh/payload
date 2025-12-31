@@ -147,7 +147,7 @@ export const syncDualMeeting = async (payload: Payload, currentDoc: any, previou
         ...(researchDocsChanged && { researchDocuments: genericResearchDocs }),
         migrationComments: migrationComments,
       },
-      context: { from: 'process' },
+      context: { from: 'process', process: 'syncDualMeeting' },
     })
   } catch (error) {
     console.error('Error syncing dual meeting:', error)

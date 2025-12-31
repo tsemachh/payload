@@ -8,9 +8,9 @@ import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 const TwoFactorDisableEndpoint = async (req: PayloadRequest) => {
   try {
     await addDataAndFileToRequest(req)
-    
+
     const { currentPassword } = (await req.json?.()) || {}
-    
+
     if (!currentPassword) {
       return Response.json({ error: 'נדרשת סיסמה נוכחית' }, { status: 400 })
     }
@@ -36,6 +36,10 @@ const TwoFactorDisableEndpoint = async (req: PayloadRequest) => {
     await req.payload.update({
       collection: 'users',
       id: req.user.id,
+      req: {
+        ...req,
+        context: { ...req.context, process: 'disableTwoFactor' },
+      },
       data: {
         twoFactorAuth: {
           enabled: false,
@@ -50,15 +54,11 @@ const TwoFactorDisableEndpoint = async (req: PayloadRequest) => {
 
     return Response.json({
       success: true,
-      message: 'אימות דו-שלבי בוטל בהצלחה'
+      message: 'אימות דו-שלבי בוטל בהצלחה',
     })
-
   } catch (error) {
     req.payload.logger.error({ error }, '2FA disable error:')
-    return Response.json(
-      { error: 'שגיאה בביטול אימות דו-שלבי' }, 
-      { status: 500 }
-    )
+    return Response.json({ error: 'שגיאה בביטול אימות דו-שלבי' }, { status: 500 })
   }
 }
 

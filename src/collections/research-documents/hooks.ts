@@ -6,8 +6,6 @@ import {
 } from 'payload'
 import { parseResearchFilename } from '@/utils/parseResearchFilename'
 
-
-
 // Hook to update hasCompleteResearchDocuments in meetings when research documents change
 export const updateMeetingResearchStatus: CollectionAfterChangeHook = async ({
   doc,
@@ -21,10 +19,10 @@ export const updateMeetingResearchStatus: CollectionAfterChangeHook = async ({
       collection: 'meetings',
       where: {
         researchDocuments: {
-          contains: doc.id
-        }
+          contains: doc.id,
+        },
       },
-      limit: 0
+      limit: 0,
     })
 
     // Update each meeting's researchDocumentsStatus
@@ -34,8 +32,12 @@ export const updateMeetingResearchStatus: CollectionAfterChangeHook = async ({
         id: meeting.id,
         data: {
           // This will trigger the beforeChange hook that calculates researchDocumentsStatus
-          researchDocuments: meeting.researchDocuments
-        }
+          researchDocuments: meeting.researchDocuments,
+        },
+        req: {
+          ...req,
+          context: { ...req.context, process: 'updateMeetingResearchStatusOnDocChange' },
+        },
       })
     }
 
@@ -46,9 +48,9 @@ export const updateMeetingResearchStatus: CollectionAfterChangeHook = async ({
         const companyIdStr = typeof companyId === 'string' ? companyId : companyId.id
         const company = await req.payload.findByID({
           collection: 'companies',
-          id: companyIdStr
+          id: companyIdStr,
         })
-        
+
         if (company) {
           // Trigger a simple update to recalculate hasResearchDocuments
           await req.payload.update({
@@ -56,8 +58,12 @@ export const updateMeetingResearchStatus: CollectionAfterChangeHook = async ({
             id: company.id,
             data: {
               // Just update the same data to trigger the beforeChange hook
-              name: company.name
-            }
+              name: company.name,
+            },
+            req: {
+              ...req,
+              context: { ...req.context, process: 'updateCompanyResearchStatusOnDocChange' },
+            },
           })
         }
       } catch (error: any) {
@@ -65,7 +71,9 @@ export const updateMeetingResearchStatus: CollectionAfterChangeHook = async ({
       }
     }
 
-    req.payload.logger.info(`Updated research document status for ${meetings.totalDocs} meetings and ${companyIds.length} companies`)
+    req.payload.logger.info(
+      `Updated research document status for ${meetings.totalDocs} meetings and ${companyIds.length} companies`,
+    )
   } catch (error: any) {
     req.payload.logger.error('Error updating meeting research status:', error)
   }
@@ -93,9 +101,9 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
   const docIDs = data?.researchDocuments
   const companies = data?.companies || []
   if (!docIDs || !Array.isArray(docIDs) || docIDs.length === 0) return data
-  
+
   const validationErrors: { message: string; path: string }[] = []
-  
+
   // This is still a critical error that should block
   if ((type === 'אג"ח' || type === 'אג"ח כהונת נאמן') && docIDs.length > 1) {
     validationErrors.push({
@@ -104,7 +112,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
     })
     throw new ValidationError({ errors: validationErrors })
   }
-  
+
   return data
 }
 
@@ -130,7 +138,10 @@ export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook =
       data: {
         companies: [],
       },
-      req,
+      req: {
+        ...req,
+        context: { ...req.context, process: 'clearCompaniesInSingleBondResearchDoc' },
+      },
     })
   }
   return data

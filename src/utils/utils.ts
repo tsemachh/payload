@@ -380,7 +380,10 @@ export async function revertToPublished(
         id: documentId,
         data: publishedDoc, // Use the published document data
         draft: true, // Update the draft version
-        req,
+        req: {
+          ...req,
+          context: { ...req.context, process: 'revertToPublished' },
+        },
       })
 
       return {

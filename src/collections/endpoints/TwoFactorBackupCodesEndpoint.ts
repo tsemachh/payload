@@ -48,6 +48,10 @@ const TwoFactorBackupCodesEndpoint = async (req: PayloadRequest) => {
       await req.payload.update({
         collection: 'users',
         id: req.user.id,
+        req: {
+          ...req,
+          context: { ...req.context, process: 'generateTwoFactorBackupCodes' },
+        },
         data: {
           twoFactorAuth: {
             ...req.user.twoFactorAuth,

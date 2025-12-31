@@ -39,8 +39,10 @@ const fixStockRelationsEndPoint = async (req: PayloadRequest) => {
         data: {
           relatedStock: null,
         },
-        req,
-        context: { from: 'process' },
+        req: {
+          ...req,
+          context: { ...req.context, from: 'process', process: 'fixStockRelationsEndPoint' },
+        },
       })
       updatedStocks.push({
         id: stock.id,
