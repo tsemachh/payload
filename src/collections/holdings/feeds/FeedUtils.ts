@@ -30,7 +30,16 @@ export const parseFileContent = (file: any): any[] | undefined => {
     let csvData = file.data.toString('utf8')
     csvData = '0,1,2\r\n' + csvData
     // Parse CSV without using generateHeaderNames which can cause errors
-    return csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
+    const results = csvToJson.fieldDelimiter(',').csvStringToJson(csvData)
+    
+    // Filter out extra columns - keep only the first 3 columns (0, 1, 2)
+    return results.map((row: any) => {
+      const filteredRow: any = {}
+      filteredRow['0'] = row['0'] // STOCK_ID_COL
+      filteredRow['1'] = row['1'] // QUANTITY_COL  
+      filteredRow['2'] = row['2'] // ACCOUNT_ID_COL
+      return filteredRow
+    })
   } else if (fileExt === 'xlsx' || fileExt === 'xls') {
     const workbook = XLSX.read(file.data, { type: 'buffer' })
     const sheetName = workbook.SheetNames[0]
@@ -38,7 +47,10 @@ export const parseFileContent = (file: any): any[] | undefined => {
 
     const results: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
 
-    return results.filter((row) => row.length > 0)
+    // Filter out extra columns - keep only the first 3 columns
+    return results
+      .filter((row) => row.length > 0)
+      .map((row) => row.slice(0, 3)) // Keep only first 3 columns
   }
 }
 /**
@@ -73,7 +85,7 @@ export const standardizeRows = (results: any[]): StandardizedRow[] => {
  * Generic helper function to convert text values to numbers in a specific column
  * @param results The parsed file content
  * @param hasHebrewHeader Whether the file has a Hebrew header row
- * @param columnIndex The column index to process
+ * @param columnIndex The column index to process (only processes columns 0, 1, 2)
  * @param removeQuotes Whether to remove quotes from the value
  */
 export const convertTextToNumbers = (
@@ -82,6 +94,11 @@ export const convertTextToNumbers = (
   columnIndex: number,
   removeQuotes: boolean = false,
 ): void => {
+  // Only process the required columns (0, 1, 2), ignore others
+  if (columnIndex > 2) {
+    return
+  }
+
   const startIndex = hasHebrewHeader ? 1 : 0
 
   for (let i = startIndex; i < results.length; i++) {
