@@ -90,6 +90,7 @@ export async function getVotedCompaniesEndpoint(req: any) {
       collection: 'votes',
       where: {
         meeting: { equals: meetingId },
+        _status: { equals: 'published' },
       },
       select: {
         id: true,

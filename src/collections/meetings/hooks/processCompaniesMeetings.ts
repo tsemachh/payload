@@ -427,7 +427,7 @@ async function processMeeting(
       id: meeting.id,
       req: {
         ...req,
-        context: { ...req.context, from: 'process' },
+        context: { ...req.context, from: 'process', process: 'processCompaniesMeetings' },
       },
       data,
     })
