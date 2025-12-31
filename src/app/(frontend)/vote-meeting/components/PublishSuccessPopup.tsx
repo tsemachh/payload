@@ -45,8 +45,8 @@ export function PublishSuccessPopup({
 
   // Generate the success message based on the type of vote
   const getSuccessMessage = () => {
-    if (isPrivateVote && companyNames.length > 0) {
-      return `נשלחה הצבעה פרטנית עבור חברה ${companyNames[0]}`
+    if (isPrivateVote) {
+      return 'נשלחה הצבעה עבור חברה אחת'
     }
 
     if (updatedCount !== undefined) {
@@ -104,9 +104,8 @@ export function PublishSuccessPopup({
               </h2>
 
               {/* Show company names if there are any */}
-              {companyNames.length > 0 && !isPrivateVote && (
+              {companyNames.length > 0 && (
                 <div className="mt-4 text-sm text-muted-foreground">
-                  <p className="mb-2">חברות שנשלחו:</p>
                   <ul className="text-right list-none">
                     {companyNames.map((name, index) => (
                       <li key={index} className="mb-1">
