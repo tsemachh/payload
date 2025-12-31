@@ -10,6 +10,10 @@ export const handleReportApproval: FieldHook = async ({ data, operation, req }) 
           meeting: { equals: data.meeting },
         },
         data: { handled: true },
+        req: {
+          ...req,
+          context: { ...req.context, process: 'markAdminNotificationHandled' },
+        },
       })
     } catch (err) {
       console.error('Error updating admin notifications:', err)

@@ -96,7 +96,7 @@ const removeCompanyEndpoint = async (req: PayloadRequest) => {
         removedCompanies: updatedRemovedCompanies as string[],
         changeDetails: `${new Date().toISOString()} - [user] הוסרה חברה: ${company?.name || companyId}`,
       },
-      context: { from: 'user-action' },
+      context: { ...req.context, from: 'user-action', process: 'removeCompanyEndpoint' },
       req,
     })
 
@@ -210,7 +210,7 @@ export const restoreCompanyEndpoint = async (req: PayloadRequest) => {
         removedCompanies: updatedRemovedCompanies as string[],
         changeDetails: `${new Date().toISOString()} - [user] הוחזרה חברה: ${company?.name || companyId}`,
       },
-      context: { from: 'user-action' },
+      context: { ...req.context, from: 'user-action', process: 'restoreCompanyEndpoint' },
       req,
     })
 
@@ -344,7 +344,7 @@ export const removeFundEndpoint = async (req: PayloadRequest) => {
             data: {
               holdings: updatedHoldings as any,
             },
-            context: { from: 'process' },
+            context: { ...req.context, from: 'process', process: 'removeFundEndpoint' },
             req,
           })
         }

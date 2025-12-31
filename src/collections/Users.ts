@@ -700,6 +700,10 @@ export const Users: CollectionConfig = {
                       lastFailureTime: new Date().toISOString(),
                     },
                   },
+                  req: {
+                    ...req,
+                    context: { ...req.context, process: 'incrementTwoFactorFailure' },
+                  },
                 })
 
                 throw new APIError('קוד אימות דו-שלבי שגוי', 401)
@@ -717,6 +721,10 @@ export const Users: CollectionConfig = {
                     lastUsed: new Date().toISOString(),
                     failureCount: 0,
                   },
+                },
+                req: {
+                  ...req,
+                  context: { ...req.context, process: 'resetTwoFactorFailureCount' },
                 },
               })
             } catch (error) {
@@ -740,6 +748,10 @@ export const Users: CollectionConfig = {
             data: {
               lastLoginIP: clientIP,
               lastLoginAt: new Date().toISOString(),
+            },
+            req: {
+              ...req,
+              context: { ...req.context, process: 'updateLastLoginInfo' },
             },
           })
         } catch (e) {

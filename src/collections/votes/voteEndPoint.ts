@@ -243,7 +243,10 @@ export const publishVotes = async (req: PayloadRequest) => {
           },
           draft: false,
           overrideAccess: true,
-          req,
+          req: {
+            ...req,
+            context: { ...req.context, process: 'publishVotes' },
+          },
         }),
       ),
     )
@@ -432,7 +435,10 @@ const upsertVotesInternal = async ({
           data: updateItem.data,
           draft: true,
           overrideAccess: true,
-          req,
+          req: {
+            ...req,
+            context: { ...req.context, process: 'upsertVotesInternalUpdate' },
+          },
         }),
       ),
     )
@@ -552,7 +558,10 @@ export const updateGroupedVotes = async (req: PayloadRequest) => {
         collection: 'meetings',
         id: meetingId,
         data: { fundsWithHolding: merged },
-        req,
+        req: {
+          ...req,
+          context: { ...req.context, process: 'updateGroupedVotesFundsWithHolding' },
+        },
       })
 
       // Create company-meeting-notifications for companies with unverified holdings

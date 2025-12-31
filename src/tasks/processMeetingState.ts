@@ -42,7 +42,7 @@ export const processMeetingState = async (req: PayloadRequest) => {
       },
       req: {
         ...req,
-        context: { ...req.context, from: 'process' },
+        context: { ...req.context, process: 'processMeetingState' },
       },
     })
 

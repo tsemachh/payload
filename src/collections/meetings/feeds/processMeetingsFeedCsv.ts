@@ -121,7 +121,7 @@ async function processRowInner(
             collection: 'meetings',
             id: prevMeetingId,
             data: dataToUpdate,
-            context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
+            context: { ...req.context, from: 'migration', process: 'processMeetingFeedUpdatePrev' },
             req,
           })
           context.successPrevCount++
@@ -164,7 +164,11 @@ async function processRowInner(
             collection: 'meetings',
             id: meetingId,
             data: row,
-            context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
+            context: {
+              ...req.context,
+              from: 'migration',
+              process: 'processMeetingFeedUpdateExisting',
+            },
             req,
           })
           context.successCount++

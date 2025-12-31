@@ -129,7 +129,7 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
                 },
               ] as any,
             },
-            context: { from: 'process' },
+            context: { from: 'process', process: 'addCompanyEndpoint' },
             req,
           })
         } else {

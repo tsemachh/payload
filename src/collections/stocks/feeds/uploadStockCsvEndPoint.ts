@@ -85,7 +85,10 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
         duration: `${durationSeconds}s`,
         summary: `Stocks processed successfully: ${processedRows} / ${fileLength - 1} `,
       },
-      req,
+      req: {
+        ...req,
+        context: { ...req.context, process: 'uploadStockCsvSummary' },
+      },
     })
     // Check if a file with the same hash already exists
     const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
@@ -115,7 +118,10 @@ const uploadStockCsvEndPoint = async (req: PayloadRequest) => {
         data: {
           hash: fileHash,
         },
-        req,
+        req: {
+          ...req,
+          context: { ...req.context, process: 'uploadStockCsvHash' },
+        },
       })
     }
     return Response.json({

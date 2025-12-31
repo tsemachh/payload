@@ -86,7 +86,10 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
         summary: `success: ${successCount} / ${fileLength} `,
         meetings: agendaUpdatedMeetingIds,
       },
-      req,
+      req: {
+        ...req,
+        context: { ...req.context, process: 'uploadMeetingsAgendaSummary' },
+      },
     })
 
     // Check if a file with the same hash already exists
@@ -117,7 +120,10 @@ const uploadMeetingsAgendaEndPoint = async (req: PayloadRequest) => {
         data: {
           hash: fileHash,
         },
-        req,
+        req: {
+          ...req,
+          context: { ...req.context, process: 'uploadMeetingsAgendaHash' },
+        },
       })
     }
     return Response.json({

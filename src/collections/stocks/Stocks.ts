@@ -191,10 +191,10 @@ export const Stocks: CollectionConfig = {
                   },
                 },
                 {
-                  name:'relatedStockStockId',
-                  label:'מספר נייר ראשי',
-                  type:'text',
-                  virtual: 'relatedStock.stockId'
+                  name: 'relatedStockStockId',
+                  label: 'מספר נייר ראשי',
+                  type: 'text',
+                  virtual: 'relatedStock.stockId',
                 },
                 {
                   name: 'relatedStock',
@@ -457,7 +457,7 @@ export const Stocks: CollectionConfig = {
                   isDual: true,
                   mainStockForDualStock: doc.id,
                 },
-                context: { from: 'process' },
+                context: { from: 'process', process: 'updateDualStockRelation' },
               })
             } catch (_error) {}
           }
@@ -472,7 +472,7 @@ export const Stocks: CollectionConfig = {
                   isDual: false,
                   mainStockForDualStock: null,
                 },
-                context: { from: 'process' },
+                context: { from: 'process', process: 'clearPreviousDualStockRelation' },
               })
             } catch (_error) {}
           }
@@ -487,7 +487,7 @@ export const Stocks: CollectionConfig = {
                   isDual: false,
                   mainStockForDualStock: null,
                 },
-                context: { from: 'process' },
+                context: { from: 'process', process: 'clearDualStockRelation' },
               })
             } catch (_error) {}
           }
