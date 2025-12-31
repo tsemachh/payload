@@ -38,9 +38,11 @@ type ActiveCompaniesCache = {
   // map of any company id -> minimal cached data
   byId: Record<string, CachedCompany>
   orderMap: Map<string, string>
+  lastLoadedAt: number
 } | null
 
 let __activeFundsCache: ActiveCompaniesCache = null
+const CACHE_TTL = 10 * 60 * 1000 // 10 minutes
 
 export function setActiveFundsCache(
   ids: string[],
@@ -56,6 +58,41 @@ export function setActiveFundsCache(
     fundToCompany: fundToCompany || {},
     byId: byId || {},
     orderMap: orderMap || new Map(),
+    lastLoadedAt: Date.now(),
+  }
+}
+
+let __refreshing = false
+export async function checkAndReloadCache(payload: Payload): Promise<void> {
+  if (__refreshing) return
+  const now = Date.now()
+
+  // If no cache or TTL passed, check SystemMeta
+  if (!__activeFundsCache || now - __activeFundsCache.lastLoadedAt > CACHE_TTL) {
+    try {
+      __refreshing = true
+      const systemMeta = await payload.findGlobal({
+        slug: 'system-meta',
+      })
+
+      const lastUpdate = systemMeta?.companyLastUpdateDate
+        ? new Date(systemMeta.companyLastUpdateDate).getTime()
+        : 0
+
+      if (!__activeFundsCache || lastUpdate > __activeFundsCache.lastLoadedAt) {
+        payload.logger.info(
+          'Cache expired or system meta update detected, reloading companies cache',
+        )
+        await preloadCompaniesCache(payload)
+      } else if (__activeFundsCache) {
+        // Just update lastLoadedAt to avoid checking again for another TTL period
+        __activeFundsCache.lastLoadedAt = now
+      }
+    } catch (e: any) {
+      payload.logger.error('Failed to check/reload companies cache', e)
+    } finally {
+      __refreshing = false
+    }
   }
 }
 

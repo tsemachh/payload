@@ -8,6 +8,7 @@ import {
   getCompanyIdFromFundId,
   getCompanyToFundsMap,
   getFundToCompanyMap,
+  checkAndReloadCache,
 } from '@/collections/meetings/hooks/activeCompaniesCache'
 
 // Historical fetch strategy v2:
@@ -503,6 +504,7 @@ export const processCompaniesMeetings = async (
       funds = fundsToProcess
       req.payload.logger.info(`Using provided funds: ${funds.length} funds`)
     } else {
+      await checkAndReloadCache(req.payload)
       funds = (getActiveFundsCache() as string[] | undefined) || []
       req.payload.logger.info(
         `Preloaded active funds via helper: ${Array.isArray(funds) ? funds.length : 0} funds`,

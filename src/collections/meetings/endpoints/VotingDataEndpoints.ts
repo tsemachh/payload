@@ -2,6 +2,7 @@ import {
   getCompanyDataById,
   getManyCompanyDataByIds,
   getCompanyOrderMap,
+  checkAndReloadCache,
 } from '@/collections/meetings/hooks/activeCompaniesCache'
 import { calculateHoldingValues } from '@/utils/dataUtils'
 import { getIdOfRelationField } from '@/utils/utils'
@@ -64,6 +65,8 @@ export async function getVotedCompaniesEndpoint(req: any) {
         headers: { 'Content-Type': 'application/json' },
       })
     }
+
+    await checkAndReloadCache(req.payload)
 
     // Fetch the meeting document
     const meeting = await req.payload.findByID({
@@ -224,6 +227,8 @@ export async function getNotVotedCompaniesEndpoint(req: any) {
       })
     }
 
+    await checkAndReloadCache(req.payload)
+
     // Fetch the meeting document
     const meeting = await req.payload.findByID({
       collection: 'meetings',
@@ -367,6 +372,7 @@ export async function getNotVotedCompaniesEndpoint(req: any) {
  */
 export async function getCompaniesOrderEndpoint(req: any) {
   try {
+    await checkAndReloadCache(req.payload)
     // Get the companies order map
     const companyOrderMap = getCompanyOrderMap() || new Map<string, string>()
     return new Response(JSON.stringify(Array.from(companyOrderMap.entries())), {
@@ -395,6 +401,8 @@ export async function getHistoricalHoldingsEndpoint(req: any) {
         headers: { 'Content-Type': 'application/json' },
       })
     }
+
+    await checkAndReloadCache(req.payload)
 
     // Fetch the meeting document
     const meeting = await req.payload.findByID({

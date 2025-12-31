@@ -4,6 +4,7 @@ import {
   getCompanyNameById,
   getCompanyNamesByIds,
   getRegularCompanies,
+  checkAndReloadCache,
 } from '../meetings/hooks/activeCompaniesCache'
 
 /**
@@ -17,6 +18,8 @@ export const getRegularCompaniesEndpoint = async (req: PayloadRequest) => {
     if (!req.user) {
       return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
     }
+
+    await checkAndReloadCache(req.payload)
 
     // Get regular companies from cache (already filtered to active and type: 'regular')
     const regularCompanies = getRegularCompanies()
@@ -98,6 +101,8 @@ export const getFundsForCompanyEndpoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'Missing companyId parameter' }, { status: 400 })
     }
 
+    await checkAndReloadCache(req.payload)
+
     const companySubCompanies = getCompanyFundIds(companyId) || []
 
     // Get company data for the funds
@@ -150,6 +155,8 @@ export const getCompanyNamesEndpoint = async (req: PayloadRequest) => {
         { status: 400 },
       )
     }
+
+    await checkAndReloadCache(req.payload)
 
     const companies = getCompanyNamesByIds(companyids)
     return Response.json({

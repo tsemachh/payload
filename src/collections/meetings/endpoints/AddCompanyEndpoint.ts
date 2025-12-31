@@ -1,7 +1,7 @@
 import { addDataAndFileToRequest, PayloadRequest } from 'payload'
 import { getIdOfRelationField } from '@/utils/utils'
 import { processCompaniesMeetings } from '../hooks/processCompaniesMeetings'
-import { getCompanyDataById } from '../hooks/activeCompaniesCache'
+import { getCompanyDataById, checkAndReloadCache } from '../hooks/activeCompaniesCache'
 
 /**
  * Endpoint to add a company to a meeting
@@ -17,6 +17,8 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
     if (!req.user) {
       return Response.json({ error: 'Unauthorized: No user logged in' }, { status: 401 })
     }
+
+    await checkAndReloadCache(req.payload)
 
     const data = req.data as
       | {
