@@ -44,9 +44,11 @@ export const syncMeetingsOnCompanyChange = async ({ req, data, previousDoc }: an
           collection: 'meetings',
           id: meeting.id,
           data: { labels: updatedLabels },
+          req: {
+            ...req,
+            context: { ...req.context, process: 'syncMeetingLabelsOnCompanyLabelAdd' },
+          },
         })
-
-        console.log(`✅ Added label ${companyLabel.label} to meeting ${meeting.id}`)
       }
     }
 
@@ -70,9 +72,11 @@ export const syncMeetingsOnCompanyChange = async ({ req, data, previousDoc }: an
           collection: 'meetings',
           id: meeting.id,
           data: { labels: updatedLabels },
+          req: {
+            ...req,
+            context: { ...req.context, process: 'syncMeetingLabelsOnCompanyLabelRemove' },
+          },
         })
-
-        console.log(`✅ Removed label ${companyLabel.label} from meeting ${meeting.id}`)
       }
     }
   } catch (err) {

@@ -28,6 +28,7 @@ import { AdminNotifications } from '@/collections/admin-notifications/AdminNotif
 import { CompanyMeetingNotifications } from '@/collections/company-meeting-notifications/CompanyMeetingNotifications'
 import { AuditLogs } from '@/collections/audit-logs/AuditLogs'
 import { AuditLogReads } from '@/collections/audit-logs/AuditLogReads'
+import { SystemMeta } from './globals/SystemMeta'
 import DynamicFieldOverrides from '@shefing/field-type-component-override'
 import MigrationFaults from './collections/migration/MigrationFaults'
 import StockMigrationMapping from './collections/stocks/StockMigrationMapping'
@@ -303,7 +304,7 @@ export default buildConfig({
     // Hidden collections
     StockValues,
   ],
-  globals: [],
+  globals: [SystemMeta],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

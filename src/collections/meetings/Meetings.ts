@@ -181,7 +181,10 @@ export const Meetings: CollectionConfig = {
         '/collections/meetings/components/MigrateVoteCountsMenuItem',
       ],
       edit: {
-        beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
+        beforeDocumentControls: [
+          '/collections/meetings/components/NavCloser',
+          '/collections/meetings/components/MeetingDate',
+        ],
         PublishButton: '/components/buttons/CustomPublishButton',
       },
     },
@@ -402,6 +405,7 @@ export const Meetings: CollectionConfig = {
               on: 'meeting',
               defaultLimit: 0,
               maxDepth: 1,
+              where: { _status: { equals: 'published' } },
               admin: {
                 allowCreate: false,
                 disableListColumn: true,
@@ -1460,7 +1464,7 @@ export const Meetings: CollectionConfig = {
                   dualMeeting: createdDualMeeting.id,
                   migrationComments: `${changeDate} - [${changeSource}] Created dual meeting for stock ${stock.fullName || stock.id}`,
                 },
-                context: { from: 'process' },
+                context: { from: 'process', process: 'MeetingsAfterChangeCreateDualMeeting' },
                 req,
               })
             } catch (error) {

@@ -90,7 +90,10 @@ Previous meetings processed successfully: ${successPrevCount} / ${countTotalPrev
  `,
         meetings: processedMeetingIds,
       },
-      req,
+      req: {
+        ...req,
+        context: { ...req.context, process: 'uploadMeetingsCsvSummary' },
+      },
     })
     // Check if a file with the same hash already exists
     const { isDuplicate, existingDoc } = await checkDuplicateFileHash(
@@ -120,7 +123,10 @@ Previous meetings processed successfully: ${successPrevCount} / ${countTotalPrev
         data: {
           hash: fileHash,
         },
-        req,
+        req: {
+          ...req,
+          context: { ...req.context, process: 'uploadMeetingsCsvHash' },
+        },
       })
     }
     return Response.json({

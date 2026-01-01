@@ -12,6 +12,10 @@ import { recalculateMeetingVoteCounts } from '@/collections/meetings/hooks/votes
  * Note: This hook should be used as a CollectionAfterDeleteHook, not CollectionAfterChangeHook
  */
 export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ doc, req }) => {
+  if (req.context?.from === 'migration' || req.context?.from === 'process') {
+    return
+  }
+
   // Only process if we have a meeting ID and the vote was published
   if (!doc.meeting || typeof doc.meeting !== 'string') {
     return
@@ -24,23 +28,24 @@ export const handleVoteDeletionHook: CollectionAfterDeleteHook<Vote> = async ({ 
   } catch (error) {
     req.payload.logger.error(
       { error },
-      `Error updating meeting vote counts after deletion for meeting ${meetingId}:`
+      `Error updating meeting vote counts after deletion for meeting ${meetingId}:`,
     )
   }
 }
 
-export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({ data, req ,originalDoc}) => {
-  
+export const setVoteFlags: CollectionBeforeChangeHook<Vote> = async ({
+  data,
+  req,
+  originalDoc,
+}) => {
   if (data._status === 'published') {
-   
-    if (originalDoc?.publishedchecksum === ''){
+    if (originalDoc?.publishedchecksum === '') {
       data.publishedchecksum = data.checksum
-    }
-    else if(originalDoc?.publishedchecksum != data.checksum) {
+    } else if (originalDoc?.publishedchecksum != data.checksum) {
       data.reported = false
-      data.reportApproval=null
+      data.reportApproval = null
       data.publishedchecksum = data.checksum
-    }else{
+    } else {
       data.publishedchecksum = originalDoc?.publishedchecksum
     }
   }
@@ -101,10 +106,7 @@ export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vo
   previousDoc,
   req,
 }) => {
-  if (
-    req.context?.from == 'migration' ||
-    req.context?.from == 'process'
-  ) {
+  if (req.context?.from == 'migration' || req.context?.from == 'process') {
     return
   }
   const reportedChanged = doc.reported !== previousDoc?.reported
@@ -113,7 +115,7 @@ export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vo
   const statusChangedFromDraftToPublished =
     previousDoc?._status === 'draft' && doc._status === 'published'
   const statusChanged = statusChangedFromPublishedToDraft || statusChangedFromDraftToPublished
- 
+
   if (
     (doc._status === 'published' && reportedChanged && doc.meeting) ||
     (statusChanged && doc.meeting)
@@ -123,7 +125,7 @@ export const recalculateVoteCountsOnReportedChange: CollectionAfterChangeHook<Vo
     } catch (error) {
       req.payload.logger.error(
         { error },
-        `Error recalculating meeting vote counts for meeting ${doc.meeting}:`
+        `Error recalculating meeting vote counts for meeting ${doc.meeting}:`,
       )
     }
   }

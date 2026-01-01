@@ -14,21 +14,6 @@ export type CachedCompany = {
   type: string | null
 }
 
-export function getCompanyIdFromFundId(fundId: string): string | null {
-  const map = getFundToCompanyMap()
-  if (!map) return null
-  const key = String(fundId)
-  return map[key] || null
-}
-
-export function getCompanyFundIds(companyId: string): string[] | null {
-  if (!companyId) return null
-  const map = __activeFundsCache?.companyToFunds
-  if (!map) return null
-  const key = String(companyId)
-  return map[key] || null
-}
-
 type ActiveCompaniesCache = {
   ids: string[]
   // map of companyId -> array of fundIds
@@ -38,9 +23,11 @@ type ActiveCompaniesCache = {
   // map of any company id -> minimal cached data
   byId: Record<string, CachedCompany>
   orderMap: Map<string, string>
+  lastLoadedAt: number
 } | null
 
 let __activeFundsCache: ActiveCompaniesCache = null
+const CACHE_TTL = 1 * 60 * 1000 // 1 minute
 
 export function setActiveFundsCache(
   ids: string[],
@@ -56,59 +43,133 @@ export function setActiveFundsCache(
     fundToCompany: fundToCompany || {},
     byId: byId || {},
     orderMap: orderMap || new Map(),
+    lastLoadedAt: Date.now(),
   }
 }
 
-export function getActiveFundsCache(): string[] | null {
+let __refreshing = false
+/**
+ * Internal logic to check and reload the cache if needed.
+ * This runs as a background task to avoid blocking the main thread.
+ */
+function checkAndReloadCache(payload: Payload): void {
+  if (__refreshing) return
+  const now = Date.now()
+
+  // If no cache or TTL passed, check SystemMeta
+  if (!__activeFundsCache || now - __activeFundsCache.lastLoadedAt > CACHE_TTL) {
+    // Fire and forget
+    ;(async () => {
+      if (__refreshing) return
+      try {
+        __refreshing = true
+        const systemMeta = await payload.findGlobal({
+          slug: 'system-meta',
+        })
+
+        const lastUpdate = systemMeta?.companyLastUpdateDate
+          ? new Date(systemMeta.companyLastUpdateDate).getTime()
+          : 0
+
+        if (!__activeFundsCache || lastUpdate > __activeFundsCache.lastLoadedAt) {
+          payload.logger.info(
+            'Cache expired or system meta update detected, reloading companies cache in background',
+          )
+          await preloadCompaniesCache(payload)
+        } else if (__activeFundsCache) {
+          // Just update lastLoadedAt to avoid checking again for another TTL period
+          __activeFundsCache.lastLoadedAt = now
+        }
+      } catch (e: any) {
+        payload.logger.error('Failed to check/reload companies cache in background', e)
+      } finally {
+        __refreshing = false
+      }
+    })()
+  }
+}
+
+export function getActiveFundsCache(payload?: Payload): string[] | null {
+  if (payload) checkAndReloadCache(payload)
   if (!__activeFundsCache) return null
   return __activeFundsCache.ids
 }
 
-export function getCompanyToFundsMap(): Record<string, string[]> | null {
+export function getCompanyToFundsMap(payload?: Payload): Record<string, string[]> | null {
+  if (payload) checkAndReloadCache(payload)
   if (!__activeFundsCache) return null
   return __activeFundsCache.companyToFunds || {}
 }
 
-export function getFundToCompanyMap(): Record<string, string> | null {
+export function getFundToCompanyMap(payload?: Payload): Record<string, string> | null {
+  if (payload) checkAndReloadCache(payload)
   if (!__activeFundsCache) return null
   return __activeFundsCache.fundToCompany || {}
 }
 
 // --- New getters for standardized access to cached company data ---
-export function getCompanyDataById(id: string): CachedCompany | null {
+export function getCompanyDataById(id: string, payload?: Payload): CachedCompany | null {
   if (!id) return null
+  if (payload) checkAndReloadCache(payload)
   if (!__activeFundsCache) return null
   return __activeFundsCache.byId[String(id)] || null
 }
 
 // --- New getters for standardized access to cached company data ---
-export function getCompanyOrderMap(): Map<string, string> | null {
+export function getCompanyOrderMap(payload?: Payload): Map<string, string> | null {
+  if (payload) checkAndReloadCache(payload)
   if (!__activeFundsCache) return null
   return __activeFundsCache.orderMap || new Map()
 }
 
-export function getRegularCompanies(): CachedCompany[] {
+export function getRegularCompanies(payload?: Payload): CachedCompany[] {
+  if (payload) checkAndReloadCache(payload)
   if (!__activeFundsCache) return []
   return Object.values(__activeFundsCache.byId).filter((company) => company.type === 'regular')
 }
 
-export function getCompanyNameById(id: string): string | null {
-  return getCompanyDataById(id)?.name ?? null
+export function getCompanyNameById(id: string, payload?: Payload): string | null {
+  const data = getCompanyDataById(id, payload)
+  return data?.name ?? null
 }
 
-export function getCompanyNamesByIds(ids: string[]): Array<{ id: string; name: string | null }> {
+export function getCompanyNamesByIds(
+  ids: string[],
+  payload?: Payload,
+): Array<{ id: string; name: string | null }> {
+  if (payload) checkAndReloadCache(payload)
   return ids.map((id) => ({ id, name: getCompanyNameById(id) }))
 }
 
-export function getManyCompanyDataByIds(ids: string[]): Record<string, CachedCompany | null> {
+export function getManyCompanyDataByIds(
+  ids: string[],
+  payload?: Payload,
+): Record<string, CachedCompany | null> {
+  if (payload) checkAndReloadCache(payload)
   const res: Record<string, CachedCompany | null> = {}
   for (const id of ids || []) res[String(id)] = getCompanyDataById(String(id))
   return res
 }
 
 // Alias with clearer name as requested
-export const getByIds = (ids: string[]): Record<string, CachedCompany | null> =>
-  getManyCompanyDataByIds(ids)
+export const getByIds = (ids: string[], payload?: Payload): Record<string, CachedCompany | null> =>
+  getManyCompanyDataByIds(ids, payload)
+
+export function getCompanyIdFromFundId(fundId: string, payload?: Payload): string | null {
+  const map = getFundToCompanyMap(payload)
+  if (!map) return null
+  const key = String(fundId)
+  return map[key] || null
+}
+
+export function getCompanyFundIds(companyId: string, payload?: Payload): string[] | null {
+  if (!companyId) return null
+  if (payload) checkAndReloadCache(payload)
+  const map = __activeFundsCache?.companyToFunds
+  if (!map) return null
+  const key = String(companyId)
+  return map[key] || null
+}
 
 // --- Loader: Preload the cache using Payload API only ---
 export async function preloadCompaniesCache(payload: Payload) {

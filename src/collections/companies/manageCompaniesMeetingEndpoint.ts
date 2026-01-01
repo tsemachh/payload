@@ -19,7 +19,7 @@ export const getRegularCompaniesEndpoint = async (req: PayloadRequest) => {
     }
 
     // Get regular companies from cache (already filtered to active and type: 'regular')
-    const regularCompanies = getRegularCompanies()
+    const regularCompanies = getRegularCompanies(req.payload)
 
     // Format to match the expected response structure
     const docs = regularCompanies.map((company) => ({
@@ -98,12 +98,12 @@ export const getFundsForCompanyEndpoint = async (req: PayloadRequest) => {
       return Response.json({ error: 'Missing companyId parameter' }, { status: 400 })
     }
 
-    const companySubCompanies = getCompanyFundIds(companyId) || []
+    const companySubCompanies = getCompanyFundIds(companyId, req.payload) || []
 
     // Get company data for the funds
     const docs = companySubCompanies
       .map((id) => {
-        const companyName = getCompanyNameById(id)
+        const companyName = getCompanyNameById(id, req.payload)
 
         return companyName
           ? {
@@ -151,7 +151,7 @@ export const getCompanyNamesEndpoint = async (req: PayloadRequest) => {
       )
     }
 
-    const companies = getCompanyNamesByIds(companyids)
+    const companies = getCompanyNamesByIds(companyids, req.payload)
     return Response.json({
       success: true,
       data: companies,

@@ -20,7 +20,11 @@ function looksLikeISIN(value?: string): boolean {
   return /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(v)
 }
 
-type MappingItem = { stockId: number; type: 'Foreign' | 'Private' | 'NotActive' | 'NonTradable'; isin?: string }
+type MappingItem = {
+  stockId: number
+  type: 'Foreign' | 'Private' | 'NotActive' | 'NonTradable'
+  isin?: string
+}
 
 function readJsonMapping(): MappingItem[] {
   const jsonPath = path.resolve(process.cwd(), 'src/utils/stockMapping.json')
@@ -42,7 +46,10 @@ export async function seedStockMigrationMapping() {
       })
       console.log(`Dropped ${deleted?.docs?.length ?? 0} existing stock-migration-mapping docs`)
     } catch (delErr) {
-      console.warn('Warning: failed to bulk-delete existing stock-migration-mapping docs (continuing):', delErr)
+      console.warn(
+        'Warning: failed to bulk-delete existing stock-migration-mapping docs (continuing):',
+        delErr,
+      )
     }
     const items = readJsonMapping()
 
@@ -96,18 +103,21 @@ export async function seedStockMigrationMapping() {
         })
         createdCount++
         createdIds.add(extra.stockId)
-      }else{
+      } else {
         await payload.update({
           collection: 'stock-migration-mapping',
           data: extra,
-          where:{
-            stockId: {equals : extra.stockId}
-          }
+          where: {
+            stockId: { equals: extra.stockId },
+          },
+          context: { process: 'seedStockMigrationMapping' },
         })
       }
     }
 
-    console.log(`Successfully seeded stock-migration-mapping collection from JSON. Inserted ${createdCount} docs.`)
+    console.log(
+      `Successfully seeded stock-migration-mapping collection from JSON. Inserted ${createdCount} docs.`,
+    )
   } catch (error) {
     console.error('Error seeding stock-migration-mapping from JSON:', error)
     throw error

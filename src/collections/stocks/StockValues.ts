@@ -142,7 +142,7 @@ export const StockValues: CollectionConfig = {
             collection: 'meetings',
             req: {
               ...req,
-              context: { ...req.context, from: 'process' },
+              context: { ...req.context, from: 'process', process: 'StockValuesAfterChange' },
             },
             data: {
               stockValue: id,

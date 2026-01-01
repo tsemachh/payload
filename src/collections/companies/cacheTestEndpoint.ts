@@ -42,16 +42,17 @@ const cacheTestEndpoint = async (req: PayloadRequest) => {
     const fundId = q.fundId ? String(q.fundId) : ''
     const companyId = q.companyId ? String(q.companyId) : ''
 
-    const byId = ids.length > 0 ? getManyCompanyDataByIds(ids) : {}
-    const namesOnly = ids.length > 0
-      ? ids.reduce<Record<string, string | null>>((acc, id) => {
-          acc[id] = getCompanyNameById(id)
-          return acc
-        }, {})
-      : {}
+    const byId = ids.length > 0 ? getManyCompanyDataByIds(ids, req.payload) : {}
+    const namesOnly =
+      ids.length > 0
+        ? ids.reduce<Record<string, string | null>>((acc, id) => {
+            acc[id] = getCompanyNameById(id, req.payload)
+            return acc
+          }, {})
+        : {}
 
-    const resolvedCompanyFromFund = fundId ? getCompanyIdFromFundId(fundId) : null
-    const resolvedFundsFromCompany = companyId ? getCompanyFundIds(companyId) : null
+    const resolvedCompanyFromFund = fundId ? getCompanyIdFromFundId(fundId, req.payload) : null
+    const resolvedFundsFromCompany = companyId ? getCompanyFundIds(companyId, req.payload) : null
 
     const payloadJson: any = {
       params: {
@@ -70,7 +71,7 @@ const cacheTestEndpoint = async (req: PayloadRequest) => {
     }
 
     if (includeActiveFunds) {
-      payloadJson.results.activeFunds = getActiveFundsCache() || []
+      payloadJson.results.activeFunds = getActiveFundsCache(req.payload) || []
     }
 
     // Always include maps for visibility when debugging
@@ -78,8 +79,8 @@ const cacheTestEndpoint = async (req: PayloadRequest) => {
       const { getCompanyToFundsMap, getFundToCompanyMap } = await import(
         '@/collections/meetings/hooks/activeCompaniesCache'
       )
-      payloadJson.results.companyToFunds = getCompanyToFundsMap() || {}
-      payloadJson.results.fundToCompany = getFundToCompanyMap() || {}
+      payloadJson.results.companyToFunds = getCompanyToFundsMap(req.payload) || {}
+      payloadJson.results.fundToCompany = getFundToCompanyMap(req.payload) || {}
     } catch {}
 
     return Response.json(payloadJson)
