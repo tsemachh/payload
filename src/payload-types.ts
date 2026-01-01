@@ -359,8 +359,12 @@ export interface Config {
     defaultIDType: string;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'system-meta': SystemMeta;
+  };
+  globalsSelect: {
+    'system-meta': SystemMetaSelect<false> | SystemMetaSelect<true>;
+  };
   locale: null;
   user: User & {
     collection: 'users';
@@ -2348,6 +2352,32 @@ export interface PayloadQueryPresetsSelect<T extends boolean = true> {
   isTemp?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "system-meta".
+ */
+export interface SystemMeta {
+  id: string;
+  companyLastUpdateDate?: string | null;
+  creator?: string | null;
+  updator?: string | null;
+  process?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "system-meta_select".
+ */
+export interface SystemMetaSelect<T extends boolean = true> {
+  companyLastUpdateDate?: T;
+  creator?: T;
+  updator?: T;
+  process?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

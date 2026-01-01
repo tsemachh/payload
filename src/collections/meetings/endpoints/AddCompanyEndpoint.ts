@@ -57,7 +57,7 @@ const addCompanyEndpoint = async (req: PayloadRequest) => {
     const fundsForCompany = {
       docs: fundIds
         .map((id) => {
-          const data = getCompanyDataById(id)
+          const data = getCompanyDataById(id, req.payload)
           return data ? { id: data.id, name: data.name } : null
         })
         .filter(Boolean),

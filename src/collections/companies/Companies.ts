@@ -809,14 +809,40 @@ export const Companies: CollectionConfig = {
           const isFund = doc?.type === 'fund' || previousDoc?.type === 'fund'
           const activeChanged = previousDoc && doc?.active !== previousDoc?.active
           const typeChanged = previousDoc && doc?.type !== previousDoc?.type
+          const nameChanged = previousDoc && doc?.name !== previousDoc?.name
+          const parentChanged =
+            previousDoc &&
+            JSON.stringify(doc?.parentCompany) !== JSON.stringify(previousDoc?.parentCompany)
+          const orderChanged = previousDoc && doc?._order !== previousDoc?._order
           const createdOrDeleted = operation === 'create'
+
           if (isFund && (activeChanged || typeChanged || createdOrDeleted)) {
             // Invalidate so next run refreshes the cache
             await invalidateActiveFundsCache(req?.payload)
             req?.payload?.logger?.info?.('Invalidated active funds cache due to company change')
           }
+
+          // Update system meta last update date if any cached field changed
+          if (
+            activeChanged ||
+            typeChanged ||
+            nameChanged ||
+            parentChanged ||
+            orderChanged ||
+            createdOrDeleted
+          ) {
+            await req.payload.updateGlobal({
+              slug: 'system-meta',
+              data: {
+                companyLastUpdateDate: new Date().toISOString(),
+              },
+            })
+          }
         } catch (e) {
-          req?.payload?.logger?.warn?.({ e }, 'Failed to invalidate active funds cache')
+          req?.payload?.logger?.warn?.(
+            { e },
+            'Failed to invalidate active funds cache or update system meta',
+          )
         }
       },
     ],
