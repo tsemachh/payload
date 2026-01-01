@@ -398,14 +398,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             // Process each date sequentially to keep per-company load reasonable
             for (const dateStr of dates) {
               const holdings = await getHoldingsPage(pool, company.firm, String(dateStr))
-              console.log(
-                '[migrateHoldings.up] getHoldingsPage rows:',
-                holdings.recordset?.length ?? 0,
-                'for firm:',
-                company.firm,
-                'date:',
-                String(dateStr),
-              )
               const formattedDate = formatDateForSQL(String(dateStr))
               await processHoldingsChunk(holdings, formattedDate)
             }
@@ -415,9 +407,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
       // Wait for all promises in the current batch to complete
       await Promise.all(batch)
-      console.log(
-        `Completed batch ${i / MAX_CONCURRENT_PROCESSES + 1} of ${Math.ceil(activeCompanies.length / MAX_CONCURRENT_PROCESSES)}`,
-      )
+      const processed = Math.min(i + MAX_CONCURRENT_PROCESSES, activeCompanies.length)
+      if (processed % 100 === 0 || processed === activeCompanies.length) {
+        const percentage = ((processed / activeCompanies.length) * 100).toFixed(2)
+        console.log(
+          `Progress: ${processed}/${activeCompanies.length} companies processed (${percentage}%)`,
+        )
+      }
     }
     // Emit consolidated 'matched by subAccountNum' logs
     if (matchedBySubAccountMsgs.size > 0) {
@@ -481,13 +477,6 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
     // NOTE: Concurrency removed entirely per request — all processing is strictly sequential.
 
     const processHoldingsChunk = async (holdings: IResult<HoldingRow>, holdingDate: string) => {
-      console.log(
-        '[backfillDiscontinuedHoldings] processHoldingsChunk start:',
-        'date:',
-        holdingDate,
-        'rows:',
-        holdings.recordset?.length ?? 0,
-      )
       const companyHoldings = new Map<
         string,
         Map<
@@ -666,14 +655,6 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
               recordCount,
             },
           }
-          console.log(
-            '[backfillDiscontinuedHoldings] creating holdings for:',
-            companyId,
-            'date:',
-            holdingDate,
-            'items:',
-            holdingsArray.length,
-          )
 
           await payload.create({
             collection: 'holdings',
@@ -683,7 +664,6 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
               context: { ...req.context, from: 'migration', process: 'migrateHoldings' },
             },
           })
-          console.log('[backfillDiscontinuedHoldings] created holdings for:', companyId)
 
           const delayMs = Number(process.env.DISCONTINUED_UPSERT_DELAY_MS || '0')
           if (delayMs > 0)
@@ -804,21 +784,16 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
         const firm = String(row.firm)
         const dateStr = formatDateForSQL(String(row.date1))
         const holdings = await getHoldingsPage(pool as sql.ConnectionPool, firm, dateStr)
-        console.log(
-          '[backfillDiscontinuedHoldings] fetched holdings rows:',
-          holdings.recordset?.length ?? 0,
-          'for firm:',
-          firm,
-          'date:',
-          dateStr,
-        )
         await processHoldingsChunk(holdings, dateStr)
       } catch (e) {
         console.error('Error processing discontinued holding pair', row, e)
       }
       processed++
-      if (processed % 50 === 0 || processed === discontinuedPairs.recordset.length) {
-        console.log(`Progress: ${processed}/${discontinuedPairs.recordset.length} pairs processed`)
+      if (processed % 100 === 0 || processed === discontinuedPairs.recordset.length) {
+        const percentage = ((processed / discontinuedPairs.recordset.length) * 100).toFixed(2)
+        console.log(
+          `Progress: ${processed}/${discontinuedPairs.recordset.length} pairs processed (${percentage}%)`,
+        )
       }
       // Yield to event loop to avoid starving I/O
       await new Promise((r) => setImmediate(r))
@@ -826,7 +801,9 @@ export async function backfillDiscontinuedHoldings({ payload, req }: MigrateUpAr
 
     // Emit consolidated 'matched by subAccountNum' logs
     if (matchedBySubAccountMsgs.size > 0) {
-      console.log('\n[backfillDiscontinuedHoldings] Matched-by-subAccountNum summary (logged once at end):')
+      console.log(
+        '\n[backfillDiscontinuedHoldings] Matched-by-subAccountNum summary (logged once at end):',
+      )
       for (const [msg, count] of Array.from(matchedBySubAccountMsgs.entries())) {
         console.info(`${msg} | occurrences=${count}`)
       }

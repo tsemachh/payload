@@ -24,13 +24,16 @@ export async function recalculateMeetingVoteCounts(
     }
   | undefined
 > {
+  const isMigration = req.context?.from === 'migration'
+  const logPrefix = `[recalculateMeetingVoteCounts][${meetingId}]`
+
   try {
-    // Get the meeting with all votes and companies
+    if (isMigration) console.log(`${logPrefix} Step 1: Fetching meeting...`)
+    // Get the meeting with companies (IDs only)
     const meeting = await req.payload.findByID({
       collection: 'meetings',
       select: {
         migrationComments: true,
-        votes: true,
         companies: true,
         votesCount: true,
         reportVotesCount: true,
@@ -38,20 +41,39 @@ export async function recalculateMeetingVoteCounts(
         votesReportStatus: true,
       },
       id: meetingId,
-      depth: 1,
+      depth: 0,
     })
 
     if (!meeting) {
       throw new Error(`Meeting with ID ${meetingId} not found`)
     }
 
-    // Count reported votes
-    const newReportVotesCount =
-      meeting?.votes?.docs?.filter((vote) => (vote as Vote).reported === true).length || 0
+    if (isMigration) console.log(`${logPrefix} Step 2: Counting published votes...`)
+    // Count published votes using count() for performance
+    const { totalDocs: newVotesCount } = await req.payload.count({
+      collection: 'votes',
+      where: {
+        meeting: { equals: meetingId },
+        _status: { equals: 'published' },
+      },
+      req,
+    })
+
+    if (isMigration) console.log(`${logPrefix} Step 3: Counting reported votes...`)
+    // Count reported votes using count() for performance
+    const { totalDocs: newReportVotesCount } = await req.payload.count({
+      collection: 'votes',
+      where: {
+        meeting: { equals: meetingId },
+        _status: { equals: 'published' },
+        reported: { equals: true },
+      },
+      req,
+    })
+
+    if (isMigration) console.log(`${logPrefix} Step 4: Calculating statuses...`)
     // Calculate status indicators
     const companiesCount = meeting.companies?.length || 0
-    //vote Count
-    const newVotesCount = meeting?.votes?.docs?.length || 0
     // Calculate vote statuses using the utility function
     const { votesStatus, votesReportStatus } = calculateVoteStatuses(
       newVotesCount,
@@ -74,6 +96,7 @@ export async function recalculateMeetingVoteCounts(
       meeting.votesStatus !== votesStatus || meeting.votesReportStatus !== votesReportStatus
 
     if (countsChanged || statusesChanged) {
+      if (isMigration) console.log(`${logPrefix} Step 5: Updating meeting counts/statuses...`)
       // Get current meeting to access its changeDetails
       const currentMeeting = meeting
 
@@ -101,9 +124,14 @@ export async function recalculateMeetingVoteCounts(
             votesReportStatus,
             migrationComments,
           },
+          depth: 0,
           req: {
             ...req,
-            context: { ...req.context, from: 'process', process: 'recalculateMeetingVoteCounts' },
+            context: {
+              ...req.context,
+              from: 'migration',
+              process: 'recalculateMeetingVoteCounts',
+            },
           },
         })
 
@@ -182,6 +210,11 @@ export const updateVoteStatusOnCompaniesChange: CollectionBeforeChangeHook<Meeti
 }) => {
   // Only process updates
   if (operation !== 'update' || !originalDoc) {
+    return data
+  }
+
+  // Skip if companies are not being updated to avoid false positives and incorrect status resets
+  if (data.companies === undefined) {
     return data
   }
 

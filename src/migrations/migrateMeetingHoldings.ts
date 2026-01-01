@@ -2,6 +2,7 @@ import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import sql from 'mssql'
 import { logMigrationFault } from '@/migrations/utils/migrationFaultUtils'
 import { PromisePool } from '@/utils/promisePool'
+import { withTimeout } from '@/utils/withTimeout'
 import { Meeting, Stock } from '@/payload-types'
 import { createMSSqlPool } from '@/migrations/utils/utils'
 import { getCompanyIdFromFundId, initFundIdToCompanyIdMap } from '@/utils/utils'
@@ -37,13 +38,13 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
         finalized: { not_equals: true },
       },
       limit: 0,
-      depth: 1,
+      depth: 0,
     })
 
     console.log(`Found ${meetings.docs.length} meetings in MongoDB`)
 
-    // Create a promise pool with 20 concurrent threads
-    const promisePool = new PromisePool(20)
+    // Create a promise pool with 5 concurrent threads
+    const promisePool = new PromisePool(5)
     const promises = []
 
     // Process meetings in parallel using the promise pool
@@ -57,157 +58,172 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       promises.push(
         promisePool.add(async () => {
           try {
-            // Get the meeting ID from the sequence map
-            const meetingId = meeting.id
+            await withTimeout(
+              (async () => {
+                // Get the meeting ID from the sequence map
+                const meetingId = meeting.id
 
-            const meetingSeq = meeting.primaryLegacyId
+                const meetingSeq = meeting.primaryLegacyId
 
-            if (!meetingSeq) {
-              console.log(`Meeting with ID ${meetingId} has no meetingId, skipping...`)
-              skippedCount++
-              return
-            }
+                if (!meetingSeq) {
+                  console.log(`Meeting with ID ${meetingId} has no meetingId, skipping...`)
+                  skippedCount++
+                  return
+                }
 
-            // Call the stored procedure to get meeting holdings
-            const request = pool!.request()
-            request.input('MeetingId', sql.Int, meetingSeq)
-            const result = await request.execute('getMeetingAccountHoldingsLast')
+                // Call the stored procedure to get meeting holdings
+                const request = pool!.request()
+                request.input('MeetingId', sql.Int, meetingSeq)
+                const result = await request.execute('getMeetingAccountHoldingsLast')
 
-            if (!result.recordset || result.recordset.length === 0) {
-              console.log(`No holdings found for meeting ${meetingSeq}, skipping...`)
-              skippedCount++
-              return
-            }
+                if (!result.recordset || result.recordset.length === 0) {
+                  console.log(`No holdings found for meeting ${meetingSeq}, skipping...`)
+                  skippedCount++
+                  return
+                }
 
-            // Filter out rows where qty is NULL
-            const filteredHoldings = result.recordset.filter((row) => row.qty !== null)
+                // Filter out rows where qty is NULL
+                const filteredHoldings = result.recordset.filter((row) => row.qty !== null)
 
-            if (filteredHoldings.length === 0) {
-              console.log(
-                `No valid holdings found for meeting ${meetingSeq} after filtering, skipping...`,
-              )
-              skippedCount++
-              return
-            }
+                if (filteredHoldings.length === 0) {
+                  console.log(
+                    `No valid holdings found for meeting ${meetingSeq} after filtering, skipping...`,
+                  )
+                  skippedCount++
+                  return
+                }
 
-            // Find funds (companies of type 'fund') where parent company is one of the firmIds
-            // and main account is the accountNum
-            const fundsPromises = []
+                // Find funds (companies of type 'fund') where parent company is one of the firmIds
+                // and main account is the accountNum
+                const fundsPromises = []
 
-            for (const holding of filteredHoldings) {
-              fundsPromises.push(
-                payload.find({
-                  collection: 'companies',
-                  select: {
-                    mainAccount: { accountNumber: true, subAccounts: true },
-                    legacyCompanyId: true,
-                  },
-                  where: {
-                    and: [
-                      { type: { equals: 'fund' } },
-                      { legacyCompanyId: { equals: holding.firmid } },
-                      {
-                        or: [
+                for (const holding of filteredHoldings) {
+                  fundsPromises.push(
+                    payload.find({
+                      collection: 'companies',
+                      select: {
+                        mainAccount: { accountNumber: true, subAccounts: true },
+                        legacyCompanyId: true,
+                      },
+                      where: {
+                        and: [
+                          { type: { equals: 'fund' } },
+                          { legacyCompanyId: { equals: holding.firmid } },
                           {
-                            'mainAccount.accountNumber': { equals: holding.accountNum.toString() },
-                          },
-                          {
-                            'mainAccount.subAccounts': { contains: holding.accountNum.toString() },
+                            or: [
+                              {
+                                'mainAccount.accountNumber': {
+                                  equals: holding.accountNum.toString(),
+                                },
+                              },
+                              {
+                                'mainAccount.subAccounts': {
+                                  contains: holding.accountNum.toString(),
+                                },
+                              },
+                            ],
                           },
                         ],
                       },
-                    ],
-                  },
-                  depth: 0,
-                  limit: 0,
-                }),
-              )
-            }
-
-            const fundsResults = await Promise.all(fundsPromises)
-
-            // Create a map of firmId + accountNum -> fundId using the matched account number per holding
-            const fundMap = new Map()
-            filteredHoldings.forEach((holding, idx) => {
-              const docs = fundsResults[idx]?.docs || []
-              if (docs.length > 0) {
-                const fund = docs[0] as any
-                const key = `${holding.firmid}_${holding.accountNum}`
-                fundMap.set(key, fund.id)
-                // Detect whether the match was via a subAccountNum and log it
-                const accountStr = holding.accountNum?.toString?.() ?? String(holding.accountNum)
-                const accounts = Array.isArray(fund.mainAccount) ? fund.mainAccount : []
-                let matchedBySub = false
-                for (const acc of accounts) {
-                  const subAccounts = Array.isArray(acc?.subAccounts)
-                    ? acc.subAccounts.map((s: any) => String(s))
-                    : []
-                  if (subAccounts.includes(accountStr)) {
-                    matchedBySub = true
-                    break
-                  }
-                  if (String(acc?.accountNumber) === accountStr) {
-                    matchedBySub = false
-                    break
-                  }
+                      depth: 0,
+                      limit: 0,
+                    }),
+                  )
                 }
-                if (matchedBySub) {
-                  const key = `Matched by subAccountNum: firmId=${holding.firmid}, accountNum=${accountStr}, fundId=${fund.id}`
-                  matchedBySubAccountMsgs.set(key, (matchedBySubAccountMsgs.get(key) || 0) + 1)
-                }
-              }
-            })
 
-            // Create fundsWithHolding array
-            const fundsWithHolding = []
-            const fromRelatedStock = meeting.legacyStockNum !== meeting.stockId
+                const fundsResults = await Promise.all(fundsPromises)
 
-            for (const holding of filteredHoldings) {
-              const key = `${holding.firmid}_${holding.accountNum}`
-              const fundId = fundMap.get(key)
-              if (fundId) {
-                const verifiedHoldings =
-                  holding.ownedQty == holding.qty ? true : holding.ownedQty > 0 ? false : null
-
-                fundsWithHolding.push({
-                  company: getCompanyIdFromFundId(fundId),
-                  fund: fundId,
-                  quantity: holding.qty,
-                  // Reset ownedQuantity when verifiedHoldings is true or null
-                  ownedQuantity: verifiedHoldings === false ? holding.ownedQty : 0,
-                  verifiedHoldings,
-                  feedStockNum: (meeting.stock as Stock).stockId || '', // Take stockNum from the meeting
-                  fromRelatedStock,
-                  original: [
-                    {
-                      quantity: holding.qty,
-                      stockId: meeting.legacyStockNum,
-                    },
-                  ],
+                // Create a map of firmId + accountNum -> fundId using the matched account number per holding
+                const fundMap = new Map()
+                filteredHoldings.forEach((holding, idx) => {
+                  const docs = fundsResults[idx]?.docs || []
+                  if (docs.length > 0) {
+                    const fund = docs[0] as any
+                    const key = `${holding.firmid}_${holding.accountNum}`
+                    fundMap.set(key, fund.id)
+                    // Detect whether the match was via a subAccountNum and log it
+                    const accountStr =
+                      holding.accountNum?.toString?.() ?? String(holding.accountNum)
+                    const accounts = Array.isArray(fund.mainAccount) ? fund.mainAccount : []
+                    let matchedBySub = false
+                    for (const acc of accounts) {
+                      const subAccounts = Array.isArray(acc?.subAccounts)
+                        ? acc.subAccounts.map((s: any) => String(s))
+                        : []
+                      if (subAccounts.includes(accountStr)) {
+                        matchedBySub = true
+                        break
+                      }
+                      if (String(acc?.accountNumber) === accountStr) {
+                        matchedBySub = false
+                        break
+                      }
+                    }
+                    if (matchedBySub) {
+                      const key = `Matched by subAccountNum: firmId=${holding.firmid}, accountNum=${accountStr}, fundId=${fund.id}`
+                      matchedBySubAccountMsgs.set(key, (matchedBySubAccountMsgs.get(key) || 0) + 1)
+                    }
+                  }
                 })
-              }
-            }
 
-            // Update the meeting with companies, funds, and fundsWithHolding
-            const updatedMeeting = {
-              hasRelatedStocks: fromRelatedStock,
-              funds: Array.from(new Set(fundsWithHolding.map((item) => item.fund))),
-              companies: Array.from(new Set(fundsWithHolding.map((item) => item.company))),
-              fundsWithHolding,
-            } as Partial<Meeting>
+                // Create fundsWithHolding array
+                const fundsWithHolding = []
+                const fromRelatedStock = meeting.legacyStockNum !== meeting.stockId
 
-            // Update the meeting in MongoDB
-            const updateResult = await payload.update({
-              collection: 'meetings',
-              id: meetingId,
-              data: updatedMeeting,
-              req,
-              context: { ...req.context, from: 'migration', process: 'migrateMeetingHoldings' },
-            })
+                for (const holding of filteredHoldings) {
+                  const key = `${holding.firmid}_${holding.accountNum}`
+                  const fundId = fundMap.get(key)
+                  if (fundId) {
+                    const verifiedHoldings =
+                      holding.ownedQty == holding.qty ? true : holding.ownedQty > 0 ? false : null
 
-            successCount++
-            console.log(
-              `✓ Updated Meeting: ${meetingSeq} with  ${updatedMeeting?.funds?.length} funds, and ${fundsWithHolding.length} fundsWithHolding (${successCount}/${meetings.docs.length})`,
+                    fundsWithHolding.push({
+                      company: getCompanyIdFromFundId(fundId),
+                      fund: fundId,
+                      quantity: holding.qty,
+                      // Reset ownedQuantity when verifiedHoldings is true or null
+                      ownedQuantity: verifiedHoldings === false ? holding.ownedQty : 0,
+                      verifiedHoldings,
+                      feedStockNum: (meeting.stock as Stock).stockId || '', // Take stockNum from the meeting
+                      fromRelatedStock,
+                      original: [
+                        {
+                          quantity: holding.qty,
+                          stockId: meeting.legacyStockNum,
+                        },
+                      ],
+                    })
+                  }
+                }
+
+                // Update the meeting with companies, funds, and fundsWithHolding
+                const updatedMeeting = {
+                  hasRelatedStocks: fromRelatedStock,
+                  funds: Array.from(new Set(fundsWithHolding.map((item) => item.fund))),
+                  companies: Array.from(new Set(fundsWithHolding.map((item) => item.company))),
+                  fundsWithHolding,
+                } as Partial<Meeting>
+
+                // Update the meeting in MongoDB
+                await payload.update({
+                  collection: 'meetings',
+                  id: meetingId,
+                  data: updatedMeeting,
+                  req,
+                  context: {
+                    ...req.context,
+                    from: 'migration',
+                    process: 'migrateMeetingHoldings',
+                  },
+                })
+
+                successCount++
+                console.log(
+                  `✓ Updated Meeting: ${meetingSeq} with  ${updatedMeeting?.funds?.length} funds, and ${fundsWithHolding.length} fundsWithHolding (${successCount}/${meetings.docs.length})`,
+                )
+              })(),
+              12000,
+              `Timeout processing meeting ${meeting.id} after 180s`,
             )
           } catch (updateError: any) {
             errorCount++
@@ -232,7 +248,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     // Emit consolidated 'matched by subAccountNum' logs
     if (matchedBySubAccountMsgs.size > 0) {
-      console.log('\n[migrateMeetingHoldings.up] Matched-by-subAccountNum summary (logged once at end):')
+      console.log(
+        '\n[migrateMeetingHoldings.up] Matched-by-subAccountNum summary (logged once at end):',
+      )
       for (const [msg, count] of Array.from(matchedBySubAccountMsgs.entries())) {
         console.info(`${msg} | occurrences=${count}`)
       }
