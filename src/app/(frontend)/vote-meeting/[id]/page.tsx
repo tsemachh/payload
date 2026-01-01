@@ -97,6 +97,7 @@ export default function VotingForm() {
   const [companiesIDs, setCompaniesIDs] = useState<string[]>([])
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submittingAction, setSubmittingAction] = useState<'single' | 'all' | null>(null)
   const [votingData, setVotingData] = useState<VoteDataType>({
     generalVotingData: {
       isInterested: false,
@@ -248,47 +249,37 @@ export default function VotingForm() {
   })
 
   const isDirty = useMemo(() => {
+    if (!initialVotingData || !fetchedVotes || fetchedVotes.length === 0) {
+      return true
+    }
+
     if (!initialVotingData) return true
+
     const currentDataForComparison = {
       ...votingData,
       voteDocuments: uploadedDocs.map((doc) => doc.id).sort(),
     }
+
     const initialDataForComparison = {
       ...initialVotingData,
-      voteDocuments: (initialVotingData.voteDocuments || []).sort(),
+      voteDocuments: (initialVotingData.voteDocuments || []).map((id: string) => id).sort(),
     }
+
     return JSON.stringify(currentDataForComparison) !== JSON.stringify(initialDataForComparison)
-  }, [votingData, initialVotingData, uploadedDocs])
+  }, [votingData, initialVotingData, uploadedDocs, fetchedVotes])
 
-  // Check if there are any changes across all companies
   const isAnyCompanyDirty = useMemo(() => {
-    // If current company has changes, return true immediately
-    if (isDirty) return true
-
-    // Check if any company has draft votes that differ from published votes
-    if (!fetchedAllLatestVotes || fetchedAllLatestVotes.length === 0) return false
-    if (!publishedVotes || publishedVotes.length === 0) return true // Has drafts but no published votes
-
-    // Simple check: if we have more draft votes than published votes, there are changes
-    const draftCompanies = new Set(
-      fetchedAllLatestVotes.map((v: any) =>
-        typeof v.company === 'string' ? v.company : v.company?.id,
-      ),
-    )
-    const publishedCompanies = new Set(
-      publishedVotes.map((v: any) => (typeof v.company === 'string' ? v.company : v.company?.id)),
-    )
-
-    // If different number of companies have votes, there are changes
-    if (draftCompanies.size !== publishedCompanies.size) return true
-
-    // If any company has draft but no published, there are changes
-    for (const companyId of draftCompanies) {
-      if (!publishedCompanies.has(companyId)) return true
+    if (!meetingData?.companies) {
+      return false
     }
-
-    return false
-  }, [isDirty, fetchedAllLatestVotes, publishedVotes])
+    if (!fetchedAllLatestVotes || fetchedAllLatestVotes.length === 0) {
+      return true
+    }
+    if (fetchedAllLatestVotes.length < meetingData.companies.length) {
+      return true
+    }
+    return fetchedAllLatestVotes.some((vote: any) => vote._status === 'draft')
+  }, [fetchedAllLatestVotes, meetingData?.companies])
 
   const votedCompanies = useMemo(() => {
     if (isVotedCompaniesArray || !Array.isArray(votedCompaniesArray)) return new Set<string>()
@@ -496,7 +487,6 @@ export default function VotingForm() {
       }
     }
 
-    console.log('Setting votingData with initialData:', initialData)
     setVotingData(initialData)
     setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
   }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes, setIsDraftSaved])
@@ -653,7 +643,6 @@ export default function VotingForm() {
 
         if (!vote) {
           // No draft vote for this company - it's invalid
-          invalidCompanies.push(companyId)
           continue
         }
 
@@ -800,6 +789,7 @@ export default function VotingForm() {
       }
 
       setIsSubmitting(true)
+      setSubmittingAction('single')
 
       try {
         const response = await postWithErrorHandling(
@@ -835,6 +825,7 @@ export default function VotingForm() {
         // Additional error handling if needed
       } finally {
         setIsSubmitting(false)
+        setSubmittingAction(null)
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -851,107 +842,150 @@ export default function VotingForm() {
     ],
   )
 
-  const savePublishAll = useCallback(
-    async () => {
-      // Trigger blur on all textareas to ensure all changes are saved
-      const textareas = document.querySelectorAll('textarea')
-      textareas.forEach((textarea) => {
-        if (textarea === document.activeElement) {
-          textarea.blur()
+  const createMissingDrafts = useCallback(async () => {
+    if (!meetingData || !meetingIdPayload || !meetingCompanies.length) return
+
+    const response = await fetch(
+      `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies.join(',')}&status=draft`,
+    )
+    const existingDrafts = await response.json()
+
+    const companiesWithDraft = new Set(
+      existingDrafts.map((vote: any) =>
+        typeof vote.company === 'string' ? vote.company : vote.company?.id,
+      ),
+    )
+
+    const missingCompanies = meetingCompanies.filter(
+      (companyId: string) => !companiesWithDraft.has(companyId),
+    )
+
+    if (missingCompanies.length === 0) return
+
+    const dynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions
+      ? meetingData.relatedQuestions.questions.map((q) => ({
+          questionId: q.id,
+          questionText: q.questionText,
+          answer: q.defaultValue || false,
+          explanation: '',
+        }))
+      : []
+
+    const defaultVotingData: VoteDataType = {
+      generalVotingData: {
+        isInterested: false,
+        isSeniorOfficial: false,
+        isInstitutionalInvestor: true,
+      },
+      voterNotes: '',
+      userVotes: createDefaultAgendaQuestions(
+        meetingData.agendas,
+        meetingData.defaultVotingRecommendation,
+      ),
+      voteDocuments: [],
+      dynamicQuestions,
+    }
+
+    await postWithErrorHandling(
+      '/api/votes/upsert-draft',
+      {
+        meetingId: meetingIdPayload,
+        companiesIds: missingCompanies,
+        votingData: defaultVotingData,
+      },
+      {
+        errorMessage: 'שגיאה ביצירת טיוטות לחברות חסרות',
+      },
+    )
+
+    mutateAllLatestVotes()
+    mutateDraft()
+  }, [meetingData, meetingIdPayload, meetingCompanies, mutateAllLatestVotes, mutateDraft])
+
+  const savePublishAll = useCallback(async () => {
+    // Trigger blur on all textareas to ensure all changes are saved
+    const textareas = document.querySelectorAll('textarea')
+    textareas.forEach((textarea) => {
+      if (textarea === document.activeElement) {
+        textarea.blur()
+      }
+    })
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    await createMissingDrafts()
+
+    const validationResult = await validateAllCompaniesVotes()
+    if (!validationResult.isValid) {
+      // Set companies with errors
+      setCompaniesWithErrors(new Set(validationResult.invalidCompanies))
+
+      // If current company is in the invalid list, show field-level errors
+      if (validationResult.invalidCompanies.includes(companiesIDs[0])) {
+        const currentErrors = validateForm()
+        if (currentErrors.length > 0) {
+          setValidationErrors(currentErrors)
+          // Scroll to the first error
+          const firstError = currentErrors[0]
+          const errorElement = document.querySelector(
+            `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
+          )
+          errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
-      })
-
-      // Wait for blur handlers to complete and state to update
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      // Validate ALL companies votes first
-      const validationResult = await validateAllCompaniesVotes()
-      console.log('^^^^^^^^^^^^^^validationResult', validationResult)
-      console.log('^^^^^^^^^^^^^^companiesIDs[0]', companiesIDs[0])
-
-      if (!validationResult.isValid) {
-        // Set companies with errors
-        setCompaniesWithErrors(new Set(validationResult.invalidCompanies))
-
-        // If current company is in the invalid list, show field-level errors
-        if (validationResult.invalidCompanies.includes(companiesIDs[0])) {
-          const currentErrors = validateForm()
-          if (currentErrors.length > 0) {
-            setValidationErrors(currentErrors)
-            // Scroll to the first error
-            const firstError = currentErrors[0]
-            const errorElement = document.querySelector(
-              `[data-field-name="${firstError.field}"][data-topic-index="${firstError.topicIndex || ''}"]`,
-            )
-            errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }
-        } else {
-          setValidationErrors([])
-        }
-
-        setTimeout(() => {
-          toast({
-            title: '⚠️  חברות עם שדות חובה חסרים',
-            description: `לא ניתן לשלוח הצבעות. נמצאו ${validationResult.invalidCompanies.length} חברות עם שדות חובה חסרים (מסומנות באדום). אנא השלם את השדות החובה בכל החברות.`,
-            duration: 5000,
-          })
-        }, 0)
-        return
+      } else {
+        setValidationErrors([])
       }
 
-      // Clear any previous errors
-      setCompaniesWithErrors(new Set())
-      setValidationErrors([])
-
-      setIsSubmitting(true)
-
-      try {
-        // Publish votes for ALL companies in the meeting
-        const response = await postWithErrorHandling(
-          '/api/votes/publish-votes',
-          {
-            meetingId: meetingIdPayload,
-            companiesIds: meetingCompanies,
-          },
-          {
-            errorMessage: 'שגיאה בשליחת ההצבעה',
-          },
-        )
-
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-
-        // Set success data for popup
-        setPublishSuccessAll({
-          updatedCount: response.actuallyUpdated || 0,
-          companyNames: response.updatedCompanyNames || [],
-          isPrivateVote: false,
+      setTimeout(() => {
+        toast({
+          title: '⚠️  חברות עם שדות חובה חסרים',
+          description: `לא ניתן לשלוח הצבעות. נמצאו ${validationResult.invalidCompanies.length} חברות עם שדות חובה חסרים (מסומנות באדום). אנא השלם את השדות החובה בכל החברות.`,
+          duration: 5000,
         })
+      }, 0)
+      return
+    }
 
-        setPublishSuccess(true)
-        mutatePublish()
-        mutateAllLatestVotes()
-        mutateVotedCompaniesArray()
-      } catch (_error) {
-        // Error already logged and notified by postWithErrorHandling
-        // Additional error handling if needed
-      } finally {
-        setIsSubmitting(false)
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      validateAllCompaniesVotes,
-      validateForm,
-      meetingIdPayload,
-      meetingCompanies,
-      companiesIDs,
-      meetingData,
-      toast,
-      mutatePublish,
-      mutateAllLatestVotes,
-      mutateVotedCompaniesArray,
-    ],
-  )
+    setCompaniesWithErrors(new Set())
+    setValidationErrors([])
+    setIsSubmitting(true)
+    setSubmittingAction('all')
+    try {
+      const response = await postWithErrorHandling(
+        '/api/votes/publish-votes',
+        {
+          meetingId: meetingIdPayload,
+          companiesIds: meetingCompanies,
+        },
+        { errorMessage: 'שגיאה בשליחת ההצבעה' },
+      )
+
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      setPublishSuccessAll({
+        updatedCount: response.actuallyUpdated || 0,
+        companyNames: response.updatedCompanyNames || [],
+        isPrivateVote: false,
+      })
+      setPublishSuccess(true)
+      mutatePublish()
+      mutateAllLatestVotes()
+      mutateVotedCompaniesArray()
+    } catch (_error) {
+    } finally {
+      setIsSubmitting(false)
+      setSubmittingAction(null)
+    }
+  }, [
+    createMissingDrafts,
+    validateAllCompaniesVotes,
+    validateForm,
+    meetingIdPayload,
+    meetingCompanies,
+    companiesIDs,
+    toast,
+    mutatePublish,
+    mutateAllLatestVotes,
+    mutateVotedCompaniesArray,
+  ])
 
   const saveDraftData = useCallback(
     async (
@@ -1608,7 +1642,7 @@ export default function VotingForm() {
 
             {/* כפתורי שליחת הצבעה */}
             <div className="flex justify-end gap-4 mt-6">
-              {meetingCompanies.length === 1 ? (
+              {meetingCompanies.length === 1 || isGeneralVoteOption ? (
                 /* Single button for single company */
                 <TooltipProvider>
                   <Tooltip>
@@ -1619,7 +1653,7 @@ export default function VotingForm() {
                           disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
                           className="px-8"
                         >
-                          {isSubmitting ? 'שולח...' : 'שליחת הצבעה'}
+                          {isSubmitting ? 'שולח...' : 'שליחת ההצבעה'}
                         </Button>
                       </div>
                     </TooltipTrigger>
@@ -1648,11 +1682,7 @@ export default function VotingForm() {
                             disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
                             className="px-8"
                           >
-                            {isSubmitting
-                              ? 'שולח...'
-                              : isGeneralVoteOption
-                                ? 'שליחת הצבעה כללית'
-                                : 'שליחת הצבעה פרטנית'}
+                            {submittingAction === 'single' ? 'שולח...' : 'שליחת ההצבעה'}
                           </Button>
                         </div>
                       </TooltipTrigger>
@@ -1683,7 +1713,7 @@ export default function VotingForm() {
                             className="px-8 border border-gray-300 dark:border-gray-600"
                             variant="secondary"
                           >
-                            {isSubmitting ? 'שולח...' : 'שלח את כל ההצבעות'}
+                            {submittingAction === 'all' ? 'שולח...' : 'שליחת כל ההצבעות'}
                           </Button>
                         </div>
                       </TooltipTrigger>

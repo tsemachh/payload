@@ -83,23 +83,6 @@ export const validateWholeFeed = (
   let hasWrongFormat = false
   const formatDetails: string[] = []
 
-  // Check if the first row has the expected columns
-
-  if (Array.isArray(firstRow)) {
-    // For XLSX files
-    if (firstRow.length !== 3) {
-      hasWrongFormat = true
-      formatDetails.push(`מספר עמודות שגוי: ${firstRow.length} במקום 3`)
-    }
-  } else {
-    // For CSV files
-    const keys = Object.keys(firstRow)
-    if (keys.length !== 3) {
-      hasWrongFormat = true
-      formatDetails.push(`מספר עמודות שגוי: ${keys.length} במקום 3`)
-    }
-  }
-
   // Check data types in the first few rows
   for (let i = hasHebrewHeader ? 1 : 0; i < Math.min(results.length, 5); i++) {
     const row = results[i]

@@ -701,7 +701,6 @@ export interface Meeting {
   removedCompanies?: (string | Company)[] | null;
   totalHoldings?: number | null;
   activity?: string | null;
-  hasResearchDoc?: boolean | null;
   hasVoteRecommendation?: boolean | null;
   votes?: {
     docs?: (string | Vote)[];
@@ -1551,7 +1550,6 @@ export interface MeetingsSelect<T extends boolean = true> {
   removedCompanies?: T;
   totalHoldings?: T;
   activity?: T;
-  hasResearchDoc?: T;
   hasVoteRecommendation?: T;
   votes?: T;
   stock?: T;
