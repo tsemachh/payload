@@ -60,20 +60,25 @@ const convertDataToObjects = (jsonData: any) => {
 }
 
 export function convertMagnaToPayloadMeeting(data: any) {
-  return {
+  const result = {
     type: getMeetingType(data.MeetingType || '') as MeetingType,
     magnaId: data.ProofId || data.proofID || '',
     stock: data.stockID || '',
-    meetingDate: data.mdate != '' ? parseDateString(data.mdate) : null,
-    holdingsLimit: data.sdate != '' ? parseDateString(data.sdate) : null,
+    meetingDate: data.mdate !== '' ? parseDateString(data.mdate) : null,
+    holdingsLimit: data.sdate !== '' ? parseDateString(data.sdate) : null,
     location: data.location || '',
     state: getMeetingState(data.state || '') as MeetingState,
     proofIdPrev: data.ProofIdPrev || '',
     electronicVotingEnabled: true,
     _status: 'draft',
-    createdAt: data.ReportDate != '' ? parseDateString(data.ReportDate) : null,
+    createdAt: data.ReportDate !== '' ? parseDateString(data.ReportDate) : null,
   }
+
+  console.log('convertMagnaToPayloadMeeting result:', result)
+
+  return result
 }
+
 
 // Inner function to process a single row without promise pool
 async function processRowInner(
@@ -144,34 +149,20 @@ async function processRowInner(
       const meetingId = existingMeeting?.docs[0].id
       const existingMeetingData = existingMeeting.docs[0]
 
-      // Check if the existing meeting was already published with a newer creation date
-      if (
-        existingMeetingData.createdAt &&
-        row.createdAt &&
-        new Date(existingMeetingData.createdAt) > new Date(row.createdAt)
-      ) {
-        // Do not update the meeting, just log a message
-        context.errors.push(`האסיפה עם האסמכתא ${row.magnaId} כבר פורסמה ולא תעודכן`)
-        req.payload.logger.info(
-          `Meeting with magnaId ${row.magnaId} was already published with a newer creation date and will not be updated`,
-        )
-        context.successCount++ // Still count as processed
+      // Always update existing meetings with new data from the feed
+      try {
+        row._status = 'draft'
+        await req.payload.update({
+          collection: 'meetings',
+          id: meetingId,
+          data: row,
+          context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
+          req,
+        })
+        context.successCount++
         context.processedMeetingIds.push(meetingId)
-      } else {
-        try {
-          row._status = 'draft'
-          await req.payload.update({
-            collection: 'meetings',
-            id: meetingId,
-            data: row,
-            context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
-            req,
-          })
-          context.successCount++
-          context.processedMeetingIds.push(meetingId)
-        } catch (e: any) {
-          context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
-        }
+      } catch (e: any) {
+        context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
       }
     } else {
       try {
