@@ -60,23 +60,19 @@ const convertDataToObjects = (jsonData: any) => {
 }
 
 export function convertMagnaToPayloadMeeting(data: any) {
-  const result = {
+  return {
     type: getMeetingType(data.MeetingType || '') as MeetingType,
     magnaId: data.ProofId || data.proofID || '',
     stock: data.stockID || '',
-    meetingDate: data.mdate !== '' ? parseDateString(data.mdate) : null,
-    holdingsLimit: data.sdate !== '' ? parseDateString(data.sdate) : null,
+    meetingDate: data.mdate != '' ? parseDateString(data.mdate) : null,
+    holdingsLimit: data.sdate != '' ? parseDateString(data.sdate) : null,
     location: data.location || '',
     state: getMeetingState(data.state || '') as MeetingState,
     proofIdPrev: data.ProofIdPrev || '',
     electronicVotingEnabled: true,
     _status: 'draft',
-    createdAt: data.ReportDate !== '' ? parseDateString(data.ReportDate) : null,
+    createdAt: data.ReportDate != '' ? parseDateString(data.ReportDate) : null,
   }
-
-  console.log('convertMagnaToPayloadMeeting result:', result)
-
-  return result
 }
 
 
