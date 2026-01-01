@@ -39,7 +39,9 @@ export function MeetingsTableClient() {
   // Build API URL with company filter if companies are selected
   const apiUrl = useMemo(() => {
     let url = `/api/meetings/future-meetings`
-
+    if (selectedCompanyIds.length === 0) {
+      return null
+    }
     if (selectedCompanyIds.length > 0) {
       url += `?companyIds=${selectedCompanyIds.join(',')}`
     }

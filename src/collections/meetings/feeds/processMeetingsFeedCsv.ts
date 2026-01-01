@@ -75,6 +75,7 @@ export function convertMagnaToPayloadMeeting(data: any) {
   }
 }
 
+
 // Inner function to process a single row without promise pool
 async function processRowInner(
   row: any,
@@ -144,38 +145,20 @@ async function processRowInner(
       const meetingId = existingMeeting?.docs[0].id
       const existingMeetingData = existingMeeting.docs[0]
 
-      // Check if the existing meeting was already published with a newer creation date
-      if (
-        existingMeetingData.createdAt &&
-        row.createdAt &&
-        new Date(existingMeetingData.createdAt) > new Date(row.createdAt)
-      ) {
-        // Do not update the meeting, just log a message
-        context.errors.push(`האסיפה עם האסמכתא ${row.magnaId} כבר פורסמה ולא תעודכן`)
-        req.payload.logger.info(
-          `Meeting with magnaId ${row.magnaId} was already published with a newer creation date and will not be updated`,
-        )
-        context.successCount++ // Still count as processed
+      // Always update existing meetings with new data from the feed
+      try {
+        row._status = 'draft'
+        await req.payload.update({
+          collection: 'meetings',
+          id: meetingId,
+          data: row,
+          context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
+          req,
+        })
+        context.successCount++
         context.processedMeetingIds.push(meetingId)
-      } else {
-        try {
-          row._status = 'draft'
-          await req.payload.update({
-            collection: 'meetings',
-            id: meetingId,
-            data: row,
-            context: {
-              ...req.context,
-              from: 'migration',
-              process: 'processMeetingFeedUpdateExisting',
-            },
-            req,
-          })
-          context.successCount++
-          context.processedMeetingIds.push(meetingId)
-        } catch (e: any) {
-          context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
-        }
+      } catch (e: any) {
+        context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
       }
     } else {
       try {
