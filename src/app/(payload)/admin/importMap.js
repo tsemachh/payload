@@ -27,6 +27,7 @@ import { default as default_a67c7af692aa11619535122f63eb21ed } from '../../../co
 import { default as default_db476bf98543a9aec106bf023275e3c1 } from '../../../collections/meetings/components/MigrateVoteCountsMenuItem'
 import { ExportListMenuItem as ExportListMenuItem_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { default as default_6dd674b10194d045c09b533845410341 } from '../../../collections/meetings/components/NavCloser'
+import { default as default_dedb5de08fa9b37ac3ba2bc199fe943c } from '../../../collections/meetings/components/MeetingDate'
 import { default as default_b0fd6d42c10a2a9bdf03d06835428598 } from '../../../components/buttons/CustomPublishButton'
 import { default as default_0ba51fa546833e39b1776668c92181e7 } from '../../../admincomponents/link/IconLinkCell'
 import { default as default_9b3d6aeb3db734d1413eca27dd67abd5 } from '../../../admincomponents/fields/arrayHoldingsTable'
@@ -98,6 +99,7 @@ export const importMap = {
   "/collections/meetings/components/MigrateVoteCountsMenuItem#default": default_db476bf98543a9aec106bf023275e3c1,
   "@payloadcms/plugin-import-export/rsc#ExportListMenuItem": ExportListMenuItem_cdf7e044479f899a31f804427d568b36,
   "/collections/meetings/components/NavCloser#default": default_6dd674b10194d045c09b533845410341,
+  "/collections/meetings/components/MeetingDate#default": default_dedb5de08fa9b37ac3ba2bc199fe943c,
   "/components/buttons/CustomPublishButton#default": default_b0fd6d42c10a2a9bdf03d06835428598,
   "/admincomponents/link/IconLinkCell#default": default_0ba51fa546833e39b1776668c92181e7,
   "/admincomponents/fields/arrayHoldingsTable#default": default_9b3d6aeb3db734d1413eca27dd67abd5,
