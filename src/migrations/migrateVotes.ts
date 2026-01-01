@@ -75,9 +75,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const mongoMeetingRes = await payload.find({
               collection: 'meetings',
               where: {
-                and: [
-                  { legacyIds: { contains: meeting.id.toString() } },
-                ],
+                and: [{ legacyIds: { contains: meeting.id.toString() } }],
               },
               select: { id: true, finalized: true },
               limit: 1,
@@ -87,9 +85,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
             const mongoMeetingId = mongoMeetingRes?.docs?.[0]?.id
             const mongoMeetingFinalized = mongoMeetingRes?.docs?.[0]?.finalized
             if (!mongoMeetingId) {
-              console.warn(
-                `Meeting with legacyId ${meeting.id} not found; skipping votes`,
-              )
+              console.warn(`Meeting with legacyId ${meeting.id} not found; skipping votes`)
               skippedNotFoundCount++
               await logMigrationFault({
                 payload,
@@ -102,9 +98,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               return
             }
             if (mongoMeetingFinalized === true) {
-              console.warn(
-                `Meeting with legacyId ${meeting.id} is finalized; skipping votes`,
-              )
+              console.warn(`Meeting with legacyId ${meeting.id} is finalized; skipping votes`)
               skippedFinalizedCount++
               await logMigrationFault({
                 payload,
@@ -215,8 +209,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                     payload,
                     type: 'vote',
                     typeId: `meeting-${meeting.id}-company-${company.firmid}`,
-                    comments:
-                      `No positive voting data (cdecision > 0) for firm ${company.firmid} in meeting ${meeting.id}; skipping vote creation`,
+                    comments: `No positive voting data (cdecision > 0) for firm ${company.firmid} in meeting ${meeting.id}; skipping vote creation`,
                     row: company,
                     severity: 'warning',
                   })
@@ -252,7 +245,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 })
                 // Create votes array, preserving the order of agenda topics
                 const votes = votingData?.map((vote) => {
-                  const voteDecision = votingResultMap[vote.cdecision.toString()] || null
+                  const voteDecision = votingResultMap[vote.cdecision.toString()]?.length
+                    ? votingResultMap[vote.cdecision.toString()]
+                    : null
                   let noParticipantDuty = false
                   if (vote.voteDecision == 10 || vote.voteDecision == 14) {
                     noParticipantDuty = true
