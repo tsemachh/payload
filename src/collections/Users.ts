@@ -15,6 +15,7 @@ import TwoFactorBackupCodesEndpoint from '@/collections/endpoints/TwoFactorBacku
 import LoginWith2FAEndpoint from '@/collections/endpoints/LoginWith2FAEndpoint'
 import { getClientIP } from '@/utils/getClientIP'
 import { logEvent } from '@/lib/audit/logEvent'
+import { shouldEnforceSecurityMeasures } from '@/utils/environmentUtils'
 
 async function computeCompanyTreeAndLeafs(
   companyIds: string[],
@@ -377,7 +378,7 @@ export const Users: CollectionConfig = {
               name: 'bypassIPCheck',
               label: 'דלג על בדיקת IP למשתמש זה',
               type: 'checkbox',
-              defaultValue: true,
+              defaultValue: shouldEnforceSecurityMeasures() ? false : true,
               access: {
                 create: isAdminFieldLevel,
                 update: isAdminFieldLevel,
@@ -432,7 +433,8 @@ export const Users: CollectionConfig = {
                       name: 'enabled',
                       label: 'אימות דו-שלבי מופעל',
                       type: 'checkbox',
-                      defaultValue: false,
+                      // Force 2FA in staging/testing environments
+                      defaultValue: shouldEnforceSecurityMeasures() ? true : false,
                       index: true,
                     },
                     {
