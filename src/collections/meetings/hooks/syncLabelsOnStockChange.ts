@@ -5,6 +5,11 @@ export const syncLabelsOnStockChange: CollectionBeforeChangeHook = async ({
   originalDoc,
   req,
 }) => {
+  // Skip processing during migrations or automated processes
+  if (req.context?.from === 'migration' || req.context?.from === 'process') {
+    return
+  }
+
   const newCompanies = data?.companies || []
   const oldCompanies = originalDoc?.companies || []
 

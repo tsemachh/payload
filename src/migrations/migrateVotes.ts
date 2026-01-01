@@ -57,6 +57,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
 
     let successCount = 0
     let errorCount = 0
+    let processedCount = 0
     let skippedNotFoundCount = 0
     let skippedFinalizedCount = 0
     let skippedVotedCount = 0
@@ -304,12 +305,6 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   })
                 }
               }
-
-              if (createdFirmIds.length > 0) {
-                console.log(
-                  `✓ Created vote for meeting ${meeting.id} and companies ${createdFirmIds.join(',')}`,
-                )
-              }
             }
           } catch (error: any) {
             errorCount++
@@ -322,6 +317,14 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               comments: `Failed to process votes for meeting ${meeting.id}: ${error.message}`,
               row: meeting,
             })
+          } finally {
+            processedCount++
+            if (processedCount % 100 === 0 || processedCount === meetings.length) {
+              const percentage = ((processedCount / meetings.length) * 100).toFixed(2)
+              console.log(
+                `Progress: ${processedCount}/${meetings.length} meetings processed (${percentage}%)`,
+              )
+            }
           }
         }),
       )

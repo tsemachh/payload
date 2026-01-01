@@ -1,6 +1,7 @@
 import { MigrateUpArgs } from '@payloadcms/db-mongodb'
 import { recalculateMeetingVoteCounts } from '@/collections/meetings/hooks/votesCountHooks'
 import { PromisePool } from '@/utils/promisePool'
+import { withTimeout } from '@/utils/withTimeout'
 
 /**
  * Migration script to calculate initial vote counts for existing meetings
@@ -56,7 +57,18 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const promises = meetings.map((meeting, index) => {
       return pool.add(async () => {
         try {
-          const result = await recalculateMeetingVoteCounts(req, meeting.id)
+          // Add detailed logging for debugging hangs
+          if (meetings.length > 100 && index % 10 === 0) {
+            console.log(
+              `[${new Date().toISOString()}] Processing meeting ${index + 1}/${meetings.length}: ${meeting.id}`,
+            )
+          }
+
+          const result = await withTimeout(
+            recalculateMeetingVoteCounts(req, meeting.id),
+            180000,
+            `Timeout recalculating vote counts for meeting ${meeting.id} after 180s`,
+          )
           if (result?.data?.votesExceedCompanies) {
             meetingIdsNeedingCompaniesProcessing.push(meeting.id)
           }
@@ -69,7 +81,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
           stats.processed++
           if (stats.processed % 10 === 0 || stats.processed === meetings.length) {
             const percentComplete = ((stats.processed / meetings.length) * 100).toFixed(1)
-            console.log(`Progress: ${stats.processed}/${meetings.length} (${percentComplete}%)`)
+            console.log(
+              `[${new Date().toISOString()}] Progress: ${stats.processed}/${meetings.length} (${percentComplete}%)`,
+            )
           }
         }
       })
