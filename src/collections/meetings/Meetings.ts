@@ -181,7 +181,10 @@ export const Meetings: CollectionConfig = {
         '/collections/meetings/components/MigrateVoteCountsMenuItem',
       ],
       edit: {
-        beforeDocumentControls: ['/collections/meetings/components/NavCloser'],
+        beforeDocumentControls: [
+          '/collections/meetings/components/NavCloser',
+          '/collections/meetings/components/MeetingDate',
+        ],
         PublishButton: '/components/buttons/CustomPublishButton',
       },
     },
