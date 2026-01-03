@@ -42,7 +42,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     })
 
     stats.total = meetings.length
-    console.log(`Found ${meetings.length} meetings to process`)
+    console.log(`Found ${meetings.length} meeting to process`)
 
     // Process meetings in parallel with a pool size of 20
     const POOL_SIZE = 20
