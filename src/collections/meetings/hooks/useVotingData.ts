@@ -538,7 +538,7 @@ export const useVotingData = () => {
 
   return {
     notVotedCompanies,
-    votedCompanies: votedCompanies,
+    votedCompanies,
     processedNotVotedData,
     processedVotedData,
     historicalHoldings,
