@@ -4,17 +4,33 @@ on:
   push:
     branches:
       - 'main'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches:
+      - 'main'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+env:
+  REGISTRY: me-west1-docker.pkg.dev
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
 
 jobs:
   docker-build:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       # Step 1: Checkout code
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Step 2: Authenticate to Google Cloud -
+      # Step 2: Authenticate to Google Cloud
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
@@ -23,13 +39,12 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          export_default_credentials: true
 
       # Step 4: Set tag parameter
       - name: Set tag parameter
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "TAG=pr" >> $GITHUB_ENV
+            echo "TAG=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
             echo "TAG=latest" >> $GITHUB_ENV
           else
@@ -46,10 +61,7 @@ jobs:
 
       # Step 6: Docker setup
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          use: true
-          version: latest
+        uses: docker/setup-buildx-action@v3
 
       # Step 7: Cache Docker layers
       - name: Cache Docker layers
@@ -62,9 +74,9 @@ jobs:
 
       # Step 8: Login to GCR
       - name: Login to Google Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
-          registry: me-west1-docker.pkg.dev
+          registry: ${{ env.REGISTRY }}
           username: _json_key
           password: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
@@ -76,102 +88,69 @@ jobs:
         run: |
           # Set version for cache invalidation
           APP_VERSION="${GITHUB_SHA:0:7}"
-          BUILD_TIME="$(date +%s)"
           
-          # Build the image without cache options to avoid driver errors
-          docker build \
-            --build-arg PAYLOAD_SECRET="$PAYLOAD_SECRET" \
-            --build-arg DATABASE_URI="$DATABASE_URI" \
-            --build-arg BUILD_TIME="$BUILD_TIME" \
-            --build-arg APP_VERSION="$APP_VERSION" \
-            -t payload-image:local-test .
-
-          # Run container
-          docker run -d --name payload-container -p 3000:3000 payload-image:local-test
-
-          # Wait for the app to start
-          echo "Waiting for the application to start..."
-          sleep 30
-
-          # Check logs for debugging
-          echo "Container logs:"
-          docker logs payload-container
-
-          # Test the application
-          curl http://localhost:3000 || exit 1
-
-          # Stop the container after testing
-          docker stop payload-container
-
-      # Step 10: Tag and Push Docker image to GCR (only after test pass and on push events)
-      - name: Install yq and prepare tag
-        run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/v4.43.1/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
-          yq --version
-
-          # Clone ArgoCD config repo
-          git clone https://x-access-token:${{ secrets.EMDA_ARGOCD_PER }}@github.com/shefing/emda-argocd.git
-          cd emda-argocd
-
-          REPO="shefing/emda" 
-          COMMIT_SHA=${GITHUB_SHA}
-
-          PR_NUMBER=$(curl -s -H "Authorization: token ${{ secrets.EMDA_ARGOCD_PER }}" \
-            "https://api.github.com/repos/$REPO/pulls?state=closed&sort=updated&direction=desc" | \
-            jq ".[] | select(.merge_commit_sha==\"$COMMIT_SHA\") | .number" | head -n 1)
-
-          if [ -z "$PR_NUMBER" ]; then
-            PR_NUMBER=$COMMIT_SHA
-          fi
-
-          NEW_TAG="$PR_NUMBER"
-          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
-          yq e -i ".image.tag = \"$NEW_TAG\"" helm/values.yaml
-
-          git config user.email "ci-bot@emda.dev"
-          git config user.name "Emda CI Bot"
-          git add helm/values.yaml
-          git commit -m "ci: update payload image tag to $NEW_TAG"
-          git push origin main
-
-      - name: Tag and Push Docker image
-        run: |
-          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG}
-          docker tag payload-image:local-test me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest
-          if docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:${NEW_TAG} && \
-            docker push me-west1-docker.pkg.dev/emda-dev/emda-gcr/payload-image:latest; then
+          # Build with cache
+          docker buildx build \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --build-arg APP_VERSION=$APP_VERSION \
+            --build-arg DATABASE_URI=$DATABASE_URI \
+            --build-arg PAYLOAD_SECRET=$PAYLOAD_SECRET \
+            --tag ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/payload-app:${{ env.TAG }} \
+            --tag ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/payload-app:$APP_VERSION \
+            --load \
+            --file ./Dockerfile \
+            .
+          
+          # Run tests
+          docker run --rm \
+            -e DATABASE_URI=$DATABASE_URI \
+            -e PAYLOAD_SECRET=$PAYLOAD_SECRET \
+            ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/payload-app:${{ env.TAG }} \
+            npm test
+          
+          # Push only if tests pass and not a PR
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            docker buildx build \
+              --cache-from type=local,src=/tmp/.buildx-cache \
+              --build-arg APP_VERSION=$APP_VERSION \
+              --build-arg DATABASE_URI=$DATABASE_URI \
+              --build-arg PAYLOAD_SECRET=$PAYLOAD_SECRET \
+              --tag ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/payload-app:${{ env.TAG }} \
+              --tag ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/payload-app:$APP_VERSION \
+              --push \
+              --file ./Dockerfile \
+              .
             echo "NEW_IMAGE_PUSHED=true" >> $GITHUB_ENV
-          else
-            echo "NEW_IMAGE_PUSHED=false" >> $GITHUB_ENV
+            echo "NEW_TAG=${{ env.TAG }}" >> $GITHUB_ENV
           fi
+          
+          # Move cache to avoid growth
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-        env:
-          NEW_TAG: ${{ env.NEW_TAG }}
-
+      # Step 10: Print NEW_IMAGE_PUSHED Value
       - name: Print NEW_IMAGE_PUSHED Value
+        if: env.NEW_IMAGE_PUSHED == 'true'
         run: echo "NEW_IMAGE_PUSHED=${{ env.NEW_IMAGE_PUSHED }}"
+
+      # Step 11: Notify Slack - Deployment Completed
       - name: Notify Slack - Deployment Completed
-        if: ${{ success() && env.NEW_IMAGE_PUSHED == 'true' }}
+        if: success() && env.NEW_IMAGE_PUSHED == 'true'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_MESSAGE: 'New Docker image deployed to GCR!'
-      # Step 11: Reset VM - moved to cron job
-      # - name: Reset GCP VM
-      #   run: |
-      #     gcloud compute instances reset payload-vm \
-      #       --zone=me-west1-b \
-      #       --project=${{ secrets.GCP_PROJECT_ID }}
 
   notify-slack:
     needs: docker-build
     if: failure()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        
+          SLACK_MESSAGE: 'Docker build failed!'
+          SLACK_COLOR: danger
