@@ -383,7 +383,7 @@ export default function VotingForm() {
         const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
         return {
           topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || '',
+          choice: voteItem?.voteDecision || null,
           questions: {
             hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
             isRelatedParty: voteItem?.isRelatedParty ?? false,
@@ -438,7 +438,7 @@ export default function VotingForm() {
         )
         return {
           topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || '',
+          choice: voteItem?.voteDecision || null,
           questions: {
             hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
             isRelatedParty: voteItem?.isRelatedParty ?? false,
