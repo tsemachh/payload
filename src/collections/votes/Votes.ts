@@ -583,5 +583,8 @@ export const Votes: CollectionConfig = {
       fields: ['meeting', 'company'],
       unique: true,
     },
+    {
+      fields: ['meeting', '_status', 'createdAt'],
+    },
   ],
 }

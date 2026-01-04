@@ -200,6 +200,12 @@ export const Meetings: CollectionConfig = {
     {
       fields: ['companies', 'meetingDate'],
     },
+    {
+      fields: ['_status', 'meetingDate', 'createdAt'],
+    },
+    {
+      fields: ['state', 'meetingDate', '_status'],
+    },
   ],
   fields: [
     {
