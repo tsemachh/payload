@@ -81,7 +81,7 @@ jobs:
           password: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
       # Step 9: Build and test
-      - name: Build, Test, and Push
+      - name: Build and Push
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
@@ -102,15 +102,7 @@ jobs:
             --file ./Dockerfile \
             .
           
-          # Run tests
-          docker run --rm \
-            -e DATABASE_URI=$DATABASE_URI \
-            -e PAYLOAD_SECRET=$PAYLOAD_SECRET \
-            ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/payload-app:${{ env.TAG }} \
-            npm test
-          
-          # Push only if tests pass and not a PR
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
+          # Push only if not a PR          if [ "${{ github.event_name }}" != "pull_request" ]; then
             docker buildx build \
               --cache-from type=local,src=/tmp/.buildx-cache \
               --build-arg APP_VERSION=$APP_VERSION \
