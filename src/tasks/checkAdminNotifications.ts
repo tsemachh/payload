@@ -311,6 +311,85 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
       }
 
       await createAdminNotification(req, message, 'predictaFeed', `/admin`)
+
+      // Send Slack notification for missing Predictae feed
+      try {
+        // Only send Slack notifications in staging environment
+        if (process.env.ENV === 'staging') {
+          const { notifyDataMissing } = await import('@/utils/slackNotifications')
+
+          // Helper function to get last feed date
+          const getLastFeedDate = async (collectionName: string) => {
+            try {
+              const { docs: lastFeed } = await req.payload.find({
+                collection: collectionName as any,
+                sort: '-createdAt',
+                limit: 1,
+                depth: 0,
+              })
+
+              if (lastFeed.length === 0) {
+                return 'Never'
+              }
+
+              const lastFeedDate = new Date((lastFeed[0] as any).createdAt)
+              return lastFeedDate.toLocaleDateString('en-US')
+            } catch (error) {
+              return 'Unknown'
+            }
+          }
+
+          if (stocksFeeds.length === 0 && meetingsFeeds.length === 0) {
+            // Both feeds missing
+            const meetingsLastFeed = await getLastFeedDate('meetings-feed')
+            const stocksLastFeed = await getLastFeedDate('stocks-feed')
+
+            await notifyDataMissing(
+              'meetings',
+              {
+                lastReceived: meetingsLastFeed,
+                missingDays: 1,
+              },
+              req,
+            )
+            await notifyDataMissing(
+              'holdings',
+              {
+                lastReceived: stocksLastFeed,
+                missingDays: 1,
+              },
+              req,
+            )
+          } else if (stocksFeeds.length === 0) {
+            // Only stocks feed missing
+            const stocksLastFeed = await getLastFeedDate('stocks-feed')
+            await notifyDataMissing(
+              'holdings',
+              {
+                lastReceived: stocksLastFeed,
+                missingDays: 1,
+              },
+              req,
+            )
+          } else {
+            // Only meetings feed missing
+            const meetingsLastFeed = await getLastFeedDate('meetings-feed')
+            await notifyDataMissing(
+              'meetings',
+              {
+                lastReceived: meetingsLastFeed,
+                missingDays: 1,
+              },
+              req,
+            )
+          }
+        }
+      } catch (slackError) {
+        req.payload.logger.warn(
+          `Failed to send Slack notification for missing Predictae feed: ${slackError}`,
+        )
+      }
+
       notifications.noFeedFromPredictae = true
     }
   } catch (error) {
