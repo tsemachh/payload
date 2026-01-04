@@ -88,11 +88,6 @@ export class SlackNotificationService {
 
     let detailsText = `Environment: ${environment}\nLink: ${serverUrl}`
 
-    if (details.missingDays && details.missingDays > 0) {
-      const daysText = details.missingDays === 1 ? 'day' : 'days'
-      detailsText += `\nMissing feed for ${details.missingDays} ${daysText}`
-    }
-
     if (
       details.lastReceived &&
       details.lastReceived !== 'Unknown' &&

@@ -348,7 +348,6 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
               'meetings',
               {
                 lastReceived: meetingsLastFeed,
-                missingDays: 1,
               },
               req,
             )
@@ -356,7 +355,6 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
               'holdings',
               {
                 lastReceived: stocksLastFeed,
-                missingDays: 1,
               },
               req,
             )
@@ -367,7 +365,6 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
               'holdings',
               {
                 lastReceived: stocksLastFeed,
-                missingDays: 1,
               },
               req,
             )
@@ -378,7 +375,6 @@ async function checkPredictaeFeeds(req: PayloadRequest, notifications: any) {
               'meetings',
               {
                 lastReceived: meetingsLastFeed,
-                missingDays: 1,
               },
               req,
             )
