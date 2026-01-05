@@ -33,6 +33,10 @@ export const validateMeetingState: SelectFieldSingleValidation = (
   value: string | null | undefined,
   options: any,
 ) => {
+  if (options.req?.context?.from == 'migration' || options.req?.context?.from == 'process') {
+    return true
+  }
+
   if (
     !value &&
     !(options.req.context.from == 'migration' || options.req.context.from == 'process')
@@ -123,15 +127,16 @@ export const setStockValueOnCreateOrHoldingsChange: CollectionBeforeChangeHook =
   req,
 }) => {
   try {
-    if ( req.context?.from === 'process') {
+    if (req.context?.from === 'process') {
       return data
     }
 
     // Only when creating, or when holdingsLimit/stock changed
-    const stockChanged = String(getIdOfRelationField(originalDoc?.stock) || '') !== String(
-      getIdOfRelationField(data?.stock) || '',
-    )
-    const holdingsChanged = (originalDoc?.holdingsLimit || '')?.toString() !== (data?.holdingsLimit || '')?.toString()
+    const stockChanged =
+      String(getIdOfRelationField(originalDoc?.stock) || '') !==
+      String(getIdOfRelationField(data?.stock) || '')
+    const holdingsChanged =
+      (originalDoc?.holdingsLimit || '')?.toString() !== (data?.holdingsLimit || '')?.toString()
 
     if (!(operation === 'create' || stockChanged || holdingsChanged)) {
       return data
@@ -141,10 +146,7 @@ export const setStockValueOnCreateOrHoldingsChange: CollectionBeforeChangeHook =
     if (!stockId) return data
 
     const where: any = {
-      or: [
-        { stockId: { equals: stockId } },
-        { 'stockId.dualStock': { equals: stockId } },
-      ],
+      or: [{ stockId: { equals: stockId } }, { 'stockId.dualStock': { equals: stockId } }],
     }
 
     if (data?.holdingsLimit) {
