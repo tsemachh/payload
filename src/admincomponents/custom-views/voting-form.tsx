@@ -20,7 +20,6 @@ import { formatDateTime } from '@/app/(frontend)/helpers/utils-data-table'
 import { formatNumberWithLocale } from '@/utils/numberUtils'
 import { ReportApprovalUpload } from './uploadApproval'
 import { OwnedQuantityInput } from './OwnedQuantityInput'
-import { sortFundsData } from '@/utils/companySort'
 import { Trash2, Copy } from 'lucide-react'
 import { toast } from '@payloadcms/ui'
 import { HoldingsDetailsTooltip } from './HoldingsDetailsTooltip'
@@ -111,7 +110,6 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   const [hasErrors, setHasErrors] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
-  const [sortedFundsData, setSortedFundsData] = useState<VoteData['fundsData']>([])
   const [fundToRemove, setFundToRemove] = useState<number | null>(null)
   const [removingFundIndex, setRemovingFundIndex] = useState<number | null>(null)
 
@@ -166,10 +164,6 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
     if (!voteData) return
     setFormData(JSON.parse(JSON.stringify(voteData)))
     setInitialFormData(JSON.parse(JSON.stringify(voteData))) // Deep copy for comparison
-
-    // Sort the funds data using the _order fields that come from the API
-    const sorted = sortFundsData(voteData.fundsData)
-    setSortedFundsData(sorted)
   }, [voteData])
 
   useEffect(() => {
@@ -270,25 +264,18 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
     }
   }
 
-  const updateFundData = (sortedIndex: number, field: string, value: any) => {
+  const updateFundData = (index: number, field: string, value: any) => {
     if (!formData) return
-
-    const sortedFund = sortedFundsData[sortedIndex]
-    const actualIndex = formData.fundsData.findIndex(
-      (fund) => fund.company.id === sortedFund.company.id && fund.fund.id === sortedFund.fund.id,
-    )
-
-    if (actualIndex === -1) return
 
     const booleanValue = value === 'checked' ? true : value === 'unchecked' ? false : null
     const updatedFunds = [...formData.fundsData]
     if (booleanValue) {
-      updatedFunds[actualIndex].ownedQuantity = undefined
+      updatedFunds[index].ownedQuantity = undefined
     }
     if (field.startsWith('original.')) {
       // Handle nested original fields
       const originalField = field.replace('original.', '')
-      const currentOriginal = updatedFunds[actualIndex].original || ({} as any)
+      const currentOriginal = updatedFunds[index].original || ({} as any)
       if (booleanValue) {
         currentOriginal.ownedQuantity = undefined
       }
@@ -296,8 +283,8 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
         originalField === 'ownedQuantity'
           ? Number.parseFloat(value.replace(/,/g, ''))
           : booleanValue
-      updatedFunds[actualIndex] = {
-        ...updatedFunds[actualIndex],
+      updatedFunds[index] = {
+        ...updatedFunds[index],
         original: {
           ...currentOriginal,
           [originalField]: numericValue,
@@ -307,14 +294,11 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
       // Handle regular fields
       const numericValue =
         field === 'ownedQuantity' ? Number.parseFloat(value.replace(/,/g, '')) : booleanValue
-      updatedFunds[actualIndex] = { ...updatedFunds[actualIndex], [field]: numericValue }
+      updatedFunds[index] = { ...updatedFunds[index], [field]: numericValue }
     }
 
     const newFormData = { ...formData, fundsData: updatedFunds }
     setFormData(newFormData)
-
-    const newSorted = sortFundsData(newFormData.fundsData)
-    setSortedFundsData(newSorted)
   }
 
   const getVoteResultColor = (result: string) => {
@@ -365,7 +349,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   const confirmRemoveFund = async () => {
     if (fundToRemove === null || !formData) return
 
-    const fundToDelete = sortedFundsData[fundToRemove]
+    const fundToDelete = formData.fundsData[fundToRemove]
 
     // Set the removing state and close dialog
     setRemovingFundIndex(fundToRemove)
@@ -404,10 +388,6 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
       const newFormData = { ...formData, fundsData: updatedFunds }
       setFormData(newFormData)
       setInitialFormData(newFormData)
-
-      const newSorted = sortFundsData(newFormData.fundsData)
-      setSortedFundsData(newSorted)
-
       setRemovingFundIndex(null)
     } catch (error) {
       console.error('Error removing fund:', error)
@@ -516,7 +496,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedFundsData.map((fund, index) => {
+              {formData.fundsData.map((fund, index) => {
                 const hasOriginal = fund.original
                 const displayData = hasOriginal ? fund.original : fund
                 const fundKey = `${fund.company.id}-${fund.fund.id}`
@@ -635,7 +615,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 </TableCell>
                 <TableCell className="text-right text-base text-gray-900 dark:text-white">
                   {formatNumberWithLocale(
-                    sortedFundsData.reduce((sum, fund) => {
+                    formData.fundsData.reduce((sum, fund) => {
                       const displayData = fund.original || fund
                       return sum + (displayData?.quantity || 0)
                     }, 0),
@@ -644,7 +624,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                 <TableCell />
                 <TableCell className="text-right text-base text-gray-900 dark:text-white">
                   {(() => {
-                    const hasNullVerification = sortedFundsData.some((fund) => {
+                    const hasNullVerification = formData.fundsData.some((fund) => {
                       const displayData = fund.original || fund
                       return (
                         displayData?.verifiedHoldings === null ||
@@ -657,16 +637,16 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     }
 
                     return formatNumberWithLocale(
-                      sortedFundsData.reduce((sum, fund) => {
+                      formData.fundsData.reduce((sum, fund) => {
                         const displayData = fund.original || fund
 
-                        if (displayData?.verifiedHoldings ) {
+                        if (displayData?.verifiedHoldings) {
                           return sum + (displayData?.quantity || 0)
                         }
 
                         if (displayData?.verifiedHoldings === false) {
                           const ownedQty = displayData?.ownedQuantity
-                          return sum + (ownedQty  ? ownedQty : 0)
+                          return sum + (ownedQty ? ownedQty : 0)
                         }
 
                         return sum
@@ -687,7 +667,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
           onOpenChange={() => setFundToRemove(null)}
           onConfirm={confirmRemoveFund}
           title="הסרת תיק"
-          description={`פעולה זו תסיר את תיק ${fundToRemove !== null ? sortedFundsData[fundToRemove]?.fund.name : ''}`}
+          description={`פעולה זו תסיר את תיק ${fundToRemove !== null ? formData.fundsData[fundToRemove]?.fund.name : ''}`}
         />
       )}
       <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
