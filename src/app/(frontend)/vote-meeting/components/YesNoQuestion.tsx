@@ -57,11 +57,17 @@ export default function YesNoQuestion({
 
   return (
     <div>
-      <div className="flex items-start gap-4 mb-2">
-        <span className={`text-sm font-medium ${isReadOnly ? 'text-muted-foreground' : ''}`}>
+      <div
+        className={`flex items-start mb-2 ${isAgendaQuestion ? 'justify-between gap-2' : 'gap-4'}`}
+      >
+        <span
+          className={`text-sm font-medium ${isAgendaQuestion ? 'flex-1' : ''} ${isReadOnly ? 'text-muted-foreground' : ''}`}
+        >
           {label}
         </span>
-        <div className={`flex bg-muted rounded-full p-0.5 ${isReadOnly ? 'opacity-75' : ''}`}>
+        <div
+          className={`flex bg-muted rounded-full p-0.5 ${isAgendaQuestion ? 'flex-shrink-0' : ''} ${isReadOnly ? 'opacity-75' : ''}`}
+        >
           <button
             type="button"
             onClick={() => onValueChangeAction(true)}
