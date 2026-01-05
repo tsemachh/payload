@@ -572,24 +572,34 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <OwnedQuantityInput
-                        value={displayData?.ownedQuantity}
-                        verifiedHoldings={displayData?.verifiedHoldings}
-                        onChangeAction={(value) =>
-                          updateFundData(
-                            index,
-                            hasOriginal ? 'original.ownedQuantity' : 'ownedQuantity',
-                            value,
-                          )
-                        }
-                        isVisible={
-                          !(
-                            displayData?.verifiedHoldings ||
-                            displayData?.verifiedHoldings === undefined ||
-                            displayData?.verifiedHoldings === null
-                          )
-                        }
-                      />
+                      <div className="h-[44px] flex items-center justify-right w-fit">
+                        {displayData?.verifiedHoldings === true ? (
+                          <span className="text-gray-600 dark:text-gray-300 text-base">
+                            {displayData?.quantity && formatNumberWithLocale(displayData.quantity)}
+                          </span>
+                        ) : (
+                          <div className="w-full">
+                            <OwnedQuantityInput
+                              value={displayData?.ownedQuantity}
+                              verifiedHoldings={displayData?.verifiedHoldings}
+                              onChangeAction={(value) =>
+                                updateFundData(
+                                  index,
+                                  hasOriginal ? 'original.ownedQuantity' : 'ownedQuantity',
+                                  value,
+                                )
+                              }
+                              isVisible={
+                                !(
+                                  displayData?.verifiedHoldings ||
+                                  displayData?.verifiedHoldings === undefined ||
+                                  displayData?.verifiedHoldings === null
+                                )
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     {shouldDisplayRemoveColumn && (
                       <TableCell className="text-center print:hidden">
@@ -649,8 +659,17 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
                     return formatNumberWithLocale(
                       sortedFundsData.reduce((sum, fund) => {
                         const displayData = fund.original || fund
-                        const ownedQty = displayData?.ownedQuantity
-                        return sum + (ownedQty != null && ownedQty !== 0 ? ownedQty : 0)
+
+                        if (displayData?.verifiedHoldings ) {
+                          return sum + (displayData?.quantity || 0)
+                        }
+
+                        if (displayData?.verifiedHoldings === false) {
+                          const ownedQty = displayData?.ownedQuantity
+                          return sum + (ownedQty  ? ownedQty : 0)
+                        }
+
+                        return sum
                       }, 0),
                     )
                   })()}
