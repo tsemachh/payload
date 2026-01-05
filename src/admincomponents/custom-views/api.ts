@@ -1,6 +1,7 @@
 import { Company } from '@/payload-types'
 import { getIdOfRelationField } from '@/utils/utils'
 import { getParentCompanyId } from '@/utils/voteGrouping'
+import { sortFundsData } from '@/utils/companySort'
 
 export async function getVoteData(
   req: any,
@@ -206,7 +207,7 @@ export async function getVoteData(
     meetingStockNum: meetingData.stockId,
     meetingStockId: meetingData.stock,
     holdingsLimit: meetingData.holdingsLimit,
-    fundsData: fundsWithHoldings,
+    fundsData: sortFundsData(fundsWithHoldings),
     agenda: meetingData.agenda,
     meetingFullName: meetingData.fullName,
   }
