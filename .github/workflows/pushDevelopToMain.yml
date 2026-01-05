@@ -1,0 +1,112 @@
+name: Main CI - Tests & Back-merge to develop
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-
+    outputs:
+      pusher_name: ${{ steps.set_pusher.outputs.pusher_name }}
+      pusher_email: ${{ steps.set_pusher.outputs.pusher_email }}
+    steps:
+      # Step 1: Checkout code
+      - uses: actions/checkout@v3
+      # Set commit author info
+      - name: Set pusher info
+        id: set_pusher
+        run: |
+          echo "pusher_name=$(git log -1 --pretty=format:'%an')" >> $GITHUB_OUTPUT
+          echo "pusher_email=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_OUTPUT
+      # Step 2: MongoDB Atlas access
+      - name: Permit runner to access MongoDB Atlas
+        uses: textbook/atlas-ip@v1
+        with:
+          atlas-private-key: ${{ secrets.ATLAS_PRIVATE_KEY }}
+          atlas-public-key: ${{ secrets.ATLAS_PUBLIC_KEY }}
+          group-id: ${{ vars.ATLAS_GROUP_ID }}
+
+      # Step 3: Docker setup
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          use: true
+          version: latest
+
+      # Step 4: Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      
+      # Step 5: Build and test
+      - name: Build, Test, and Push
+        env:
+          DATABASE_URI: ${{ secrets.DATABASE_URI }}
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+        run: |
+          # Build the image without cache options to avoid driver errors
+          docker build \
+            --build-arg PAYLOAD_SECRET="$PAYLOAD_SECRET" \
+            --build-arg DATABASE_URI="$DATABASE_URI" \
+            -t payload-image:local-test .
+
+          # Run container
+          docker run -d --name payload-container -p 3000:3000 payload-image:local-test
+
+          # Wait for the app to start
+          echo "Waiting for the application to start..."
+          sleep 30
+
+          # Check logs for debugging
+          echo "Container logs:"
+          docker logs payload-container
+
+          # Test the application
+          curl http://localhost:3000 || exit 1
+
+          # Stop the container after testing
+          docker stop payload-container
+  backmerge:
+    needs: docker-build
+    runs-on: ubuntu-latest
+    if: ${{ github.event.head_commit.message != 'Merge pull request from develop' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create PR main → develop
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main          # head
+          base: develop         # target
+          title: "Back-merge main into develop"
+          body: |
+            Automatic back-merge to keep develop in sync with main.
+
+            Triggered by push to main (${{ github.actor }}).
+          labels: back-merge, automated
+          author: ${{ needs.docker-build.outputs.pusher_name }} <${{ needs.docker-build.outputs.pusher_email }}>
+
+  notify-slack:
+    needs: docker-build
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
