@@ -11,7 +11,6 @@ import {
   groupVotesByParentAndChecksum,
   createCompanyToParentMapFromVotes,
 } from '@/utils/voteGrouping'
-import { getCompanyNameById } from '@/collections/meetings/hooks/activeCompaniesCache'
 
 export const getVoteByMeetingAndCompanies = async (req: PayloadRequest) => {
   await addDataAndFileToRequest(req)
@@ -321,21 +320,20 @@ export const publishVotes = async (req: PayloadRequest) => {
       console.error('Error creating notification for published votes:', error)
     }
 
-    // Get company names for updated votes//TODO: reachelBra
-    const updatedCompanyNames = updatedVotes.map((vote) => {
-      const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
-      if (!companyId) return null
-      return getCompanyNameById(companyId)
-    })
-
-    const validCompanyNames = updatedCompanyNames.filter((name) => name !== null)
+    // Get company IDs for updated votes
+    const updatedCompanyIds = updatedVotes
+      .map((vote) => {
+        const companyId = typeof vote.company === 'string' ? vote.company : vote.company?.id
+        return companyId || null
+      })
+      .filter((id): id is string => id !== null)
 
     return Response.json(
       {
         success: true,
         totalPublished: votesToPublish.docs.length,
         actuallyUpdated: updatedVotes.length,
-        updatedCompanyNames: validCompanyNames,
+        updatedCompanyIds,
         message:
           votesToPublish.docs.length === 1
             ? 'פורסמה בהצלחה הצבעה אחת'
