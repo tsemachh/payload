@@ -20,8 +20,8 @@ export const syncMeetingsOnCompanyChange = async ({ req, data, previousDoc }: an
       return !arraysEqual(prev.stock || [], curr.stock || [])
     })
     const removedLabels = prevLabels
-      .map((prev) => {
-        const curr = newLabels.find((c) => c.label === prev.label && c.color === prev.color)
+      .map((prev:any) => {
+        const curr = newLabels.find((c:any) => c.label === prev.label && c.color === prev.color)
         if (!curr) return prev 
 
         const prevStock = normalizeIds(prev.stock)
@@ -102,11 +102,11 @@ export const syncMeetingsOnCompanyChange = async ({ req, data, previousDoc }: an
           const existingLabels = meeting.labels || []
 
           const meetingStocks = Array.isArray(meeting.stock) ? meeting.stock : [meeting.stock]
-          const meetingStockIds = meetingStocks.map((s) =>
+          const meetingStockIds = meetingStocks.map((s:any) =>
             typeof s === 'string' ? s : s?.id || s?._id,
           )
 
-          const hasRelevantStock = currentStockIds.some((stockId) =>
+          const hasRelevantStock = currentStockIds.some((stockId:any) =>
             meetingStockIds.includes(stockId),
           )
 
