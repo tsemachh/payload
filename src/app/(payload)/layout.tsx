@@ -8,9 +8,18 @@ import React from 'react'
 import './custom.scss'
 
 import { importMap } from './admin/importMap.js'
+import type { Metadata } from 'next'
 
 type Args = {
   children: React.ReactNode
+}
+
+export const metadata: Metadata = {
+  title: 'מערכת ניהול אסיפות',
+  description: 'מערכת מודרנית לניהול אסיפות',
+  icons: {
+    icon: '/favicon.png',
+  },
 }
 
 const serverFunction: ServerFunctionClient = async function (args) {

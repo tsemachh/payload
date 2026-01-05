@@ -1224,6 +1224,9 @@ export const Meetings: CollectionConfig = {
               label: 'תיקים עם החזקות',
               admin: {
                 readOnly: true,
+                components: {
+                  Field: '/admincomponents/fields/FundsWithHoldingTable',
+                },
               },
               labels: { plural: 'תיקים עם החזקות', singular: 'תיק עם החזקות' },
               type: 'array',
@@ -1317,6 +1320,9 @@ export const Meetings: CollectionConfig = {
               admin: {
                 readOnly: true,
                 description: 'חברות שהחזיקו 30 יום לפני מועד הרישום אך לא הוזמנו לאסיפה',
+                components: {
+                  Field: '/admincomponents/fields/HistoricalHoldingsTable',
+                },
               },
               labels: {
                 plural: 'החזקות היסטוריות',
