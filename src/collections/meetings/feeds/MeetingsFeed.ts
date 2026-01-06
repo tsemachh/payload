@@ -82,3 +82,4 @@ export const MeetingsFeed: CollectionConfig = {
   ],
   upload: { skipSafeFetch: true },
 }
+
