@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   docker-build:
-    runs-on: ubuntu-
+    runs-on: ubuntu-latest
     outputs:
       pusher_name: ${{ steps.set_pusher.outputs.pusher_name }}
       pusher_email: ${{ steps.set_pusher.outputs.pusher_email }}
