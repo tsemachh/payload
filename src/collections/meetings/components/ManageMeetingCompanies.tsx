@@ -67,6 +67,9 @@ export const ManageMeetingCompanies = () => {
   // Refs to prevent duplicate calls
   const isFetchingCompanies = useRef(false)
 
+  // Check if meeting is finalized
+  const isFinalized = data?.finalized === true
+
   // Fetch data
   useEffect(() => {
     const fetchCompanyData = async () => {
@@ -485,6 +488,7 @@ export const ManageMeetingCompanies = () => {
             e.preventDefault()
             handleAddClick()
           }}
+          disabled={isFinalized}
           variant="default"
           className="gap-2"
         >
@@ -495,6 +499,7 @@ export const ManageMeetingCompanies = () => {
             e.preventDefault()
             setShowRemoveModal(true)
           }}
+          disabled={isFinalized}
           variant="outline"
           className="gap-2 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
         >
@@ -506,6 +511,7 @@ export const ManageMeetingCompanies = () => {
               e.preventDefault()
               setShowRestoreModal(true)
             }}
+          disabled={isFinalized}
             variant="outline"
             className="gap-2 border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
           >
