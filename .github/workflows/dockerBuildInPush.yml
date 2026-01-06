@@ -3,7 +3,7 @@ name: Docker Emda Payload Image CI
 on:
   push:
     branches:
-      - 'main'
+      - 'develop'
 
 jobs:
   docker-build:
@@ -30,7 +30,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "TAG=pr" >> $GITHUB_ENV
-          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             echo "TAG=latest" >> $GITHUB_ENV
           else
             echo "TAG=release" >> $GITHUB_ENV

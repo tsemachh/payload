@@ -7,6 +7,7 @@ on:
 jobs:
   docker-build-and-update:
     runs-on: ubuntu-latest
+    if: github.event.release.target_commitish == 'main'
     steps:
       # Step 1: Checkout code
       - uses: actions/checkout@v3
