@@ -257,7 +257,14 @@ export default buildConfig({
     },
     meta: {
       title: 'עמדה',
+      openGraph: {
+        // highlight-end
+        description: 'מערכת מודרנית לניהול אסיפות',
+        siteName: 'ניהול - עמדה',
+        title: 'עמדה',
+      },
       titleSuffix: '- ניהול',
+      description: 'מערכת מודרנית לניהול אסיפות',
       icons: [
         {
           rel: 'icon',
