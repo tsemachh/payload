@@ -175,7 +175,7 @@ export const setStockValueOnCreateOrHoldingsChange: CollectionBeforeChangeHook =
   return data
 }
 
-export const handleResult: CollectionBeforeChangeHook = async ({ data, req }) => {
+export const handleResult: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
   // Skip if context is from migration or process
   if (req.context?.from === 'migration' || req.context?.from === 'process') {
     return data
@@ -188,6 +188,11 @@ export const handleResult: CollectionBeforeChangeHook = async ({ data, req }) =>
 
   // Check if agenda exists and has items
   if (!data.agenda || !Array.isArray(data.agenda) || data.agenda.length === 0) {
+    return data
+  }
+
+  // If user is explicitly setting finalized to false, respect that choice
+  if (originalDoc?.finalized === true && data.finalized === false) {
     return data
   }
 
