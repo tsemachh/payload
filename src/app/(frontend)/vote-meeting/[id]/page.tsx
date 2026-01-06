@@ -377,7 +377,7 @@ export default function VotingForm() {
 
   // Use navigation guard hook for back button and browser navigation
   const navGuard = useNavigationGuard({
-    enabled: (isDirty || isDraftSaved) && !isReadOnly,
+    enabled: (isAnyCompanyDirty || isDraftSaved) && !isReadOnly,
   })
 
   const validateForm = useCallback((): ValidationError[] => {
