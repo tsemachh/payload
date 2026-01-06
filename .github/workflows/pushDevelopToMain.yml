@@ -78,29 +78,29 @@ jobs:
           # Stop the container after testing
           docker stop payload-container
 
-  backmerge:
-    needs: docker-build
-    runs-on: ubuntu-latest
-    if: ${{ github.event.head_commit.message != 'Merge pull request from develop' }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # backmerge:
+  #   needs: docker-build
+  #   runs-on: ubuntu-latest
+  #   if: ${{ github.event.head_commit.message != 'Merge pull request from develop' }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Create PR main → develop
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main          # head
-          base: develop         # target
-          title: "Back-merge main into develop"
-          body: |
-            Automatic back-merge to keep develop in sync with main.
+  #     - name: Create PR main → develop
+  #       uses: peter-evans/create-pull-request@v6
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}
+  #         branch: main          # head
+  #         base: develop         # target
+  #         title: "Back-merge main into develop"
+  #         body: |
+  #           Automatic back-merge to keep develop in sync with main.
 
-            Triggered by push to main (${{ github.actor }}).
-          labels: back-merge, automated
-          author: ${{ needs.docker-build.outputs.pusher_name }} <${{ needs.docker-build.outputs.pusher_email }}>
-          merge-method: merge   # מבטיח merge אמיתי, לא מוחק דבר
+  #           Triggered by push to main (${{ github.actor }}).
+  #         labels: back-merge, automated
+  #         author: ${{ needs.docker-build.outputs.pusher_name }} <${{ needs.docker-build.outputs.pusher_email }}>
+  #         merge-method: merge   # מבטיח merge אמיתי, לא מוחק דבר
 
   notify-slack:
     needs: docker-build
