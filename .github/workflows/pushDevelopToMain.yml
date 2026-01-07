@@ -93,28 +93,24 @@ jobs:
           git config user.name "${{ needs.docker-build.outputs.pusher_name }}"
           git config user.email "${{ needs.docker-build.outputs.pusher_email }}"
 
-      - name: Create backmerge branch and merge main
-        run: |
-          git fetch origin
-          git checkout -b backmerge-main-to-develop-${{ github.run_id }} origin/develop
-          git merge origin/main --no-ff --no-edit
-
-      - name: Create Pull Request main → develop
+      - name: Create Pull Request directly from main to develop
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Back-merge main into develop" 
           title: "Back-merge: Sync develop with main"
           body: |
-            Automatic back-merge to keep `develop` in sync with `main`.
+            Automatic back-merge PR to keep `develop` in sync with `main`.
 
             Triggered by push to `main` by ${{ github.actor }}.
             Commit: ${{ github.sha }}
 
-            This ensures hotfixes and releases from `main` are integrated into `develop`.
-          branch: backmerge-main-to-develop-${{ github.run_id }}
-          base: develop
+            This PR contains all commits from `main` that are not yet in `develop`.
+          branch: main                          
+          base: develop                        
           labels: automated, back-merge
           draft: false
+          delete-branch: false                  
 
   notify-slack:
     needs: docker-build
