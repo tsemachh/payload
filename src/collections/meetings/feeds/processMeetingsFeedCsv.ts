@@ -75,7 +75,6 @@ export function convertMagnaToPayloadMeeting(data: any) {
   }
 }
 
-
 // Inner function to process a single row without promise pool
 async function processRowInner(
   row: any,
@@ -126,52 +125,53 @@ async function processRowInner(
             req,
           })
           context.successPrevCount++
-          context.processedMeetingIds.push(prevMeetingId)
-          return // Add return to prevent processing the same row again
+          context.processedPrevMeetingIds.push(prevMeetingId)
+          return // Exit here - don't create new meeting when updating previous one
         } catch (e: any) {
           context.errors.push(`שגיאה בעידכון הפגישה עם האסמכתא  ${row.proofIdPrev}: ${e.message}`)
           req.payload.logger.error(`Error updating meeting with ProofIdPrev ${row.proofIdPrev}`)
+          return // Exit here even if update failed - don't create new meeting
         }
       } else {
         context.errors.push(`לא נמצאה אסיפה עם האסמכתא  ${row.proofIdPrev}, האסיפה לא תתעדכן`)
         req.payload.logger.warn(
           `No meeting found for ProofIdPrev ${row.proofIdPrev} for ${row.magnaId}`,
         )
-      }
-    }
-
-    const existingMeeting = await findMeetingByMagnaId(req.payload, row.magnaId)
-    if (existingMeeting?.docs.length > 0) {
-      const meetingId = existingMeeting?.docs[0].id
-      const existingMeetingData = existingMeeting.docs[0]
-
-      // Always update existing meetings with new data from the feed
-      try {
-        row._status = 'draft'
-        await req.payload.update({
-          collection: 'meetings',
-          id: meetingId,
-          data: row,
-          context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
-          req,
-        })
-        context.successCount++
-        context.processedMeetingIds.push(meetingId)
-      } catch (e: any) {
-        context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
+        return // Exit here - don't create new meeting when ProofIdPrev not found
       }
     } else {
-      try {
-        const newMeeting = await req.payload.create({
-          collection: 'meetings',
-          data: row,
-          context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
-          req,
-        })
-        context.successCount++
-        context.processedMeetingIds.push(newMeeting.id)
-      } catch (e: any) {
-        context.errors.push(`שגיאה בייצור הפגישה עם האסמכתא ${row.magnaId}: ${e.message}`)
+      const existingMeeting = await findMeetingByMagnaId(req.payload, row.magnaId)
+      if (existingMeeting?.docs.length > 0) {
+        const meetingId = existingMeeting?.docs[0].id
+
+        // Always update existing meetings with new data from the feed
+        try {
+          row._status = 'draft'
+          await req.payload.update({
+            collection: 'meetings',
+            id: meetingId,
+            data: row,
+            context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
+            req,
+          })
+          context.successCount++
+          context.processedMeetingIds.push(meetingId)
+        } catch (e: any) {
+          context.errors.push(`שגיאה בעידכון האסיפה עם האסמכתא  ${row.magnaId}: ${e.message}`)
+        }
+      } else {
+        try {
+          const newMeeting = await req.payload.create({
+            collection: 'meetings',
+            data: row,
+            context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
+            req,
+          })
+          context.successCount++
+          context.processedMeetingIds.push(newMeeting.id)
+        } catch (e: any) {
+          context.errors.push(`שגיאה בייצור הפגישה עם האסמכתא ${row.magnaId}: ${e.message}`)
+        }
       }
     }
   } catch (error) {
@@ -284,7 +284,8 @@ export type MeetingFeedContext = {
   fileLength: number
   successPrevCount: number
   countTotalPrev: number
-  processedMeetingIds: string[] // IDs of meetings that were processed (created or updated)
+  processedMeetingIds: string[] // IDs of meetings that were created or updated (without proofIdPrev)
+  processedPrevMeetingIds: string[] // IDs of meetings that were updated via proofIdPrev
 }
 export const processMeetingsFeedCsv = async (
   req: PayloadRequest,
@@ -297,6 +298,7 @@ export const processMeetingsFeedCsv = async (
     successPrevCount: 0,
     countTotalPrev: 0,
     processedMeetingIds: [],
+    processedPrevMeetingIds: [],
   }
   try {
     // The file is at req.file as specified in the issue description
@@ -322,7 +324,15 @@ export const processMeetingsFeedCsv = async (
     })
 
     req.payload.logger.info(`Processing ${rows.length} rows from CSV file: ${file.name}`)
-    context.fileLength = rows.length
+
+    // Count only rows without proofIdPrev as potential new meetings
+    const rowsWithoutPrev = rows.filter((row) => !row.proofIdPrev)
+    context.fileLength = rowsWithoutPrev.length
+
+    req.payload.logger.info(
+      `Found ${rowsWithoutPrev.length} potential new meetings (without proofIdPrev) out of ${rows.length} total rows`,
+    )
+
     // Check for missing columns in the CSV
     const missingColumns = getMissingColumns(rows, requiredFields)
     if (missingColumns.length > 0) {
@@ -336,6 +346,7 @@ export const processMeetingsFeedCsv = async (
     context.successPrevCount = __ret.successPrevCount
     context.successCount = __ret.successCount
     context.processedMeetingIds = __ret.processedMeetingIds
+    context.processedPrevMeetingIds = __ret.processedPrevMeetingIds
     req.payload.logger.info(
       `Successfully processed ${rows.length} rows from CSV file: ${file.name}`,
     )
@@ -359,4 +370,3 @@ export const processMeetingsFeedCsv = async (
     return context
   }
 }
-
