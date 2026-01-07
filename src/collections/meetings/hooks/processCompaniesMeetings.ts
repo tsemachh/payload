@@ -28,7 +28,6 @@ async function fetchHistoricalHoldings(
   // Pull mapping from cache to avoid extra queries
   const cachedMap = getCompanyToFundsMap(req.payload) || {}
 
-  debugger
   const stockId = String(getIdOfRelationField(meeting.stock))
   const results: any[] = []
 
@@ -376,13 +375,34 @@ async function processMeeting(
     const hasRelatedStocks = fromRelatedStock
 
     const migrationComments = `${changeDate} - [${changeSource}] ${changeDescription}`
+
+    const finalCompanies = Array.from(new Set(filteredCompIds)) as string[]
+
     const data: Partial<Meeting> = {
-      companies: Array.from(new Set(filteredCompIds)) as string[],
+      companies: finalCompanies,
       funds: [...filteredFunds],
       fundsWithHolding: filteredFundsWithHolding,
       historicalHoldings,
       migrationComments,
       hasRelatedStocks,
+    }
+
+    // Recalculate meeting vote counts once before the update to embed results
+    req.payload.logger.info(
+      `recalculateMeetingVoteCounts for meeting ${meeting.id} (skipUpdate: true)`,
+    )
+    const recalcResult = await recalculateMeetingVoteCounts(req, meeting.id, true)
+    if (recalcResult?.success && recalcResult.data) {
+      data.votesCount = recalcResult.data.votesCount
+      data.reportVotesCount = recalcResult.data.reportVotesCount
+      data.votesStatus = recalcResult.data.votesStatus
+      data.votesReportStatus = recalcResult.data.votesReportStatus
+
+      // Append vote count info to migration comments if changed
+      if (recalcResult.message.includes('Calculated counts')) {
+        const voteInfo = ` | הצבעות: ${data.votesCount}, מדווחות: ${data.reportVotesCount}`
+        data.migrationComments = data.migrationComments + voteInfo
+      }
     }
 
     // Skip-update guard: compute a deterministic hash of the payload and compare with stored value
@@ -402,6 +422,10 @@ async function processMeeting(
         funds: data.funds,
         fundsWithHolding: data.fundsWithHolding,
         historicalHoldings: data.historicalHoldings,
+        votesCount: data.votesCount,
+        reportVotesCount: data.reportVotesCount,
+        votesStatus: data.votesStatus,
+        votesReportStatus: data.votesReportStatus,
       })
       const json = JSON.stringify(payloadForHash)
       // lightweight hash (FNV-1a 32-bit)
@@ -418,7 +442,7 @@ async function processMeeting(
         )
         mt.inc('update.skipped', 1)
         // still run cleanup to ensure votes stay consistent with current companies
-        await cleanupInvalidVotesForMeetings(req, [String(meeting.id)], mt)
+        await cleanupInvalidVotesForMeetings(req, [String(meeting.id)], mt, finalCompanies)
         mt.end('meetingTotal')
         return
       }
@@ -426,21 +450,36 @@ async function processMeeting(
     } catch {}
     mt.start('mutation.meetings.update')
 
-    // Recalculate meeting vote counts once after bulk deletion
-    //TODO - do it as part of the meeting update
-    await recalculateMeetingVoteCounts(req, meeting.id)
+    req.payload.logger.info(
+      {
+        meetingId: meeting.id,
+        companiesCount: finalCompanies.length,
+        fundsCount: filteredFunds.length,
+        fundsWithHoldingCount: filteredFundsWithHolding.length,
+        historicalHoldingsCount: historicalHoldings.length,
+      },
+      `before update meeting ${meeting.id}`,
+    )
+
+    const updateStartTime = Date.now()
     await req.payload.update({
       collection: 'meetings',
       id: meeting.id,
+      depth: 0,
       req: {
         ...req,
         context: { ...req.context, from: 'process', process: 'processCompaniesMeetings' },
       },
       data,
     })
+    const updateDuration = Date.now() - updateStartTime
+    req.payload.logger.info(`after update meeting ${meeting.id} (${updateDuration}ms)`)
     mt.end('mutation.meetings.update')
     // Use the new cleanup API to remove invalid votes for this meeting
-    await cleanupInvalidVotesForMeetings(req, [String(meeting.id)], mt)
+    req.payload.logger.info(`before cleanupInvalidVotesForMeetings meeting ${meeting.id}`)
+
+    await cleanupInvalidVotesForMeetings(req, [String(meeting.id)], mt, finalCompanies)
+    req.payload.logger.info(`after cleanupInvalidVotesForMeetings meeting ${meeting.id}`)
   }
   mt.end('meetingTotal')
 }
@@ -590,26 +629,33 @@ export const cleanupInvalidVotesForMeetings = async (
   req: PayloadRequest,
   meetingIds: string[],
   runAgg?: PerfTimer,
+  manualCompanies?: string[],
 ): Promise<void> => {
   const total = meetingIds.length
   for (let idx = 0; idx < meetingIds.length; idx++) {
     const meetingId = meetingIds[idx]
     try {
-      // Load meeting companies only
-      const meeting = await req.payload.findByID({
-        collection: 'meetings',
-        id: meetingId,
-        select: { companies: true },
-        depth: 0,
-      })
-      runAgg?.inc('findCalls', 1)
-      runAgg?.inc('docsRead', 1)
+      let validCompanyIds: string[] = []
 
-      const companies: string[] = Array.isArray((meeting as any).companies)
-        ? ((meeting as any).companies as string[])
-        : []
+      if (manualCompanies) {
+        validCompanyIds = manualCompanies.filter(Boolean).map(String)
+      } else {
+        // Load meeting companies only
+        const meeting = await req.payload.findByID({
+          collection: 'meetings',
+          id: meetingId,
+          select: { companies: true },
+          depth: 0,
+        })
+        runAgg?.inc('findCalls', 1)
+        runAgg?.inc('docsRead', 1)
 
-      const validCompanyIds = companies.filter(Boolean).map(String)
+        const companies: string[] = Array.isArray((meeting as any).companies)
+          ? ((meeting as any).companies as string[])
+          : []
+
+        validCompanyIds = companies.filter(Boolean).map(String)
+      }
 
       // Single bulk delete: remove votes for this meeting whose company is not in the valid list
       // If the valid list is empty, this will delete all votes for the meeting (expected behavior)

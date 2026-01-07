@@ -9,6 +9,7 @@ import { Meeting, Vote, VotesReportStatus, VotesStatus } from '@/payload-types'
 export async function recalculateMeetingVoteCounts(
   req: PayloadRequest,
   meetingId: string,
+  skipUpdate: boolean = false,
 ): Promise<
   | {
       success: boolean
@@ -24,7 +25,7 @@ export async function recalculateMeetingVoteCounts(
     }
   | undefined
 > {
-  const isMigration = req.context?.from === 'migration'
+  const isMigration = req.context?.from === 'migration' || req.context?.from === 'process'
   const logPrefix = `[recalculateMeetingVoteCounts][${meetingId}]`
 
   try {
@@ -113,31 +114,35 @@ export async function recalculateMeetingVoteCounts(
         const existingChangeDetails = currentMeeting?.migrationComments || ''
         const migrationComments = `${changeDate} - [${changeSource}] ${changeDescription}\n${existingChangeDetails}`
 
-        // Update the meeting with calculated values
-        await req.payload.update({
-          collection: 'meetings',
-          id: meetingId,
-          data: {
-            votesCount: newVotesCount,
-            reportVotesCount: newReportVotesCount,
-            votesStatus,
-            votesReportStatus,
-            migrationComments,
-          },
-          depth: 0,
-          req: {
-            ...req,
-            context: {
-              ...req.context,
-              from: 'migration',
-              process: 'recalculateMeetingVoteCounts',
+        if (!skipUpdate) {
+          // Update the meeting with calculated values
+          await req.payload.update({
+            collection: 'meetings',
+            id: meetingId,
+            data: {
+              votesCount: newVotesCount,
+              reportVotesCount: newReportVotesCount,
+              votesStatus,
+              votesReportStatus,
+              migrationComments,
             },
-          },
-        })
+            depth: 0,
+            req: {
+              ...req,
+              context: {
+                ...req.context,
+                from: 'migration',
+                process: 'recalculateMeetingVoteCounts',
+              },
+            },
+          })
+        }
 
         return {
           success: true,
-          message: `Updated meeting ${meetingId}: votes=${newVotesCount}, reported=${newReportVotesCount}`,
+          message: skipUpdate
+            ? `Calculated counts for meeting ${meetingId}: votes=${newVotesCount}, reported=${newReportVotesCount}`
+            : `Updated meeting ${meetingId}: votes=${newVotesCount}, reported=${newReportVotesCount}`,
           data,
         }
       } else {
@@ -208,8 +213,17 @@ export const updateVoteStatusOnCompaniesChange: CollectionBeforeChangeHook<Meeti
   req,
   operation,
 }) => {
+  req.payload.logger.info(
+    { meetingId: data.id || originalDoc?.id, from: req.context?.from, operation },
+    `updateVoteStatusOnCompaniesChange hook started`,
+  )
   // Only process updates
   if (operation !== 'update' || !originalDoc) {
+    return data
+  }
+
+  // Skip if context is from migration or process
+  if (req.context?.from === 'migration' || req.context?.from === 'process') {
     return data
   }
 
