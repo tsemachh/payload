@@ -96,7 +96,7 @@ export const validateResearchDocsInMeetings: CollectionBeforeValidateHook = asyn
   data,
   req,
 }) => {
-  if (req.context?.from === 'migration') return data
+  if (req.context?.from === 'migration' || req.context?.from === 'process') return data
   const type = data?.type
   const docIDs = data?.researchDocuments
   const companies = data?.companies || []
@@ -121,7 +121,7 @@ export const clearCompaniesInSingleBondResearchDoc: CollectionBeforeChangeHook =
   req,
 }) => {
   // Skip processing during migrations
-  if (req.context?.from === 'migration') {
+  if (req.context?.from === 'migration' || req.context?.from === 'process') {
     return data
   }
 
@@ -182,7 +182,7 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
 
 export const handleRecommendationReason: CollectionBeforeChangeHook = async ({ data, req }) => {
   // Skip processing during migrations
-  if (req.context?.from === 'migration') {
+  if (req.context?.from === 'migration' || req.context?.from === 'process') {
     return data
   }
 

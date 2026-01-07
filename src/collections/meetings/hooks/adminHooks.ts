@@ -11,6 +11,8 @@ export const beforeChangeMeetingId: CollectionBeforeChangeHook = async ({
   operation,
   req,
 }) => {
+  if (req.context?.from === 'migration' || req.context?.from === 'process') return data
+
   if (operation == 'create') {
     if (!data.primaryLegacyId) {
       data.primaryLegacyId = `${Math.floor(Math.random() * 1000000)}`
@@ -127,7 +129,7 @@ export const setStockValueOnCreateOrHoldingsChange: CollectionBeforeChangeHook =
   req,
 }) => {
   try {
-    if (req.context?.from === 'process') {
+    if (req.context?.from === 'process' || req.context?.from === 'migration') {
       return data
     }
 
