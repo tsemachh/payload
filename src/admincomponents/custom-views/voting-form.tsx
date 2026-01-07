@@ -51,6 +51,7 @@ export interface VoteData {
   meetingStockNum: string
   meetingStockId: string
   holdingsLimit: string
+  finalized: boolean
   isInterested: boolean
   interestedExplanation?: string
   isSeniorOfficial: boolean
@@ -110,7 +111,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   const [hasErrors, setHasErrors] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
-  const [fundToRemove, setFundToRemove] = useState<number | null>(null)
+  const [fundToRemoveIndex, setFundToRemoveIndex] = useState<number | null>(null)
   const [removingFundIndex, setRemovingFundIndex] = useState<number | null>(null)
 
   // Calculate which funds should show remove button based on company fund count
@@ -137,7 +138,9 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
 
   // Check if any fund can be removed (to determine if column should be shown)
   const shouldDisplayRemoveColumn = useMemo(() => {
-    return Array.from(fundRemoveability.values()).some((canRemove) => canRemove)
+    return (
+      !voteData.finalized && Array.from(fundRemoveability.values()).some((canRemove) => canRemove)
+    )
   }, [fundRemoveability])
 
   const allHoldingsVerified = useMemo(() => {
@@ -333,7 +336,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   }
 
   const handleRemoveFund = (sortedIndex: number) => {
-    setFundToRemove(sortedIndex)
+    setFundToRemoveIndex(sortedIndex)
   }
 
   const copyToClipboard = async (text: string) => {
@@ -347,13 +350,13 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
   }
 
   const confirmRemoveFund = async () => {
-    if (fundToRemove === null || !formData) return
+    if (fundToRemoveIndex === null || !formData) return
 
-    const fundToDelete = formData.fundsData[fundToRemove]
+    const fundToDelete = formData.fundsData[fundToRemoveIndex]
 
     // Set the removing state and close dialog
-    setRemovingFundIndex(fundToRemove)
-    setFundToRemove(null)
+    setRemovingFundIndex(fundToRemoveIndex)
+    setFundToRemoveIndex(null)
 
     try {
       const response = await fetch(`/api/meetings/removeFund`, {
@@ -365,6 +368,7 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
           meetingId,
           companyId: fundToDelete.company.id,
           fundId: fundToDelete.fund.id,
+          ...(fundToDelete.original?.stockId && { originalStockId: fundToDelete.original.stockId }),
         }),
       })
 
@@ -380,10 +384,18 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
       console.log('Fund removed successfully:', result.message)
 
       // Update local state by removing the fund
-      const updatedFunds = formData.fundsData.filter(
-        (fund) =>
-          !(fund.company.id === fundToDelete.company.id && fund.fund.id === fundToDelete.fund.id),
-      )
+      const updatedFunds = formData.fundsData.filter((fund) => {
+        if (fundToDelete.original) {
+          return !(
+            fund.company.id === fundToDelete.company.id &&
+            fund.fund.id === fundToDelete.fund.id &&
+            fund.original?.stockId === fundToDelete.original.stockId
+          )
+        }
+        return !(
+          fund.company.id === fundToDelete.company.id && fund.fund.id === fundToDelete.fund.id
+        )
+      })
 
       const newFormData = { ...formData, fundsData: updatedFunds }
       setFormData(newFormData)
@@ -663,11 +675,11 @@ export function VotingForm({ voteData, meetingId }: VotingFormProps) {
 
       {shouldDisplayRemoveColumn && (
         <ConfirmationDialog
-          open={fundToRemove !== null}
-          onOpenChange={() => setFundToRemove(null)}
+          open={fundToRemoveIndex !== null}
+          onOpenChange={() => setFundToRemoveIndex(null)}
           onConfirm={confirmRemoveFund}
           title="הסרת תיק"
-          description={`פעולה זו תסיר את תיק ${fundToRemove !== null ? formData.fundsData[fundToRemove]?.fund.name : ''}`}
+          description={`פעולה זו תסיר את תיק ${fundToRemoveIndex !== null ? formData.fundsData[fundToRemoveIndex]?.fund.name : ''}`}
         />
       )}
       <Card className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
