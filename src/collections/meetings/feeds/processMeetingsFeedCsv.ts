@@ -110,6 +110,16 @@ async function processRowInner(
 
     if (row.proofIdPrev) {
       context.countTotalPrev++
+
+      // First check if meeting with the new magnaId already exists
+      const existingNewMeeting = await findMeetingByMagnaId(req.payload, row.magnaId)
+      if (existingNewMeeting && existingNewMeeting.docs.length > 0) {
+        req.payload.logger.info(
+          `Meeting with magnaId ${row.magnaId} already exists, skipping proofIdPrev update`,
+        )
+        return // Exit here - meeting already exists with the target magnaId
+      }
+
       const prevMeeting = await findMeetingByMagnaId(req.payload, row.proofIdPrev)
       if (prevMeeting && prevMeeting.docs.length > 0) {
         const { ...dataToUpdate } = row
