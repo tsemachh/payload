@@ -105,7 +105,7 @@ jobs:
             Commit: ${{ github.sha }}
 
             This ensures hotfixes and releases from `main` are integrated into `develop`.
-          branch: backmerge-main-to-develop  
+          branch: backmerge-main-to-develop-${{ github.run_id }}  
           base: develop
           labels: automated, back-merge
           draft: false
