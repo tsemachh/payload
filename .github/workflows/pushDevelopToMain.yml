@@ -79,24 +79,30 @@ jobs:
           docker stop payload-container
 
   backmerge:
-    needs: docker-build  
+    needs: docker-build
     runs-on: ubuntu-latest
-    #if: ${{ !contains(github.event.head_commit.message, 'Merge pull request from develop') && !contains(github.event.head_commit.message, 'Back-merge branch \'develop\' into \'main\'') }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  
+          fetch-depth: 0
+
       - name: Configure Git user
         run: |
           git config user.name "${{ needs.docker-build.outputs.pusher_name }}"
           git config user.email "${{ needs.docker-build.outputs.pusher_email }}"
 
+      - name: Create backmerge branch and merge main
+        run: |
+          git fetch origin
+          git checkout -b backmerge-main-to-develop-${{ github.run_id }} origin/develop
+          git merge origin/main --no-ff --no-edit
+
       - name: Create Pull Request main → develop
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Back-merge main into develop"
           title: "Back-merge: Sync develop with main"
           body: |
             Automatic back-merge to keep `develop` in sync with `main`.
@@ -105,11 +111,11 @@ jobs:
             Commit: ${{ github.sha }}
 
             This ensures hotfixes and releases from `main` are integrated into `develop`.
-          branch: backmerge-main-to-develop-${{ github.run_id }}  
+          branch: backmerge-main-to-develop-${{ github.run_id }}
           base: develop
           labels: automated, back-merge
           draft: false
-          delete-branch: true    
+
   notify-slack:
     needs: docker-build
     if: failure()
