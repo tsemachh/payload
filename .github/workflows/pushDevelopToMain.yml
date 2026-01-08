@@ -104,24 +104,21 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Create unique backmerge branch from main
+      - name: Create unique backmerge branch from current main (including latest commit)
         run: |
           set -e
           BRANCH_NAME="backmerge/main-to-develop-${GITHUB_RUN_ID}"
           echo "Branch name: $BRANCH_NAME"
 
-          echo "📥 Fetching origin..."
           git fetch origin
 
-          echo "🔁 Checking out branch from origin/main..."
-          git checkout -B "$BRANCH_NAME" origin/main
+          git checkout -B "$BRANCH_NAME" HEAD
 
-          echo "📄 Last commits on backmerge branch:"
+          echo "Last commits on backmerge branch:"
           git --no-pager log -5 --oneline
 
-          echo "🚀 Pushing backmerge branch..."
+          echo "Pushing backmerge branch..."
           git push origin "$BRANCH_NAME" --force
-          echo "✅ Branch pushed successfully"
 
       - name: Debug – diff main vs develop
         run: |
