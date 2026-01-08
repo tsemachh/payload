@@ -88,75 +88,62 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Debug – repo & refs
-        run: |
-          echo "🔎 Repository:"
-          git remote -v
-          echo ""
-          echo "🔎 Branches:"
-          git branch -a
-          echo ""
-          echo "🔎 Current HEAD:"
-          git log -1 --oneline
-
       - name: Configure Git
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Create unique backmerge branch from current main (including latest commit)
+      - name: Create backmerge branch – start from develop, merge main
         run: |
           set -e
-          BRANCH_NAME="backmerge/main-to-develop-${GITHUB_RUN_ID}"
-          echo "Branch name: $BRANCH_NAME"
 
-          git fetch origin
+          BRANCH_NAME="backmerge/main-to-develop-${{ github.run_id }}"
+          echo "🌿 Creating branch: $BRANCH_NAME"
 
-          # חשוב: checkout מה-HEAD הנוכחי של הריצה (שזה main עם הקומיט החדש)
-          git checkout -B "$BRANCH_NAME" HEAD
+          git fetch origin main develop
 
-          echo "Last commits on backmerge branch:"
-          echo "Last commits on backmerge branch:"
+          # מתחילים מ-develop
+          git checkout -b "$BRANCH_NAME" origin/develop
+
+          # ממזגים main עם merge commit מפורש (גם אם fast-forward אפשרי)
+          git merge origin/main --no-ff -m "Back-merge main into develop"
+
+          echo "✅ Merge completed. Last commits:"
           git --no-pager log -5 --oneline
 
-          echo "Pushing backmerge branch..."
-          echo "Pushing backmerge branch..."
           git push origin "$BRANCH_NAME" --force
 
-      - name: Debug – diff main vs develop
+      - name: Debug – verify changes exist
         run: |
           git fetch origin develop
-          echo "Commits in main not in develop:"
-          git log origin/develop..origin/main --oneline || true
-
+          echo "📌 Commits in backmerge branch not in develop:"
+          git log origin/develop..HEAD --oneline || echo "No new commits – develop already up to date"
           echo ""
-          echo "File diff summary:"
-          git diff --stat origin/develop..origin/main || true
+          echo "📊 File changes:"
+          git diff --stat origin/develop..HEAD || echo "No changes"
 
-      - name: Open PR main → develop
+      - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: "Back-merge: main → develop"
           body: |
-            Automatic back-merge from `main` into `develop`.
+            Automatic back-merge to keep `develop` in sync with `main`.
 
-            Triggered by push to `main`.
-            Commit: ${{ github.sha }}
-          branch: backmerge/main-to-develop-${{ github.run_id }}  # branch קיים ושדחוף
+            Triggered by push to `main` (commit: ${{ github.sha }}).
+            Actor: ${{ github.actor }}
+
+            This integrates hotfixes and releases from `main` into `develop`.
+          branch: backmerge/main-to-develop-${{ github.run_id }}
           base: develop
           labels: automated, back-merge
           draft: false
+          delete-branch: true  # מנקה את ה-branch אחרי merge או סגירה
 
-
-      - name: Debug – PR step completed
+      - name: Debug – completion
         run: |
-          echo "🧩 create-pull-request action finished"
-          echo "If no PR appeared, it usually means:"
-          echo "1️⃣ No diff between main and develop"
-          echo "2️⃣ PR already exists and was updated"
-          echo "3️⃣ Branch protection or permissions issue"
-
+          echo "✅ Workflow completed"
+          echo "If no PR was created – develop was already in sync with main."
   notify-slack:
     needs: docker-build
     if: failure()
