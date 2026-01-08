@@ -113,32 +113,32 @@ jobs:
 
           git push origin "$BRANCH_NAME" --force
 
-      - name: Debug – verify changes exist
-        run: |
-          git fetch origin develop
-          echo "📌 Commits in backmerge branch not in develop:"
-          git log origin/develop..HEAD --oneline || echo "No new commits – develop already up to date"
-          echo ""
-          echo "📊 File changes:"
-          git diff --stat origin/develop..HEAD || echo "No changes"
+      # - name: Debug – verify changes exist
+      #   run: |
+      #     git fetch origin develop
+      #     echo "📌 Commits in backmerge branch not in develop:"
+      #     git log origin/develop..HEAD --oneline || echo "No new commits – develop already up to date"
+      #     echo ""
+      #     echo "📊 File changes:"
+      #     git diff --stat origin/develop..HEAD || echo "No changes"
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: "Back-merge: main → develop"
-          body: |
-            Automatic back-merge to keep `develop` in sync with `main`.
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@v6
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     title: "Back-merge: main → develop"
+      #     body: |
+      #       Automatic back-merge to keep `develop` in sync with `main`.
 
-            Triggered by push to `main` (commit: ${{ github.sha }}).
-            Actor: ${{ github.actor }}
+      #       Triggered by push to `main` (commit: ${{ github.sha }}).
+      #       Actor: ${{ github.actor }}
 
-            This integrates hotfixes and releases from `main` into `develop`.
-          branch: backmerge/main-to-develop-${{ github.run_id }}
-          base: develop
-          labels: automated, back-merge
-          draft: false
-          delete-branch: true  # מנקה את ה-branch אחרי merge או סגירה
+      #       This integrates hotfixes and releases from `main` into `develop`.
+      #     branch: backmerge/main-to-develop-${{ github.run_id }}
+      #     base: develop
+      #     labels: automated, back-merge
+      #     draft: false
+      #     delete-branch: true  # מנקה את ה-branch אחרי merge או סגירה
 
       - name: Debug – completion
         run: |
