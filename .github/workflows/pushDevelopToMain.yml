@@ -47,7 +47,7 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
-
+      
       
       # Step 5: Build and test
       - name: Build, Test, and Push
@@ -78,38 +78,30 @@ jobs:
           # Stop the container after testing
           docker stop payload-container
 
-  backmerge:
-    needs: docker-build  
-    runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.head_commit.message, 'Merge pull request') && !contains(github.event.head_commit.message, 'Back-merge') }}
+  # backmerge:
+  #   needs: docker-build
+  #   runs-on: ubuntu-latest
+  #   if: ${{ github.event.head_commit.message != 'Merge pull request from develop' }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  
-      - name: Configure Git user
-        run: |
-          git config user.name "${{ needs.docker-build.outputs.pusher_name }}"
-          git config user.email "${{ needs.docker-build.outputs.pusher_email }}"
+  #     - name: Create PR main → develop
+  #       uses: peter-evans/create-pull-request@v6
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}
+  #         branch: main          # head
+  #         base: develop         # target
+  #         title: "Back-merge main into develop"
+  #         body: |
+  #           Automatic back-merge to keep develop in sync with main.
 
-      - name: Create Pull Request main → develop
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Back-merge main into develop"
-          title: "Back-merge: Sync develop with main"
-          body: |
-            Automatic back-merge to keep `develop` in sync with `main`.
+  #           Triggered by push to main (${{ github.actor }}).
+  #         labels: back-merge, automated
+  #         author: ${{ needs.docker-build.outputs.pusher_name }} <${{ needs.docker-build.outputs.pusher_email }}>
+  #         merge-method: merge   # מבטיח merge אמיתי, לא מוחק דבר
 
-            Triggered by push to `main` by ${{ github.actor }}.
-            Commit: ${{ github.sha }}
-
-            This ensures hotfixes and releases from `main` are integrated into `develop`.
-          branch: backmerge-main-to-develop  
-          base: develop
-          labels: automated, back-merge
-          draft: false
-          delete-branch: true    
   notify-slack:
     needs: docker-build
     if: failure()
