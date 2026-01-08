@@ -20,6 +20,7 @@ export async function getVoteData(
       holdingsLimit: true,
       stockId: true,
       stock: true,
+      finalized: true,
     },
     depth: 0,
     limit: 0,
@@ -209,6 +210,6 @@ export async function getVoteData(
     holdingsLimit: meetingData.holdingsLimit,
     fundsData: sortFundsData(fundsWithHoldings),
     agenda: meetingData.agenda,
-    meetingFullName: meetingData.fullName,
+    finalized: meetingData.finalized,
   }
 }
