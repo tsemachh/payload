@@ -104,29 +104,28 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Create / update backmerge branch from main
+      - name: Create unique backmerge branch from main
         run: |
           set -e
+          BRANCH_NAME="backmerge/main-to-develop-${GITHUB_RUN_ID}"
+          echo "Branch name: $BRANCH_NAME"
 
           echo "📥 Fetching origin..."
           git fetch origin
 
-          echo "🔁 Checking out backmerge branch from origin/main..."
-          git checkout -B backmerge/main-to-develop origin/main
+          echo "🔁 Checking out branch from origin/main..."
+          git checkout -B "$BRANCH_NAME" origin/main
 
           echo "📄 Last commits on backmerge branch:"
-          git --no-pager log --oneline -5
+          git --no-pager log -5 --oneline
 
           echo "🚀 Pushing backmerge branch..."
-          git push origin backmerge/main-to-develop --force
-
+          git push origin "$BRANCH_NAME" --force
           echo "✅ Branch pushed successfully"
 
       - name: Debug – diff main vs develop
         run: |
-          echo "🔎 Comparing branches:"
           git fetch origin develop
-
           echo "Commits in main not in develop:"
           git log origin/develop..origin/main --oneline || true
 
@@ -144,7 +143,7 @@ jobs:
 
             Triggered by push to `main`.
             Commit: ${{ github.sha }}
-          branch: backmerge/main-to-develop
+          branch: ${{ steps.create_unique_branch.outputs.branch_name }}
           base: develop
           labels: automated, back-merge
           draft: false
@@ -156,7 +155,7 @@ jobs:
           echo "1️⃣ No diff between main and develop"
           echo "2️⃣ PR already exists and was updated"
           echo "3️⃣ Branch protection or permissions issue"
-      
+
 
   notify-slack:
     needs: docker-build
