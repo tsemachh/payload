@@ -143,10 +143,11 @@ jobs:
 
             Triggered by push to `main`.
             Commit: ${{ github.sha }}
-          branch: ${{ steps.create_unique_branch.outputs.branch_name }}
+          branch: backmerge/main-to-develop-${{ github.run_id }}  # branch קיים ושדחוף
           base: develop
           labels: automated, back-merge
           draft: false
+
 
       - name: Debug – PR step completed
         run: |
