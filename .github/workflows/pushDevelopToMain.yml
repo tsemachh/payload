@@ -156,7 +156,6 @@ jobs:
           echo "2️⃣ PR already exists and was updated"
           echo "3️⃣ Branch protection or permissions issue"
 
-
   notify-slack:
     needs: docker-build
     if: failure()
