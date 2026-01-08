@@ -78,29 +78,85 @@ jobs:
           # Stop the container after testing
           docker stop payload-container
 
-  # backmerge:
-  #   needs: docker-build
-  #   runs-on: ubuntu-latest
-  #   if: ${{ github.event.head_commit.message != 'Merge pull request from develop' }}
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
+    backmerge:
+      needs: docker-build
+      runs-on: ubuntu-latest
 
-  #     - name: Create PR main → develop
-  #       uses: peter-evans/create-pull-request@v6
-  #       with:
-  #         token: ${{ secrets.GITHUB_TOKEN }}
-  #         branch: main          # head
-  #         base: develop         # target
-  #         title: "Back-merge main into develop"
-  #         body: |
-  #           Automatic back-merge to keep develop in sync with main.
+      steps:
+        - name: Checkout full history
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
 
-  #           Triggered by push to main (${{ github.actor }}).
-  #         labels: back-merge, automated
-  #         author: ${{ needs.docker-build.outputs.pusher_name }} <${{ needs.docker-build.outputs.pusher_email }}>
-  #         merge-method: merge   # מבטיח merge אמיתי, לא מוחק דבר
+        - name: Debug – repo & refs
+          run: |
+            echo "🔎 Repository:"
+            git remote -v
+            echo ""
+            echo "🔎 Branches:"
+            git branch -a
+            echo ""
+            echo "🔎 Current HEAD:"
+            git log -1 --oneline
+
+        - name: Configure Git
+          run: |
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+
+        - name: Create / update backmerge branch from main
+          run: |
+            set -e
+
+            echo "📥 Fetching origin..."
+            git fetch origin
+
+            echo "🔁 Checking out backmerge branch from origin/main..."
+            git checkout -B backmerge/main-to-develop origin/main
+
+            echo "📄 Last commits on backmerge branch:"
+            git --no-pager log --oneline -5
+
+            echo "🚀 Pushing backmerge branch..."
+            git push origin backmerge/main-to-develop --force
+
+            echo "✅ Branch pushed successfully"
+
+        - name: Debug – diff main vs develop
+          run: |
+            echo "🔎 Comparing branches:"
+            git fetch origin develop
+
+            echo "Commits in main not in develop:"
+            git log origin/develop..origin/main --oneline || true
+
+            echo ""
+            echo "File diff summary:"
+            git diff --stat origin/develop..origin/main || true
+
+        - name: Open PR main → develop
+          uses: peter-evans/create-pull-request@v6
+          with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+            title: "Back-merge: main → develop"
+            body: |
+              Automatic back-merge from `main` into `develop`.
+
+              Triggered by push to `main`.
+              Commit: ${{ github.sha }}
+            branch: backmerge/main-to-develop
+            base: develop
+            labels: automated, back-merge
+            draft: false
+
+        - name: Debug – PR step completed
+          run: |
+            echo "🧩 create-pull-request action finished"
+            echo "If no PR appeared, it usually means:"
+            echo "1️⃣ No diff between main and develop"
+            echo "2️⃣ PR already exists and was updated"
+            echo "3️⃣ Branch protection or permissions issue"
+        
 
   notify-slack:
     needs: docker-build
