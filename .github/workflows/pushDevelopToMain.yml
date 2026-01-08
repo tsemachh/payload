@@ -116,8 +116,10 @@ jobs:
           git checkout -B "$BRANCH_NAME" HEAD
 
           echo "Last commits on backmerge branch:"
+          echo "Last commits on backmerge branch:"
           git --no-pager log -5 --oneline
 
+          echo "Pushing backmerge branch..."
           echo "Pushing backmerge branch..."
           git push origin "$BRANCH_NAME" --force
 
