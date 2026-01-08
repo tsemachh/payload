@@ -11,6 +11,8 @@ export const beforeChangeMeetingId: CollectionBeforeChangeHook = async ({
   operation,
   req,
 }) => {
+  if (req.context?.from === 'migration' || req.context?.from === 'process') return data
+
   if (operation == 'create') {
     if (!data.primaryLegacyId) {
       data.primaryLegacyId = `${Math.floor(Math.random() * 1000000)}`
@@ -33,6 +35,10 @@ export const validateMeetingState: SelectFieldSingleValidation = (
   value: string | null | undefined,
   options: any,
 ) => {
+  if (options.req?.context?.from == 'migration' || options.req?.context?.from == 'process') {
+    return true
+  }
+
   if (
     !value &&
     !(options.req.context.from == 'migration' || options.req.context.from == 'process')
@@ -123,15 +129,16 @@ export const setStockValueOnCreateOrHoldingsChange: CollectionBeforeChangeHook =
   req,
 }) => {
   try {
-    if ( req.context?.from === 'process') {
+    if (req.context?.from === 'process' || req.context?.from === 'migration') {
       return data
     }
 
     // Only when creating, or when holdingsLimit/stock changed
-    const stockChanged = String(getIdOfRelationField(originalDoc?.stock) || '') !== String(
-      getIdOfRelationField(data?.stock) || '',
-    )
-    const holdingsChanged = (originalDoc?.holdingsLimit || '')?.toString() !== (data?.holdingsLimit || '')?.toString()
+    const stockChanged =
+      String(getIdOfRelationField(originalDoc?.stock) || '') !==
+      String(getIdOfRelationField(data?.stock) || '')
+    const holdingsChanged =
+      (originalDoc?.holdingsLimit || '')?.toString() !== (data?.holdingsLimit || '')?.toString()
 
     if (!(operation === 'create' || stockChanged || holdingsChanged)) {
       return data
@@ -141,10 +148,7 @@ export const setStockValueOnCreateOrHoldingsChange: CollectionBeforeChangeHook =
     if (!stockId) return data
 
     const where: any = {
-      or: [
-        { stockId: { equals: stockId } },
-        { 'stockId.dualStock': { equals: stockId } },
-      ],
+      or: [{ stockId: { equals: stockId } }, { 'stockId.dualStock': { equals: stockId } }],
     }
 
     if (data?.holdingsLimit) {
@@ -173,7 +177,7 @@ export const setStockValueOnCreateOrHoldingsChange: CollectionBeforeChangeHook =
   return data
 }
 
-export const handleResult: CollectionBeforeChangeHook = async ({ data, req }) => {
+export const handleResult: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
   // Skip if context is from migration or process
   if (req.context?.from === 'migration' || req.context?.from === 'process') {
     return data
@@ -186,6 +190,11 @@ export const handleResult: CollectionBeforeChangeHook = async ({ data, req }) =>
 
   // Check if agenda exists and has items
   if (!data.agenda || !Array.isArray(data.agenda) || data.agenda.length === 0) {
+    return data
+  }
+
+  // If user is explicitly setting finalized to false, respect that choice
+  if (originalDoc?.finalized === true && data.finalized === false) {
     return data
   }
 

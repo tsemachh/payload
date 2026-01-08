@@ -330,7 +330,9 @@ export const Meetings: CollectionConfig = {
               },
               hooks: {
                 afterRead: [
-                  async ({ data, req }) => {
+                  async ({ data, req, value }) => {
+                    if (req.context?.from === 'migration' || req.context?.from === 'process')
+                      return value
                     if (
                       !data?.fundsWithHolding ||
                       !Array.isArray(data.fundsWithHolding) ||
@@ -371,7 +373,9 @@ export const Meetings: CollectionConfig = {
               },
               hooks: {
                 afterRead: [
-                  async ({ data }) => {
+                  async ({ data, req, value }) => {
+                    if (req.context?.from === 'migration' || req.context?.from === 'process')
+                      return value
                     // Return the data needed for the component as a JSON string
                     return JSON.stringify({
                       companies: data?.companies?.length || 0,
@@ -391,7 +395,9 @@ export const Meetings: CollectionConfig = {
               },
               hooks: {
                 afterRead: [
-                  async ({ data }) => {
+                  async ({ data, req, value }) => {
+                    if (req.context?.from === 'migration' || req.context?.from === 'process')
+                      return value
                     if (!data?.agenda || !Array.isArray(data.agenda) || data.agenda.length === 0) {
                       return false
                     }
@@ -547,6 +553,8 @@ export const Meetings: CollectionConfig = {
                   hooks: {
                     beforeChange: [
                       async ({ value, data, req, operation }) => {
+                        if (req.context?.from === 'migration' || req.context?.from === 'process')
+                          return value
                         // Only auto-fill relatedQuestions if it's empty/null and we have a meeting type
                         if (!value || !data || data.relatedQuestions) {
                           return value
@@ -621,7 +629,9 @@ export const Meetings: CollectionConfig = {
                   validate: validateMeetingInvitationLink,
                   hooks: {
                     afterRead: [
-                      async ({ data, req }) => {
+                      async ({ data, req, value }) => {
+                        if (req.context?.from === 'migration' || req.context?.from === 'process')
+                          return value
                         if (data?.invitationDocument) {
                           const document = await req.payload.findByID({
                             collection: 'documents',
@@ -1224,6 +1234,9 @@ export const Meetings: CollectionConfig = {
               label: 'תיקים עם החזקות',
               admin: {
                 readOnly: true,
+                components: {
+                  Field: '/admincomponents/fields/FundsWithHoldingTable',
+                },
               },
               labels: { plural: 'תיקים עם החזקות', singular: 'תיק עם החזקות' },
               type: 'array',
@@ -1317,6 +1330,9 @@ export const Meetings: CollectionConfig = {
               admin: {
                 readOnly: true,
                 description: 'חברות שהחזיקו 30 יום לפני מועד הרישום אך לא הוזמנו לאסיפה',
+                components: {
+                  Field: '/admincomponents/fields/HistoricalHoldingsTable',
+                },
               },
               labels: {
                 plural: 'החזקות היסטוריות',
@@ -1374,6 +1390,11 @@ export const Meetings: CollectionConfig = {
         const changeDate = new Date().toISOString()
         const changeSource = req.context?.from || 'user'
         let meetingAlreadyProcessed = false
+
+        req.payload.logger.info(
+          { meetingId: doc.id, from: req.context?.from, operation },
+          `Meetings afterChange hook started`,
+        )
 
         // Create notifications for significant changes (when changeDetails is added)
         if (

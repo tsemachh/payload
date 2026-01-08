@@ -50,12 +50,12 @@ export default function VoteReason({
         נימוק הצבעה
       </span>
       {voteReason && !isInputOpen && (
-        <div className="mt-1 p-2 bg-muted/30 rounded-md text-sm text-foreground w-[200px] whitespace-pre-wrap break-words">
+        <div className="mt-1 p-2 bg-muted/30 rounded-md text-sm text-foreground w-[170px] whitespace-pre-wrap break-words">
           {voteReason}
         </div>
       )}
       {isInputOpen && (
-        <div className="mt-2 w-[200px]">
+        <div className="mt-2 w-[160px]">
           <Textarea
             ref={textareaRef}
             placeholder="הכנס נימוק להצבעה..."

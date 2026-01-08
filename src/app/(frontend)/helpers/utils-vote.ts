@@ -79,9 +79,34 @@ export function isGeneralVote(votes: Vote[]): boolean {
     ]
 
     for (const field of generalFieldsToCompare) {
-      if ((ref as any)[field] !== (current as any)[field]) {
-        return false
+      const refVal = (ref as any)[field]
+      const currentVal = (current as any)[field]
+      const isStringField = [
+        'interestedExplanation',
+        'seniorOfficialExplanation',
+        'clientComment',
+        '_status',
+      ].includes(field)
+      if (isStringField) {
+        if ((refVal || '') !== (currentVal || '')) {
+          return false
+        }
+      } else {
+        if (refVal !== currentVal) {
+          return false
+        }
       }
+    }
+
+    // Compare voteDocuments
+    const refVoteDocuments = (ref.voteDocuments || []).map((doc) =>
+      typeof doc === 'string' ? doc : doc.id,
+    )
+    const currentVoteDocuments = (current.voteDocuments || []).map((doc) =>
+      typeof doc === 'string' ? doc : doc.id,
+    )
+    if (JSON.stringify(refVoteDocuments) !== JSON.stringify(currentVoteDocuments)) {
+      return false
     }
 
     // Compare dynamic questions
@@ -117,6 +142,7 @@ export function isGeneralVote(votes: Vote[]): boolean {
       const voteFieldsToCompare: (keyof typeof a)[] = [
         'topicIndex',
         'voteDecision',
+        'voteReason',
         'hasConflictOfInterest',
         'isRelatedParty',
         'isInvestmentCommittee',
@@ -127,9 +153,23 @@ export function isGeneralVote(votes: Vote[]): boolean {
       ]
 
       for (const field of voteFieldsToCompare) {
-        if ((a as any)[field] !== (b as any)[field]) {
-          console.warn()
-          return false
+        const aVal = (a as any)[field]
+        const bVal = (b as any)[field]
+        const isStringField = [
+          'voteDecision',
+          'voteReason',
+          'conflictOfInterestExplanation',
+          'relatedPartyExplanation',
+          'personalInterestExplanation',
+        ].includes(field)
+        if (isStringField) {
+          if ((aVal || '') !== (bVal || '')) {
+            return false
+          }
+        } else {
+          if (aVal !== bVal) {
+            return false
+          }
         }
       }
     }

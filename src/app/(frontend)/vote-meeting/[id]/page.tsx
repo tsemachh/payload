@@ -1,15 +1,7 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Upload } from 'lucide-react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { useParams, useRouter } from 'next/navigation'
 import { useNavigationGuard } from 'next-navigation-guard'
@@ -18,8 +10,6 @@ import LoadingSpinnerDiamond from '../../components/ui/loading-spinner-diamond'
 import VoteDetails from '../components/VoteDetails'
 import VoteCompanySelector from '../components/VoteCompanySelector'
 import GeneralQuestions from '../components/GeneralQuestions'
-import AgendaQuestions from '../components/AgendaQuestions'
-import VoteReason from '../components/VoteReason'
 import {
   Dialog,
   DialogContent,
@@ -56,19 +46,33 @@ import {
   isGeneralVote,
 } from '../../helpers/utils-vote'
 import useSWR from 'swr'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { PublishSuccessPopup } from '../components/PublishSuccessPopup'
 import { Document } from '@/payload-types'
 import VoteHeader from '../components/Header'
 import { hasCompanyPermission } from '@/utils/permissions'
 import { useAuth } from '@/providers/auth-provider'
 import { useImpersonation } from '@/plugins/impersonate/components'
+import { useCompaniesContext } from '../../context/companiesContext'
+import {
+  transformVoteToComparisonFormat,
+  createInitialVoteData,
+} from '../../helpers/vote-transformers'
+import {
+  validateGeneralQuestions,
+  validateAgendaQuestions,
+  validateVoteData,
+} from '../../helpers/vote-validation'
+import AgendaItemsSection from '../../helpers/components/AgendaItemsSection'
+import VotingActions from '../../helpers/components/VotingActions'
+import AttachmentsSection from '../../helpers/components/AttachmentsSection'
+import NavigationGuardDialog from '../../helpers/components/NavigationGuardDialog'
 
 export default function VotingForm() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
   const { user } = useAuth()
+  const { companies: companiesFromContext } = useCompaniesContext()
 
   useEffect(() => {
     if (user === null) {
@@ -77,14 +81,6 @@ export default function VotingForm() {
       return
     }
   }, [user, router])
-
-  if (user === null) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinnerDiamond />
-      </div>
-    )
-  }
 
   const meetingIdFromUrl = params?.id || '-'
 
@@ -262,24 +258,57 @@ export default function VotingForm() {
 
     const initialDataForComparison = {
       ...initialVotingData,
-      voteDocuments: (initialVotingData.voteDocuments || []).map((id: string) => id).sort(),
+      voteDocuments: (initialVotingData.voteDocuments || []).sort(),
     }
 
     return JSON.stringify(currentDataForComparison) !== JSON.stringify(initialDataForComparison)
-  }, [votingData, initialVotingData, uploadedDocs, fetchedVotes])
+  }, [votingData, initialVotingData, uploadedDocs])
+
+  // SWR For the review, check if there is a draft for sending for all companies.
+  const swrKeyAllPublished =
+    meetingIdPayload && meetingCompanies.length > 0
+      ? `/api/votes/by-meeting-and-companies?meetingId=${meetingIdPayload}&companiesIds=${meetingCompanies}&status=published`
+      : null
+
+  const { data: fetchedAllPublishedVotes, mutate: mutateAllPublishedVotes } = useSWR(
+    swrKeyAllPublished,
+    fetcherVote,
+    {
+      revalidateOnFocus: false,
+    },
+  )
 
   const isAnyCompanyDirty = useMemo(() => {
-    if (!meetingData?.companies) {
-      return false
+    if (isDirty) return true
+    if (!fetchedAllLatestVotes || !fetchedAllPublishedVotes || !meetingCompanies) return false
+
+    const numCompanies = meetingCompanies.length
+    const numPublished = fetchedAllPublishedVotes.length
+
+    if (numPublished < numCompanies) return true
+
+    // Full comparison for each company
+    for (const latestVote of fetchedAllLatestVotes) {
+      const companyId =
+        typeof latestVote.company === 'string' ? latestVote.company : latestVote.company?.id
+
+      const publishedVote = fetchedAllPublishedVotes.find((pv: any) => {
+        const pvCompanyId = typeof pv.company === 'string' ? pv.company : pv.company?.id
+        return pvCompanyId === companyId
+      })
+
+      if (!publishedVote) continue
+
+      const latestForComparison = transformVoteToComparisonFormat(latestVote)
+      const publishedForComparison = transformVoteToComparisonFormat(publishedVote)
+
+      if (JSON.stringify(latestForComparison) !== JSON.stringify(publishedForComparison)) {
+        return true
+      }
     }
-    if (!fetchedAllLatestVotes || fetchedAllLatestVotes.length === 0) {
-      return true
-    }
-    if (fetchedAllLatestVotes.length < meetingData.companies.length) {
-      return true
-    }
-    return fetchedAllLatestVotes.some((vote: any) => vote._status === 'draft')
-  }, [fetchedAllLatestVotes, meetingData?.companies])
+
+    return false
+  }, [isDirty, fetchedAllLatestVotes, fetchedAllPublishedVotes, meetingCompanies])
 
   const votedCompanies = useMemo(() => {
     if (isVotedCompaniesArray || !Array.isArray(votedCompaniesArray)) return new Set<string>()
@@ -328,167 +357,18 @@ export default function VotingForm() {
     }
     // Reset isDraftSaved when loading a new meeting
     setIsDraftSaved(false)
-    let initialData: VoteDataType
-    let publishedData: VoteDataType | null = null
 
-    // Initialize dynamic questions from meeting data
-    const dynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions
-      ? meetingData.relatedQuestions.questions.map((q) => {
-          return {
-            questionId: q.id,
-            questionText: q.questionText,
-            answer: q.defaultValue || false,
-            explanation: '',
-          }
-        })
-      : []
-
-    if (!fetchedVotes || fetchedVotes.length === 0) {
-      initialData = {
-        generalVotingData: {
-          isInterested: false,
-          isSeniorOfficial: false,
-          isInstitutionalInvestor: true,
-        },
-        voterNotes: '',
-        userVotes: createDefaultAgendaQuestions(
-          meetingData.agendas,
-          meetingData.defaultVotingRecommendation,
-        ),
-        voteDocuments: [],
-        dynamicQuestions,
-      }
-      setUploadedDocs([])
-    } else {
-      // Case where we have fetched votes
-      if (!publishedVotes || !publishedVotes.length) {
-        setLastPublishedVoteInfo(undefined)
-      } else {
-        const lastPublishedVoteInfoTmp = {
-          user: publishedVotes[0].publisher || '',
-          date: publishedVotes[0].updatedAt || ' לא ידוע',
-        }
-        setLastPublishedVoteInfo(lastPublishedVoteInfoTmp)
-      }
-
-      const firstVote = fetchedVotes[0]
-      if (firstVote.voteDocuments && Array.isArray(firstVote.voteDocuments)) {
-        setUploadedDocs(
-          firstVote.voteDocuments.filter((doc: { id: any }) => typeof doc === 'object' && doc.id),
-        )
-      } else {
-        setUploadedDocs([])
-      }
-      const transformedUserVotes = meetingData.agendas.map((agenda) => {
-        const voteItem = (firstVote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
-        return {
-          topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || null,
-          questions: {
-            hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
-            isRelatedParty: voteItem?.isRelatedParty ?? false,
-            isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
-            hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
-            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
-            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
-            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
-          },
-          voteReason: voteItem?.voteReason || '',
-          privilegedMajority: agenda.privilegedMajority,
-          isRemovedFromAgenda: agenda.isRemovedFromAgenda,
-        }
-      })
-
-      // Load dynamic questions answers from saved vote
-      const savedDynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions?.questions
-        ? meetingData.relatedQuestions.questions.map((q) => {
-            const savedAnswer = firstVote.dynamicQuestions?.find(
-              (dq: any) => dq.questionId === q.id,
-            )
-            return {
-              questionId: q.id,
-              questionText: q.questionText,
-              answer: savedAnswer?.answer ?? (q.defaultValue || false),
-              explanation: savedAnswer?.explanation || '',
-            }
-          })
-        : []
-      initialData = {
-        generalVotingData: {
-          isInterested: firstVote.isInterested ?? false,
-          isSeniorOfficial: firstVote.isSeniorOfficial ?? false,
-          isInstitutionalInvestor: firstVote.isInstitutionalInvestor ?? true,
-          interestedExplanation: firstVote.interestedExplanation || '',
-          seniorOfficialExplanation: firstVote.seniorOfficialExplanation || '',
-        },
-        voterNotes: firstVote.clientComment || '',
-        userVotes: transformedUserVotes,
-        voteDocuments: Array.isArray(firstVote.voteDocuments)
-          ? firstVote.voteDocuments.map((doc: { id: any }) => doc.id)
-          : [],
-        dynamicQuestions: savedDynamicQuestions,
-      }
-    }
-
-    if (publishedVotes && publishedVotes.length > 0) {
-      const firstPublishedVote = publishedVotes[0]
-      const transformedPublishedUserVotes = meetingData.agendas.map((agenda) => {
-        const voteItem = (firstPublishedVote.votes || []).find(
-          (v: any) => v.topicIndex == agenda.topicIndex,
-        )
-        return {
-          topicIndex: agenda.topicIndex,
-          choice: voteItem?.voteDecision || null,
-          questions: {
-            hasConflictOfInterest: voteItem?.hasConflictOfInterest ?? false,
-            isRelatedParty: voteItem?.isRelatedParty ?? false,
-            isInvestmentCommittee: voteItem?.isInvestmentCommittee ?? true,
-            hasPersonalInterest: voteItem?.hasPersonalInterest ?? false,
-            conflictOfInterestExplanation: voteItem?.conflictOfInterestExplanation || '',
-            relatedPartyExplanation: voteItem?.relatedPartyExplanation || '',
-            personalInterestExplanation: voteItem?.personalInterestExplanation || '',
-          },
-          voteReason: voteItem?.voteReason || '',
-          privilegedMajority: agenda.privilegedMajority,
-          isRemovedFromAgenda: agenda.isRemovedFromAgenda,
-        }
-      })
-
-      // Load published dynamic questions answers
-      const publishedDynamicQuestions: DynamicQuestionAnswer[] = meetingData.relatedQuestions
-        ?.questions
-        ? meetingData.relatedQuestions.questions.map((q) => {
-            const savedAnswer = firstPublishedVote.dynamicQuestions?.find(
-              (dq: any) => dq.questionId === q.id,
-            )
-            return {
-              questionId: q.id,
-              questionText: q.questionText,
-              answer: savedAnswer?.answer ?? (q.defaultValue || false),
-              explanation: savedAnswer?.explanation || '',
-            }
-          })
-        : []
-
-      publishedData = {
-        generalVotingData: {
-          isInterested: firstPublishedVote.isInterested ?? false,
-          isSeniorOfficial: firstPublishedVote.isSeniorOfficial ?? false,
-          isInstitutionalInvestor: firstPublishedVote.isInstitutionalInvestor ?? true,
-          interestedExplanation: firstPublishedVote.interestedExplanation || '',
-          seniorOfficialExplanation: firstPublishedVote.seniorOfficialExplanation || '',
-        },
-        voterNotes: firstPublishedVote.clientComment || '',
-        userVotes: transformedPublishedUserVotes,
-        voteDocuments: Array.isArray(firstPublishedVote.voteDocuments)
-          ? firstPublishedVote.voteDocuments.map((doc: { id: any }) => doc.id)
-          : [],
-        dynamicQuestions: publishedDynamicQuestions,
-      }
-    }
+    const {
+      initialData,
+      publishedData,
+      uploadedDocs: docs,
+      lastPublishedVoteInfo: info,
+    } = createInitialVoteData(meetingData, fetchedVotes, publishedVotes)
 
     setVotingData(initialData)
     setInitialVotingData(publishedData ? structuredClone(publishedData) : null)
+    setUploadedDocs(docs)
+    setLastPublishedVoteInfo(info)
   }, [fetchedVotes, isSWRLoading, meetingData, isMeetingLoading, publishedVotes, setIsDraftSaved])
 
   useEffect(() => {
@@ -497,103 +377,19 @@ export default function VotingForm() {
 
   // Use navigation guard hook for back button and browser navigation
   const navGuard = useNavigationGuard({
-    enabled: (isDirty || isDraftSaved) && !isReadOnly,
+    enabled: (isAnyCompanyDirty || isDraftSaved) && !isReadOnly,
   })
 
   const validateForm = useCallback((): ValidationError[] => {
-    const errors: ValidationError[] = []
-
-    // Check if we have dynamic questions (relatedQuestions)
     const hasDynamicQuestions =
       meetingData?.relatedQuestions &&
       meetingData.relatedQuestions.questions &&
       meetingData.relatedQuestions.questions.length > 0
 
-    if (hasDynamicQuestions) {
-      // Validate dynamic questions
-      votingData.dynamicQuestions?.forEach((dq) => {
-        // If answer is true, explanation is required
-        if (dq.answer && !dq.explanation?.trim()) {
-          errors.push({
-            field: `dynamicQuestion_${dq.questionId}`,
-            message: 'נדרש הסבר',
-            type: 'general',
-          })
-        }
-      })
-    } else {
-      // Validate static general questions (old behavior)
-      const generalData = votingData.generalVotingData
-
-      if (generalData.isInterested && !generalData.interestedExplanation?.trim()) {
-        errors.push({
-          field: 'interestedExplanation',
-          message: 'נדרש הסבר לעניין אישי',
-          type: 'general',
-        })
-      }
-
-      if (generalData.isSeniorOfficial && !generalData.seniorOfficialExplanation?.trim()) {
-        errors.push({
-          field: 'seniorOfficialExplanation',
-          message: 'נדרש הסבר לנושא תפקיד בכיר',
-          type: 'general',
-        })
-      }
-    }
-
-    // Validate agenda items
-    if (meetingData?.agendas) {
-      meetingData.agendas.forEach((agenda) => {
-        if (agenda.isRemovedFromAgenda) return
-
-        const userVote = votingData.userVotes.find((v) => v.topicIndex === agenda.topicIndex)
-
-        // Check if vote choice is selected
-        if (!userVote?.choice) {
-          errors.push({
-            field: 'choice',
-            message: 'יש לבחור הצבעה',
-            type: 'agenda',
-            topicIndex: agenda.topicIndex,
-          })
-        }
-
-        // Check agenda question explanations
-        if (userVote?.questions) {
-          const questions = userVote.questions
-
-          if (questions.hasConflictOfInterest && !questions.conflictOfInterestExplanation?.trim()) {
-            errors.push({
-              field: 'conflictOfInterestExplanation',
-              message: 'נדרש הסבר לניגוד עניינים',
-              type: 'agenda',
-              topicIndex: agenda.topicIndex,
-            })
-          }
-
-          if (questions.isRelatedParty && !questions.relatedPartyExplanation?.trim()) {
-            errors.push({
-              field: 'relatedPartyExplanation',
-              message: 'נדרש הסבר לבעל עניין',
-              type: 'agenda',
-              topicIndex: agenda.topicIndex,
-            })
-          }
-
-          if (questions.hasPersonalInterest && !questions.personalInterestExplanation?.trim()) {
-            errors.push({
-              field: 'personalInterestExplanation',
-              message: 'נדרש הסבר לעניין אישי',
-              type: 'agenda',
-              topicIndex: agenda.topicIndex,
-            })
-          }
-        }
-      })
-    }
-
-    return errors
+    return [
+      ...validateGeneralQuestions(votingData, hasDynamicQuestions || false),
+      ...validateAgendaQuestions(votingData, meetingData),
+    ]
   }, [votingData, meetingData])
 
   const getFieldError = useCallback(
@@ -642,69 +438,11 @@ export default function VotingForm() {
         )
 
         if (!vote) {
-          // No draft vote for this company - it's invalid
+          // invalidCompanies.push(companyId)
           continue
         }
 
-        // Validate dynamic questions if they exist
-        if (hasDynamicQuestions) {
-          let hasDynamicQuestionError = false
-          const voteDynamicQuestions = vote.dynamicQuestions || []
-
-          for (const dq of voteDynamicQuestions) {
-            // If answer is true, explanation is required
-            if (dq.answer && !dq.explanation?.trim()) {
-              hasDynamicQuestionError = true
-              break
-            }
-          }
-
-          if (hasDynamicQuestionError) {
-            invalidCompanies.push(companyId)
-            continue
-          }
-        } else {
-          // Validate static general questions (old behavior)
-          if (vote.isInterested && !vote.interestedExplanation?.trim()) {
-            invalidCompanies.push(companyId)
-            continue
-          }
-
-          if (vote.isSeniorOfficial && !vote.seniorOfficialExplanation?.trim()) {
-            invalidCompanies.push(companyId)
-            continue
-          }
-        }
-
-        // Validate agenda items
-        let hasAgendaError = false
-        for (const agenda of meetingData.agendas) {
-          if (agenda.isRemovedFromAgenda) continue
-
-          const voteItem = (vote.votes || []).find((v: any) => v.topicIndex == agenda.topicIndex)
-
-          if (!voteItem?.voteDecision) {
-            hasAgendaError = true
-            break
-          }
-
-          if (voteItem.hasConflictOfInterest && !voteItem.conflictOfInterestExplanation?.trim()) {
-            hasAgendaError = true
-            break
-          }
-
-          if (voteItem.isRelatedParty && !voteItem.relatedPartyExplanation?.trim()) {
-            hasAgendaError = true
-            break
-          }
-
-          if (voteItem.hasPersonalInterest && !voteItem.personalInterestExplanation?.trim()) {
-            hasAgendaError = true
-            break
-          }
-        }
-
-        if (hasAgendaError) {
+        if (!validateVoteData(meetingData, vote, hasDynamicQuestions || false)) {
           invalidCompanies.push(companyId)
         }
       }
@@ -809,10 +547,18 @@ export default function VotingForm() {
         // Determine if this is a private vote (single company)
         const isPrivate = companiesIDs.length === 1
 
+        // Resolve company IDs to names from companiesContext
+        const companyNames = (response.updatedCompanyIds || [])
+          .map((id: string) => {
+            const company = companiesFromContext.find((c) => c.id === id)
+            return company?.name || null
+          })
+          .filter((name: string | null): name is string => name !== null)
+
         // Set success data for popup
         setPublishSuccessAll({
           updatedCount: response.actuallyUpdated || 0,
-          companyNames: response.updatedCompanyNames || [],
+          companyNames,
           isPrivateVote: isPrivate,
         })
 
@@ -820,6 +566,7 @@ export default function VotingForm() {
         mutatePublish()
         mutateAllLatestVotes()
         mutateVotedCompaniesArray()
+        mutateAllPublishedVotes()
       } catch (_error) {
         // Error already logged and notified by postWithErrorHandling
         // Additional error handling if needed
@@ -834,6 +581,7 @@ export default function VotingForm() {
       validateForm,
       meetingIdPayload,
       companiesIDs,
+      companiesFromContext,
       toast,
       router,
       mutatePublish,
@@ -960,15 +708,25 @@ export default function VotingForm() {
       )
 
       window.scrollTo({ top: 0, behavior: 'smooth' })
+
+      // Resolve company IDs to names from companiesContext
+      const companyNames = (response.updatedCompanyIds || [])
+        .map((id: string) => {
+          const company = companiesFromContext.find((c) => c.id === id)
+          return company?.name || null
+        })
+        .filter((name: string | null): name is string => name !== null)
+
       setPublishSuccessAll({
         updatedCount: response.actuallyUpdated || 0,
-        companyNames: response.updatedCompanyNames || [],
+        companyNames,
         isPrivateVote: false,
       })
       setPublishSuccess(true)
       mutatePublish()
       mutateAllLatestVotes()
       mutateVotedCompaniesArray()
+      mutateAllPublishedVotes()
     } catch (_error) {
     } finally {
       setIsSubmitting(false)
@@ -981,10 +739,12 @@ export default function VotingForm() {
     meetingIdPayload,
     meetingCompanies,
     companiesIDs,
+    companiesFromContext,
     toast,
     mutatePublish,
     mutateAllLatestVotes,
     mutateVotedCompaniesArray,
+    mutateAllPublishedVotes,
   ])
 
   const saveDraftData = useCallback(
@@ -1195,6 +955,14 @@ export default function VotingForm() {
     [votingData, saveDraftData],
   )
 
+  if (user === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinnerDiamond />
+      </div>
+    )
+  }
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
@@ -1376,190 +1144,16 @@ export default function VotingForm() {
                 <h2 className="text-sm font-medium text-primary">סדר יום</h2>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="space-y-6">
-                  {meetingData.agendas.map((item, index) => {
-                    const userVote = votingData.userVotes.find(
-                      (v) => v.topicIndex == item.topicIndex,
-                    )
-                    const choiceError = getFieldError('choice', 'agenda', item.topicIndex)
-                    const itemNumber = index + 1
-                    const isHebrew = /[\u0590-\u05FF]/.test(item.text)
-
-                    return (
-                      <div
-                        key={item.id}
-                        className={`${item.isRemovedFromAgenda ? 'opacity-70' : ''}`}
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,auto] gap-4 pl-3 pr-3">
-                          <div>
-                            <div className="flex items-start">
-                              <span
-                                className={`text-primary font-bold ml-2 mt-0.5 min-w-[24px] ${isReadOnly && 'text-primary/70'}  `}
-                              >
-                                {itemNumber}.
-                              </span>
-                              <div className={`flex-1 ${isHebrew ? 'text-right' : 'text-left'}`}>
-                                <p
-                                  className={`text-foreground font-medium ${
-                                    item.isRemovedFromAgenda
-                                      ? 'line-through text-muted-foreground'
-                                      : ''
-                                  } ${isReadOnly && 'text-primary/70'}`}
-                                  dir={isHebrew ? 'rtl' : 'ltr'}
-                                >
-                                  {item.text}
-                                </p>
-                              </div>
-                            </div>
-                            <div
-                              className="flex flex-wrap gap-2 mt-2 mr-7"
-                              style={{
-                                justifyContent: isHebrew ? 'flex-start' : 'flex-end',
-                              }}
-                            >
-                              {item.privilegedMajority && !item.isRemovedFromAgenda && (
-                                <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900">
-                                  דרוש רוב מיוחד
-                                </span>
-                              )}
-                              {item.isRemovedFromAgenda && (
-                                <span className="inline-block bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full border border-border">
-                                  הוסר מסדר היום
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {!item.isRemovedFromAgenda && (
-                            <div className="flex flex-col items-center gap-2 min-w-[200px] border-r px-4  pl-0">
-                              {item.recommendation.votingRecommendation &&
-                                meetingData?.displayVotingRecommendation && (
-                                  <span
-                                    className={`inline-block text-xs px-2 py-1 rounded-full border w-full text-center ${
-                                      item.recommendation.votingRecommendation === 'בעד'
-                                        ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-900'
-                                        : item.recommendation.votingRecommendation === 'נגד'
-                                          ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
-                                          : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900'
-                                    }`}
-                                  >
-                                    המלצה: {item.recommendation.votingRecommendation}
-                                  </span>
-                                )}
-                              <Select
-                                value={userVote?.choice || undefined}
-                                onValueChange={(value) =>
-                                  handleVoteChange(item.topicIndex, value as UserVote['choice'])
-                                }
-                                disabled={isReadOnly}
-                                dir="rtl"
-                                aria-label="בחר אפשרות הצבעה"
-                              >
-                                <SelectTrigger
-                                  className={`w-full ${
-                                    choiceError
-                                      ? 'border-red-500 ring-1 ring-red-500'
-                                      : userVote?.choice === 'בעד'
-                                        ? 'border-green-500 bg-green-100 dark:bg-green-950 dark:border-green-800'
-                                        : userVote?.choice === 'נגד'
-                                          ? 'border-red-500 bg-red-100 dark:bg-red-950 dark:border-red-800'
-                                          : 'border-input'
-                                  }`}
-                                >
-                                  <SelectValue placeholder="בחר הצבעה" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem
-                                    value="בעד"
-                                    className="py-2 px-4 text-right text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 transition-colors duration-150"
-                                  >
-                                    בעד
-                                  </SelectItem>
-                                  <SelectItem
-                                    value="נגד"
-                                    className="py-2 px-4 text-right text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 transition-colors duration-150"
-                                  >
-                                    נגד
-                                  </SelectItem>
-                                  <SelectItem
-                                    value="נמנע"
-                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                                  >
-                                    נמנע
-                                  </SelectItem>
-                                  <SelectItem
-                                    value="דיון"
-                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                                  >
-                                    דיון
-                                  </SelectItem>
-                                  <SelectItem
-                                    value="אין חובת השתתפות"
-                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                                  >
-                                    אין חובת השתתפות
-                                  </SelectItem>
-                                  <SelectItem
-                                    value="לא משתתף"
-                                    className="py-2 px-4 text-right text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                                  >
-                                    לא משתתף
-                                  </SelectItem>
-                                  <SelectItem
-                                    value="----"
-                                    className="py-2 px-4 text-right text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                                  >
-                                    ----
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <VoteReason
-                                voteReason={userVote?.voteReason}
-                                topicIndex={item.topicIndex}
-                                onVoteReasonChangeAction={handleVoteReasonChange}
-                                isReadOnly={isReadOnly}
-                              />
-                            </div>
-                          )}
-
-                          {!item.isRemovedFromAgenda && (
-                            <div className="border-r px-4 pl-0">
-                              <AgendaQuestions
-                                questions={
-                                  userVote?.questions || {
-                                    hasConflictOfInterest: false,
-                                    isRelatedParty: false,
-                                    isInvestmentCommittee: true,
-                                    hasPersonalInterest: false,
-                                  }
-                                }
-                                handleAgendaQuestionsChangeAction={(
-                                  questionId,
-                                  value,
-                                  explanation,
-                                ) =>
-                                  handleAgendaQuestionsChangeWrapper(
-                                    questionId,
-                                    value,
-                                    explanation,
-                                    item.topicIndex,
-                                  )
-                                }
-                                getFieldErrorAction={getFieldError}
-                                topicIndex={item.topicIndex}
-                                isReadOnly={isReadOnly}
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {item.id !== meetingData.agendas[meetingData.agendas.length - 1].id && (
-                          <div className="mt-4 mb-2 border-b border-border" />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+                <AgendaItemsSection
+                  agendas={meetingData.agendas}
+                  userVotes={votingData.userVotes}
+                  isReadOnly={isReadOnly}
+                  displayVotingRecommendation={meetingData?.displayVotingRecommendation}
+                  onVoteChange={handleVoteChange}
+                  onVoteReasonChange={handleVoteReasonChange}
+                  onAgendaQuestionsChange={handleAgendaQuestionsChangeWrapper}
+                  getFieldError={getFieldError}
+                />
               </CardContent>
             </Card>
 
@@ -1568,170 +1162,33 @@ export default function VotingForm() {
                 <h2 className="text-sm font-medium text-primary">נספחים להצבעה</h2>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-[3fr,1fr] gap-6">
-                  <div>
-                    <div className="flex items-center mb-2">
-                      <h3 className="text-xs font-medium text-muted-foreground">הערות המצביע</h3>
-                    </div>
-                    <Textarea
-                      placeholder="אפשרות הוספת הערות..."
-                      className=" w-full border-muted bg-background resize-none focus-visible:ring-1"
-                      style={{ height: 'calc(100% - 20px)' }}
-                      value={localVoterNotes}
-                      onChange={(e) => setLocalVoterNotes(e.target.value)}
-                      onBlur={handleNotesChange}
-                      readOnly={isReadOnly}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center mb-2">
-                      <h3 className="text-xs font-medium text-muted-foreground">העלאת קבצים</h3>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <input
-                          type="file"
-                          id="file-upload"
-                          multiple
-                          onChange={handleFileChange}
-                          className="sr-only"
-                          disabled={isUploading || isReadOnly}
-                        />
-                        <label
-                          htmlFor="file-upload"
-                          className={`flex items-center gap-2 bg-background border border-input rounded-md p-2 transition-colors ${isUploading || isReadOnly ? 'cursor-default bg-muted/50' : 'cursor-pointer hover:bg-muted/50'}`}
-                        >
-                          <Upload className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            {isUploading ? 'מעלה קבצים...' : 'בחר קובץ/קבצים'}
-                          </span>
-                        </label>
-                      </div>
-
-                      {uploadedDocs.length > 0 && (
-                        <div className="space-y-1 mt-2">
-                          {uploadedDocs.map((doc) => (
-                            <div
-                              key={doc.id}
-                              className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5 text-xs"
-                            >
-                              <a
-                                href={doc.url || '#'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="truncate max-w-[150px] hover:underline"
-                              >
-                                {doc.filename}
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => removeFile(doc.id)}
-                                className="text-muted-foreground hover:text-destructive ml-2"
-                              >
-                                הסר
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <AttachmentsSection
+                  localVoterNotes={localVoterNotes}
+                  onNotesChange={setLocalVoterNotes}
+                  onNotesBlur={handleNotesChange}
+                  uploadedDocs={uploadedDocs}
+                  onFileChange={handleFileChange}
+                  onRemoveFile={removeFile}
+                  isUploading={isUploading}
+                  isReadOnly={isReadOnly}
+                />
               </CardContent>
             </Card>
 
             {/* כפתורי שליחת הצבעה */}
             <div className="flex justify-end gap-4 mt-6">
-              {meetingCompanies.length === 1 || isGeneralVoteOption ? (
-                /* Single button for single company */
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div>
-                        <Button
-                          onClick={() => savePublish()}
-                          disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
-                          className="px-8"
-                        >
-                          {isSubmitting ? 'שולח...' : 'שליחת ההצבעה'}
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    {(!isDirty || isSubmitting || isUploading || isReadOnly) && (
-                      <TooltipContent className="m-1 mx-3">
-                        {!isDirty
-                          ? 'אין שינוי מההצבעה שנשלחה לעמדה'
-                          : isUploading
-                            ? 'אנא המתן לסיום העלאת הקבצים'
-                            : isReadOnly
-                              ? 'זמן ההצבעה עבר, אין אפשרות לשלוח הצבעה'
-                              : 'הצבעה נשלחת, אנא המתן'}
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <>
-                  {/* Button for current selection (general or private) */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Button
-                            onClick={() => savePublish()}
-                            disabled={!isDirty || isSubmitting || isUploading || isReadOnly}
-                            className="px-8"
-                          >
-                            {submittingAction === 'single' ? 'שולח...' : 'שליחת ההצבעה'}
-                          </Button>
-                        </div>
-                      </TooltipTrigger>
-                      {(!isDirty || isSubmitting || isUploading || isReadOnly) && (
-                        <TooltipContent className="m-1 mx-3">
-                          {!isDirty
-                            ? 'אין שינוי מההצבעה שנשלחה לעמדה עבור החברה הנוכחית'
-                            : isUploading
-                              ? 'אנא המתן לסיום העלאת הקבצים'
-                              : isReadOnly
-                                ? 'זמן ההצבעה עבר, אין אפשרות לשלוח הצבעה'
-                                : 'הצבעה נשלחת, אנא המתן'}
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Button to send ALL votes */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="ml-2">
-                          <Button
-                            onClick={() => savePublishAll()}
-                            disabled={
-                              !isAnyCompanyDirty || isSubmitting || isUploading || isReadOnly
-                            }
-                            className="px-8 border border-gray-300 dark:border-gray-600"
-                            variant="secondary"
-                          >
-                            {submittingAction === 'all' ? 'שולח...' : 'שליחת כל ההצבעות'}
-                          </Button>
-                        </div>
-                      </TooltipTrigger>
-                      {(!isAnyCompanyDirty || isSubmitting || isUploading || isReadOnly) && (
-                        <TooltipContent className="m-1 mx-3">
-                          {!isAnyCompanyDirty
-                            ? 'כל ההצבעות כבר נשלחו'
-                            : isUploading
-                              ? 'אנא המתן לסיום העלאת הקבצים'
-                              : isReadOnly
-                                ? 'זמן ההצבעה עבר, אין אפשרות לשלוח הצבעה'
-                                : 'הצבעה נשלחת, אנא המתן'}
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
-                </>
-              )}
+              <VotingActions
+                meetingCompanies={meetingCompanies}
+                isGeneralVoteOption={isGeneralVoteOption}
+                isDirty={isDirty}
+                isAnyCompanyDirty={isAnyCompanyDirty}
+                isSubmitting={isSubmitting}
+                isUploading={isUploading}
+                isReadOnly={isReadOnly}
+                submittingAction={submittingAction}
+                onSavePublish={savePublish}
+                onSavePublishAll={savePublishAll}
+              />
             </div>
           </div>
         </div>
@@ -1751,6 +1208,7 @@ export default function VotingForm() {
         companyNames={publishSuccessAll.companyNames}
         isPrivateVote={publishSuccessAll.isPrivateVote}
       />
+      <NavigationGuardDialog navGuard={navGuard} />
     </>
   )
 }

@@ -77,6 +77,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       successPrevCount: 0,
       countTotalPrev: 0,
       processedMeetingIds: [],
+      processedPrevMeetingIds: [],
     }
 
     // Process the mapped data using processJsonMeetingRows
