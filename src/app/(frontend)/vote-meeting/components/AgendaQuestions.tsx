@@ -34,7 +34,7 @@ export default function AgendaQuestions({
   isReadOnly = false,
 }: AgendaQuestionsProps) {
   return (
-    <div className="space-y-3 min-w-[300px]">
+    <div className="space-y-3 min-w-[220px] max-w-[260px]">
       {Object.values(AgendaQuestionId).map((questionId) => {
         const config = AGENDA_QUESTIONS_CONFIG[questionId]
         const explanationFieldName = getExplanationFieldName(questionId)

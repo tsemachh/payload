@@ -246,9 +246,9 @@ export const removeFundEndpoint = async (req: PayloadRequest) => {
     }
 
     const data = req.data as
-      | { meetingId?: string; companyId?: string; fundId?: string; stockId?: string }
+      | { meetingId?: string; companyId?: string; fundId?: string; originalStockId?: string }
       | undefined
-    const { meetingId, companyId, fundId } = data || {}
+    const { meetingId, companyId, fundId, originalStockId } = data || {}
 
     if (!meetingId || !companyId || !fundId) {
       return Response.json(
@@ -333,27 +333,60 @@ export const removeFundEndpoint = async (req: PayloadRequest) => {
         )
 
         if (existingStockHolding) {
-          // Remove the holding from the holdings array
-          const updatedHoldings = holdingDoc.holdings.filter(
-            (h: any) => getIdOfRelationField(h.stock) !== stockId,
-          )
+          // If originalStockId is provided, handle originalData array when length > 1
+          if (
+            originalStockId &&
+            existingStockHolding.originalData &&
+            existingStockHolding.originalData.length > 1
+          ) {
+            // Filter out the specific originalData entry by stockId
+            const updatedOriginalData = existingStockHolding.originalData.filter(
+              (od: any) => od.stockId !== originalStockId,
+            )
 
-          await req.payload.update({
-            collection: 'holdings',
-            id: holdingDoc.id,
-            data: {
-              holdings: updatedHoldings as any,
-            },
-            context: { ...req.context, from: 'process', process: 'removeFundEndpoint' },
-            req,
-          })
+            // Update the holding with the filtered originalData
+            const updatedHoldings = holdingDoc.holdings.map((h: any) => {
+              if (getIdOfRelationField(h.stock) === stockId) {
+                return {
+                  ...h,
+                  originalData: updatedOriginalData,
+                }
+              }
+              return h
+            })
+
+            await req.payload.update({
+              collection: 'holdings',
+              id: holdingDoc.id,
+              data: {
+                holdings: updatedHoldings as any,
+              },
+              context: { ...req.context, from: 'process', process: 'removeFundEndpoint' },
+              req,
+            })
+          } else {
+            // No originalStockId provided, remove the entire holding
+            const updatedHoldings = holdingDoc.holdings.filter(
+              (h: any) => getIdOfRelationField(h.stock) !== stockId,
+            )
+
+            await req.payload.update({
+              collection: 'holdings',
+              id: holdingDoc.id,
+              data: {
+                holdings: updatedHoldings as any,
+              },
+              context: { ...req.context, from: 'process', process: 'removeFundEndpoint' },
+              req,
+            })
+          }
         }
       }
     }
 
     // Remove the fund from fundsWithHolding array
     // Pass only the affected fund to processCompaniesMeetings
-    await processCompaniesMeetings(req, [meetingId || ''], [fundId])
+    await processCompaniesMeetings(req, [meetingId || ''])
 
     return Response.json({
       success: true,

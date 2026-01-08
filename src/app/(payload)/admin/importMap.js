@@ -22,6 +22,8 @@ import { ArrayLabel as ArrayLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../..
 import { SubjectLabel as SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32 } from '../../../collections/meetings/components/RowLabel'
 import { default as default_e874c7256760885471bb1c48244ad8ef } from '../../../collections/meetings/components/ResearchUploadDisplay'
 import { default as default_76cac0c7f70bb3de068333b13381d163 } from '../../../admincomponents/fields/arrayTable'
+import { default as default_1a6cbc74d06b5d28eb818874110f1230 } from '../../../admincomponents/fields/FundsWithHoldingTable'
+import { default as default_619a0c7d4da095854ef1e974b1c4a747 } from '../../../admincomponents/fields/HistoricalHoldingsTable'
 import { default as default_aad63116ea792c565309d620a65bd218 } from '../../../collections/meetings/components/ExportMeetingsMenuItem'
 import { default as default_a67c7af692aa11619535122f63eb21ed } from '../../../collections/meetings/components/ProcessCompaniesMeetingsMenuItem'
 import { default as default_db476bf98543a9aec106bf023275e3c1 } from '../../../collections/meetings/components/MigrateVoteCountsMenuItem'
@@ -94,6 +96,8 @@ export const importMap = {
   "/collections/meetings/components/RowLabel#SubjectLabel": SubjectLabel_27e7f954a15bbe4dee58e9a5de122b32,
   "/collections/meetings/components/ResearchUploadDisplay#default": default_e874c7256760885471bb1c48244ad8ef,
   "/admincomponents/fields/arrayTable#default": default_76cac0c7f70bb3de068333b13381d163,
+  "/admincomponents/fields/FundsWithHoldingTable#default": default_1a6cbc74d06b5d28eb818874110f1230,
+  "/admincomponents/fields/HistoricalHoldingsTable#default": default_619a0c7d4da095854ef1e974b1c4a747,
   "/collections/meetings/components/ExportMeetingsMenuItem#default": default_aad63116ea792c565309d620a65bd218,
   "/collections/meetings/components/ProcessCompaniesMeetingsMenuItem#default": default_a67c7af692aa11619535122f63eb21ed,
   "/collections/meetings/components/MigrateVoteCountsMenuItem#default": default_db476bf98543a9aec106bf023275e3c1,
