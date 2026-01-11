@@ -128,7 +128,7 @@ jobs:
           # Cherry-pick של כל הקומיטים האלה
           for commit in $PR_COMMITS; do
             echo "📌 Cherry-picking commit $commit"
-            git cherry-pick "$commit" || echo "⚠️ Conflict detected – leave for manual resolution"
+            git cherry-pick "$commit" || git commit --allow-empty -m "Cherry-pick $commit – CONFLICTS NEED RESOLUTION"
           done
 
 
