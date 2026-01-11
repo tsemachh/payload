@@ -11,6 +11,7 @@ A comprehensive corporate governance platform built with Next.js and Payload CMS
 - [Development Environment Setup](#development-environment-setup)
 - [Available Commands](#available-commands)
 - [Key Features](#key-features)
+- [Testing](#testing)
 - [Environment Variables](#environment-variables)
 
 ## Architecture Overview
@@ -355,6 +356,20 @@ pnpm reinstall          # Clean reinstall of dependencies
 - Path aliases for clean imports (@/components/*, @/collections/*, etc.)
 - Source maps in production for debugging
 - Comprehensive error handling
+
+## Testing
+
+This project uses Vitest for unit and component testing, and Playwright for End-to-End (E2E) testing.
+
+For detailed information, see the [Testing Guide](tests/README.md).
+
+```bash
+# Run unit and component tests
+pnpm test
+
+# Run E2E tests
+pnpm test:e2e
+```
 
 ## Environment Variables
 
