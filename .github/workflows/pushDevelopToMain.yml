@@ -83,6 +83,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
       - name: Checkout full history
         uses: actions/checkout@v4
         with:
@@ -109,11 +111,19 @@ jobs:
           # יצירת branch חדש מ-develop
           git checkout -b "$BRANCH_NAME" origin/develop
 
-           LAST_PR_NUMBER=$(gh pr list --base main --state merged --sort mergedAt --limit 1 --json number --jq '.[0].number')
+          # מוצאים את ה-PR האחרון שהומרג ל-main
+          LAST_PR_NUMBER=$(gh pr list \
+            --base main \
+            --state merged \
+            --limit 10 \
+            --json number,mergedAt \
+            --jq 'sort_by(.mergedAt) | last(.[]).number'
+          )
+
           echo "📌 Last merged PR to main: #$LAST_PR_NUMBER"
 
-          # קבלת כל הקומיטים של ה-PR האחרון
-          PR_COMMITS=$(gh pr view $LAST_PR_NUMBER --json commits --jq '.commits[].oid')
+          # מקבלים את כל הקומיטים של ה-PR האחרון
+          PR_COMMITS=$(gh pr view "$LAST_PR_NUMBER" --json commits --jq '.commits[].oid')
 
           # Cherry-pick של כל הקומיטים האלה
           for commit in $PR_COMMITS; do
