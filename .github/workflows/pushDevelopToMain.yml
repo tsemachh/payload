@@ -138,7 +138,7 @@ jobs:
               gh pr create \
                 --head "$BRANCH_NAME" \
                 --base develop \
-                --title "Back-merge: main → develop" \
+                --title "Back-merge main → develop" \
                 --body "$PR_BODY"
 
 
