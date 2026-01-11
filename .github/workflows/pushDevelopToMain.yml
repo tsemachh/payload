@@ -125,21 +125,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-            BRANCH_NAME="backmerge/main-to-develop-${{ github.run_id }}"
+          BRANCH_NAME="backmerge/main-to-develop-${{ github.run_id }}"
 
-            PR_BODY=$(cat <<EOF
-            Automatic back-merge to keep develop in sync with main.
+          PR_BODY=$(cat <<'EOF'
+          Automatic back-merge to keep develop in sync with main.
 
-        Triggered by commit: ${{ github.sha }}
-        Actor: ${{ github.actor }}
+          Triggered by commit: ${{ github.sha }}
+          Actor: ${{ github.actor }}
           EOF
           )
 
-              gh pr create \
-                --head "$BRANCH_NAME" \
-                --base develop \
-                --title "Back-merge main → develop" \
-                --body "$PR_BODY"
+          gh pr create \
+            --head "$BRANCH_NAME" \
+            --base develop \
+            --title "Back-merge main → develop" \
+            --body "$PR_BODY" \
+            --label "automation,backmerge"
 
 
       # - name: Create Pull Request
