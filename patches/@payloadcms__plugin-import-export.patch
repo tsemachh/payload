@@ -1,0 +1,57 @@
+diff --git a/dist/export/createExport.js b/dist/export/createExport.js
+index bea207fdc3aac31db13be9ede4a95fc8cf304cd6..a31f0d0c9f3998aa989f0c345464747bcd2b95d2 100644
+--- a/dist/export/createExport.js
++++ b/dist/export/createExport.js
+@@ -197,7 +197,15 @@ export const createExport = async (args)=>{
+                         header: isFirstBatch,
+                         columns: allColumns
+                     });
+-                    this.push(encoder.encode(csvString));
++                    let encodedContent = encoder.encode(csvString);
++                    if (isFirstBatch) {
++                        const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
++                        const combined = new Uint8Array(bom.length + encodedContent.length);
++                        combined.set(bom);
++                        combined.set(encodedContent, bom.length);
++                        encodedContent = combined;
++                    }
++                    this.push(encodedContent);
+                 } else {
+                     // --- JSON Streaming ---
+                     const batchRows = result.docs.map((doc)=>filterDisabledJSON(doc));
+@@ -226,7 +234,7 @@ export const createExport = async (args)=>{
+         return new Response(stream, {
+             headers: {
+                 'Content-Disposition': `attachment; filename="${name}"`,
+-                'Content-Type': isCSV ? 'text/csv' : 'application/json'
++                'Content-Type': isCSV ? 'text/csv; charset=utf-8' : 'application/json'
+             }
+         });
+     }
+@@ -294,7 +302,7 @@ export const createExport = async (args)=>{
+             columns
+         }));
+     }
+-    const buffer = Buffer.from(format === 'json' ? `[${outputData.join(',')}]` : outputData.join(''));
++    const buffer = Buffer.from(format === 'json' ? `[${outputData.join(',')}]` : (isCSV ? '\uFEFF' : '') + (isCSV ? '\uFEFF' : '') + (isCSV ? '\uFEFF' : '') + outputData.join(''));
+     if (debug) {
+         req.payload.logger.debug(`${format} file generation complete`);
+     }
+@@ -305,7 +313,7 @@ export const createExport = async (args)=>{
+         req.file = {
+             name,
+             data: buffer,
+-            mimetype: isCSV ? 'text/csv' : 'application/json',
++            mimetype: isCSV ? 'text/csv; charset=utf-8' : 'application/json',
+             size: buffer.length
+         };
+     } else {
+@@ -319,7 +327,7 @@ export const createExport = async (args)=>{
+             file: {
+                 name,
+                 data: buffer,
+-                mimetype: isCSV ? 'text/csv' : 'application/json',
++                mimetype: isCSV ? 'text/csv; charset=utf-8' : 'application/json',
+                 size: buffer.length
+             },
+             user
