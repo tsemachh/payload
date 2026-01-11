@@ -233,8 +233,8 @@ export const updateVoteStatusOnCompaniesChange: CollectionBeforeChangeHook<Meeti
   }
 
   // Check if companies array has changed
-  const previousCompanies = Array.isArray(originalDoc.companies) ? originalDoc.companies : []
-  const currentCompanies = Array.isArray(data.companies) ? data.companies : []
+  const previousCompanies = Array.isArray(originalDoc.companies) ? [...originalDoc.companies] : []
+  const currentCompanies = Array.isArray(data.companies) ? [...data.companies] : []
 
   // Compare companies arrays by length and content
   const companiesChanged =

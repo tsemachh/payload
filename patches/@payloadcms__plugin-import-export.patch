@@ -1,3 +1,36 @@
+diff --git a/dist/components/ExportSaveButton/index.js b/dist/components/ExportSaveButton/index.js
+index d97f6c2eda674ad66c7b163f4f0a82d78d8a07f6..5889606d15654645224355524853215984621532 100644
+--- a/dist/components/ExportSaveButton/index.js
++++ b/dist/components/ExportSaveButton/index.js
+@@ -58,21 +58,9 @@ export const ExportSaveButton = ()=>{
+                 }
+                 throw new Error(errorMsg);
+             }
+-            const fileStream = response.body;
+-            const reader = fileStream?.getReader();
+-            const decoder = new TextDecoder();
+-            let result = '';
+-            while(reader){
+-                const { done, value } = await reader.read();
+-                if (done) {
+-                    break;
+-                }
+-                result += decoder.decode(value, {
+-                    stream: true
+-                });
+-            }
+-            const blob = new Blob([
+-                result
+-            ], {
+-                type: 'text/plain'
+-            });
++            const responseBlob = await response.blob();
++            const blob = data.format === 'csv' ? new Blob(['\uFEFF', responseBlob], {
++                type: 'text/csv; charset=utf-8'
++            }) : responseBlob;
+             const url = URL.createObjectURL(blob);
+             const a = document.createElement('a');
+             a.href = url;
 diff --git a/dist/export/createExport.js b/dist/export/createExport.js
 index bea207fdc3aac31db13be9ede4a95fc8cf304cd6..a31f0d0c9f3998aa989f0c345464747bcd2b95d2 100644
 --- a/dist/export/createExport.js
@@ -33,7 +66,7 @@ index bea207fdc3aac31db13be9ede4a95fc8cf304cd6..a31f0d0c9f3998aa989f0c345464747b
          }));
      }
 -    const buffer = Buffer.from(format === 'json' ? `[${outputData.join(',')}]` : outputData.join(''));
-+    const buffer = Buffer.from(format === 'json' ? `[${outputData.join(',')}]` : (isCSV ? '\uFEFF' : '') + (isCSV ? '\uFEFF' : '') + (isCSV ? '\uFEFF' : '') + outputData.join(''));
++    const buffer = Buffer.from(format === 'json' ? `[${outputData.join(',')}]` : (isCSV ? '\uFEFF' : '') + outputData.join(''));
      if (debug) {
          req.payload.logger.debug(`${format} file generation complete`);
      }

@@ -70,6 +70,13 @@ function getVotingRecommendation(
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
+  // Set migration context on req
+  if (req) {
+    req.context = req.context || {}
+    req.context.from = 'migration'
+    req.context.process = 'migrateFullMeeting'
+  }
+
   try {
     console.log('Starting full meeting migration process (meetings with agenda)...')
     pool = await createMSSqlPool()
@@ -171,8 +178,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     let errorCount = 0
     let skippedCount = 0
 
-    // Create a promise pool with 20 concurrent threads
-    const promisePool = new PromisePool(20)
+    // Create a promise pool with 5 concurrent threads to reduce load and avoid timeouts
+    const promisePool = new PromisePool(5)
     const promises = []
     const stockMap = await getStockIdToSequenceMap(req)
 
@@ -269,104 +276,114 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       }
       */
       promises.push(
-        promisePool.add(async () => {
-          try {
-            // Prepare meeting data with agenda inside the promise to avoid shared reference issues
-            const meetingData: Partial<Meeting> = {
-              primaryLegacyId: `${currentRow.id}`,
-              legacyIds: [`${currentRow.id}`],
-              stock: currentStockId as string,
-              magnaId: currentRow.proofId,
-              meetingDate: currentRow.mdate, // Keep as string instead of converting to Date
-              holdingsLimit: currentRow.sdate, // Keep as string instead of converting to Date
-              proxyVotingDate: currentRow.proxyStatementDate,
-              location: currentRow.location,
-              type: currentNewType as MeetingType,
-              state: currentNewState as MeetingState,
-              comments: currentRow.comments,
-              resultsConfirmationStatus: !!currentRow.ResultConfirm,
-              electronicVotingEnabled: !!currentRow.ElectronicVoting,
-              //finalized: finalized,
-              // Preserve the legacy stock number from the source system
-              // This is useful when the meeting stock is not the main stock
-              legacyStockNum: `${currentRow.stockID}`,
-              _status: 'published' as const,
-              agenda: currentAgendaItems.map((item) => ({
-                text: item.text,
-                topicType: item.topicType,
-                majorityType: item.majorityType,
-                result: item.result,
-                percentResult: item.percentResult,
-                dealChanged: item.dealChanged,
-                recommendation: item.recommendation,
-                isRemovedFromAgenda: item.isRemovedFromAgenda,
-              })),
-            }
+        promisePool
+          .add(async () => {
+            try {
+              // Prepare meeting data with agenda inside the promise to avoid shared reference issues
+              const meetingData: Partial<Meeting> = {
+                primaryLegacyId: `${currentRow.id}`,
+                legacyIds: [`${currentRow.id}`],
+                stock: currentStockId as string,
+                magnaId: currentRow.proofId,
+                meetingDate: currentRow.mdate, // Keep as string instead of converting to Date
+                holdingsLimit: currentRow.sdate, // Keep as string instead of converting to Date
+                proxyVotingDate: currentRow.proxyStatementDate,
+                location: currentRow.location,
+                type: currentNewType as MeetingType,
+                state: currentNewState as MeetingState,
+                comments: currentRow.comments,
+                resultsConfirmationStatus: !!currentRow.ResultConfirm,
+                electronicVotingEnabled: !!currentRow.ElectronicVoting,
+                //finalized: finalized,
+                // Preserve the legacy stock number from the source system
+                // This is useful when the meeting stock is not the main stock
+                legacyStockNum: `${currentRow.stockID}`,
+                _status: 'published' as const,
+                agenda: currentAgendaItems.map((item) => ({
+                  text: item.text,
+                  topicType: item.topicType,
+                  majorityType: item.majorityType,
+                  result: item.result,
+                  percentResult: item.percentResult,
+                  dealChanged: item.dealChanged,
+                  recommendation: item.recommendation,
+                  isRemovedFromAgenda: item.isRemovedFromAgenda,
+                })),
+              }
 
-            if (!currentRow.proofId && currentRow?.link2?.startsWith('http')) {
-              meetingData.invitationLink = currentRow.link2
-            }
+              if (!currentRow.proofId && currentRow?.link2?.startsWith('http')) {
+                meetingData.invitationLink = currentRow.link2
+              }
 
-            // Find existing meeting by legacyIds containing the MSSQL meeting id
-            const existingRes = await payload.find({
-              collection: 'meetings',
-              where: { legacyIds: { contains: String(currentRow.id) } },
-              select: { id: true, finalized: true },
-              limit: 1,
-              depth: 0,
-            })
-
-            const existing = existingRes?.docs?.[0] as any
-
-            if (existing?.finalized === true) {
-              // Strictly skip finalized meetings
-              console.log(
-                `Skipping update for meeting ${currentRow.id} (Mongo ${existing.id}) — finalized=true`,
-              )
-              return
-            }
-
-            if (existing?.id) {
-              // Update existing meeting
-              await payload.update({
+              // Find existing meeting by legacyIds containing the MSSQL meeting id
+              const existingRes = await payload.find({
                 collection: 'meetings',
-                id: existing.id,
-                data: meetingData,
-                req: {
-                  ...req,
-                  context: { ...req.context, from: 'migration', process: 'migrateFullMeeting' },
-                },
+                where: { legacyIds: { contains: String(currentRow.id) } },
+                select: { id: true, finalized: true },
+                limit: 1,
+                depth: 0,
               })
-            } else {
-              // Insert into Payload CMS
-              await payload.create({
-                collection: 'meetings',
-                data: meetingData as Meeting,
-                req: {
-                  ...req,
-                  context: { ...req.context, from: 'migration', process: 'migrateFullMeeting' },
-                },
+
+              const existing = existingRes?.docs?.[0] as any
+
+              if (existing?.finalized === true) {
+                // Strictly skip finalized meetings
+                console.log(
+                  `Skipping update for meeting ${currentRow.id} (Mongo ${existing.id}) — finalized=true`,
+                )
+                return
+              }
+
+              if (existing?.id) {
+                // Update existing meeting
+                await payload.update({
+                  collection: 'meetings',
+                  id: existing.id,
+                  data: meetingData,
+                  req,
+                  depth: 0,
+                  context: { from: 'migration' },
+                })
+              } else {
+                // Insert into Payload CMS
+                await payload.create({
+                  collection: 'meetings',
+                  data: meetingData as Meeting,
+                  req,
+                  depth: 0,
+                  context: { from: 'migration' },
+                })
+              }
+
+              successCount++
+              if (successCount % 10 === 0 || successCount === meetingsResult.recordset.length) {
+                console.log(
+                  `✓ [${successCount}/${meetingsResult.recordset.length}] Inserted/Updated Meeting: ${currentRow.id} with ${meetingData.agenda?.length} agenda items (Active: ${promisePool['running']}, Queue: ${promisePool['queue'].length})`,
+                )
+              }
+            } catch (insertError: any) {
+              console.log('Row', JSON.stringify(currentRow, null, 2))
+              errorCount++
+              console.error(`✗ Failed to insert Meeting ${currentRow.id}:`, insertError)
+
+              // Log if it was a timeout
+              if (insertError.message?.includes('timed out')) {
+                console.error(`!!! Meeting ${currentRow.id} TIMED OUT during processing !!!`)
+              }
+
+              await logMigrationFault({
+                payload,
+                type: 'meeting',
+                typeId: `${currentRow.id}`,
+                severity: 'fatal',
+                comments: `Failed to insert/update Meeting ${currentRow.id}: ${insertError}`,
+                row: currentRow,
               })
             }
-
-            successCount++
-            console.log(
-              `✓ Inserted/Updated Meeting: ${currentRow.id} with ${meetingData.agenda?.length} agenda items (${successCount}/${meetingsResult.recordset.length})`,
-            )
-          } catch (insertError) {
-            console.log('Row', JSON.stringify(currentRow, null, 2))
-            errorCount++
-            console.error(`✗ Failed to insert Meeting ${currentRow.id}:`, insertError)
-            await logMigrationFault({
-              payload,
-              type: 'meeting',
-              typeId: `${currentRow.id}`,
-              severity: 'fatal',
-              comments: `Failed to insert/update Meeting ${currentRow.id}: ${insertError}`,
-              row: currentRow,
-            })
-          }
-        }),
+          }, 30000)
+          .catch((err) => {
+            console.error(`PromisePool task error for meeting ${currentRow.id}:`, err)
+          }),
       )
     }
 

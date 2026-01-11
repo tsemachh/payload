@@ -10,16 +10,29 @@ export class PromisePool {
     this.queue = []
   }
 
-  async add<T>(fn: () => Promise<T>): Promise<T> {
+  async add<T>(fn: () => Promise<T>, timeoutMs?: number): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const run = async () => {
         this.running++
+        let timeoutId: NodeJS.Timeout | undefined
+
         try {
-          const result = await fn()
-          resolve(result)
+          if (timeoutMs) {
+            const timeoutPromise = new Promise<never>((_, rej) => {
+              timeoutId = setTimeout(() => {
+                rej(new Error(`PromisePool task timed out after ${timeoutMs}ms`))
+              }, timeoutMs)
+            })
+            const result = await Promise.race([fn(), timeoutPromise])
+            resolve(result)
+          } else {
+            const result = await fn()
+            resolve(result)
+          }
         } catch (error) {
           reject(error)
         } finally {
+          if (timeoutId) clearTimeout(timeoutId)
           this.running--
           this.next()
         }

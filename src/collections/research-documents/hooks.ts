@@ -13,6 +13,9 @@ export const updateMeetingResearchStatus: CollectionAfterChangeHook = async ({
   req,
   operation,
 }) => {
+  if (req.context?.from === 'migration' || req.context?.from === 'process') {
+    return
+  }
   try {
     // Get all meetings that reference this research document
     const meetings = await req.payload.find({

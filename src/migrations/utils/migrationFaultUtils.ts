@@ -28,7 +28,7 @@ export async function logMigrationFault({
   severity = 'warning',
 }: LogMigrationFaultProps): Promise<void> {
   try {
-    payload.create({
+    await payload.create({
       collection: 'migration-faults',
       data: {
         type,
