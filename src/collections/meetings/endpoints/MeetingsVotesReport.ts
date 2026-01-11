@@ -40,7 +40,7 @@ export const MeetingsVotesReportEndpoint = async (req: PayloadRequest) => {
     }))
 
     // Generate CSV content
-    let csvContent = 'Meeting Name,Meeting ID,# Companies,# votes\n'
+    let csvContent = '\uFEFFMeeting Name,Meeting ID,# Companies,# votes\n'
     reportData.forEach((row) => {
       csvContent += `"${row.meetingName}",${row.primaryLegacyId},${row.companiesCount},${row.votesCount}\n`
     })
