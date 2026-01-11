@@ -9,6 +9,7 @@ WORKDIR /app
 ENV COREPACK_INTEGRITY_KEYS=0
 # Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
+COPY patches ./patches
 RUN \
   if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
   elif [ -f package-lock.json ]; then npm ci; \

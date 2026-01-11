@@ -152,7 +152,9 @@ export async function getVotedCompaniesEndpoint(req: any) {
         )
         if (companyHoldings.length > 0) {
           const totalQuantity = companyHoldings.reduce((sum: number, holding: any) => {
-            if (!Array.isArray(holding.original)) return sum
+            if (!Array.isArray(holding.original) || holding.original?.length === 0) {
+              return sum + (holding.ownedQuantity || holding.quantity || 0)
+            }
             return (
               sum +
               holding.original.reduce(
