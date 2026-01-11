@@ -36,7 +36,9 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
     const { docs: meetings } = await payload.find({
       collection: 'meetings',
       select: { _status: true },
+      /*
       where: { finalized: { equals: false } },
+*/
       limit: 0,
       depth: 0,
     })
