@@ -93,25 +93,34 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Create backmerge branch – start from develop, merge main
+      - name: Create backmerge branch – cherry-pick current PR commits
         run: |
           set -e
 
-          BRANCH_NAME="backmerge/main-to-develop-${{ github.run_id }}"
+          BRANCH_NAME="backmerge/pr-${{ github.event.pull_request.number }}-to-develop-${{ github.run_id }}"
           echo "🌿 Creating branch: $BRANCH_NAME"
 
-          git fetch origin main develop
+          # וודא שיש לנו את כל ההיסטוריה
+          git fetch origin develop
+          git fetch origin main
 
-          # מתחילים מ-develop
+          # יצירת branch חדש מ-develop
           git checkout -b "$BRANCH_NAME" origin/develop
 
-          # ממזגים main עם merge commit מפורש (גם אם fast-forward אפשרי)
-          git merge origin/main --no-ff -m "Back-merge main into develop"
+          # cherry-pick של כל הקומיטים מה-PR הנוכחי
+          # github.event.pull_request.commits או github.event.pull_request.head.sha
+          # כאן נניח HEAD של ה-PR
+          PR_COMMITS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
 
-          echo "✅ Merge completed. Last commits:"
-          git --no-pager log -5 --oneline
+          for commit in $PR_COMMITS; do
+            echo "📌 Cherry-picking commit $commit"
+            git cherry-pick "$commit" || echo "⚠️ Conflict detected – leaving it for manual resolution in PR"
+          done
 
+          # דחיפה ל-origin
           git push origin "$BRANCH_NAME" --force
+
+
 
       - name: Debug – verify changes exist
         run: |
