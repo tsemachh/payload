@@ -121,17 +121,17 @@ jobs:
           echo ""
           echo "📊 File changes:"
           git diff --stat origin/develop..HEAD || echo "No changes"
-                - name: Create Pull Request via GitHub CLI
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            run: |
-              BRANCH_NAME="backmerge/main-to-develop-${{ github.run_id }}"
+      - name: Create Pull Request via GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            BRANCH_NAME="backmerge/main-to-develop-${{ github.run_id }}"
 
-              PR_BODY=$(cat <<EOF
-          Automatic back-merge to keep develop in sync with main.
+            PR_BODY=$(cat <<EOF
+            Automatic back-merge to keep develop in sync with main.
 
-          Triggered by commit: ${{ github.sha }}
-          Actor: ${{ github.actor }}
+        Triggered by commit: ${{ github.sha }}
+        Actor: ${{ github.actor }}
           EOF
           )
 
