@@ -140,7 +140,6 @@ jobs:
             --base develop \
             --title "Back-merge main → develop" \
             --body "$PR_BODY" \
-            --label "automation,backmerge"
 
 
       # - name: Create Pull Request
