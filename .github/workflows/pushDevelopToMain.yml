@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   docker-build:
@@ -144,6 +145,13 @@ jobs:
             # בדיקה אם זה merge commit
             if git cat-file -p "$commit" | grep -q "^parent.*parent"; then
               echo "⚠️ Skipping merge commit $commit (merge commits are not cherry-picked)"
+              continue
+            fi
+            
+            # בדיקה אם הcommit משנה workflow files
+            CHANGED_FILES=$(git show --name-only --pretty=format: "$commit" | grep -v '^$')
+            if echo "$CHANGED_FILES" | grep -q "^\.github/workflows/"; then
+              echo "⚠️ Skipping commit $commit (contains workflow changes that require special permissions)"
               continue
             fi
             
