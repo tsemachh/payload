@@ -154,6 +154,7 @@ jobs:
       #     draft: false
       #     delete-branch: true  # מנקה את ה-branch אחרי merge או סגירה
 
+
       - name: Debug – completion
         run: |
           echo "✅ Workflow completed"
