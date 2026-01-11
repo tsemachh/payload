@@ -94,6 +94,8 @@ jobs:
           git config user.email "github-actions@github.com"
 
       - name: Create backmerge branch – cherry-pick current PR commits
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
 
@@ -107,15 +109,18 @@ jobs:
           # יצירת branch חדש מ-develop
           git checkout -b "$BRANCH_NAME" origin/develop
 
-          # cherry-pick של כל הקומיטים מה-PR הנוכחי
-          # github.event.pull_request.commits או github.event.pull_request.head.sha
-          # כאן נניח HEAD של ה-PR
-          PR_COMMITS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
+           LAST_PR_NUMBER=$(gh pr list --base main --state merged --sort mergedAt --limit 1 --json number --jq '.[0].number')
+          echo "📌 Last merged PR to main: #$LAST_PR_NUMBER"
 
+          # קבלת כל הקומיטים של ה-PR האחרון
+          PR_COMMITS=$(gh pr view $LAST_PR_NUMBER --json commits --jq '.commits[].oid')
+
+          # Cherry-pick של כל הקומיטים האלה
           for commit in $PR_COMMITS; do
             echo "📌 Cherry-picking commit $commit"
-            git cherry-pick "$commit" || echo "⚠️ Conflict detected – leaving it for manual resolution in PR"
+            git cherry-pick "$commit" || echo "⚠️ Conflict detected – leave for manual resolution"
           done
+
 
           # דחיפה ל-origin
           git push origin "$BRANCH_NAME" --force
