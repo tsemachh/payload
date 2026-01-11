@@ -140,6 +140,13 @@ jobs:
           
           for commit in $PR_COMMITS; do
             echo "🍒 Cherry-picking $commit..."
+            
+            # בדיקה אם זה merge commit
+            if git cat-file -p "$commit" | grep -q "^parent.*parent"; then
+              echo "⚠️ Skipping merge commit $commit (merge commits are not cherry-picked)"
+              continue
+            fi
+            
             if git cherry-pick "$commit"; then
               echo "✅ $commit applied cleanly"
             else
@@ -149,27 +156,36 @@ jobs:
               CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
               echo "Conflicting files:"
               echo "$CONFLICT_FILES" | sed 's/^/  • /'
-              # לא עושים abort – משאירים את הקונפליקטים פתוחים!
-              break  # מפסיקים אחרי הקומיט הראשון שגרם לקונפליקט
+              
+              # בודקים אם יש בפועל קבצים עם קונפליקטים
+              if [ -n "$CONFLICT_FILES" ]; then
+                # יש קונפליקטים אמיתיים - מוסיפים conflict markers ועושים commit
+                echo "❌ Adding conflict files and creating commit for manual resolution"
+                git add -A  # מוסיף את כל הקבצים כולל אלה עם conflict markers
+                git commit --no-edit  # מסיים את ה-cherry-pick עם conflict markers
+                break
+              else
+                # אין קונפליקטים בפועל - מבטלים את ה-cherry-pick וממשיכים
+                echo "ℹ️ No actual conflicts found, aborting cherry-pick and continuing"
+                git cherry-pick --abort
+                CONFLICT_DETECTED=false
+                continue
+              fi
             fi
           done
           
-          # עכשיו עושים commit בכל מקרה
-          if [ "$CONFLICT_DETECTED" = true ]; then
-            echo "❌ Creating commit with unresolved conflicts for manual resolution"
-            git add -A  # מסמנים את כל הקבצים (גם עם קונפליקטים) כ"intent to commit"
-            git commit -m "Back-merge PR #$LAST_PR_NUMBER → develop: CONFLICTS NEED RESOLUTION
+          # בודקים אם יש שינויים להעלות
+          if git diff --quiet origin/develop..HEAD; then
+            echo "ℹ️ No changes to back-merge, develop is already up to date"
+            echo "create_pr=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
           
-          Automatic cherry-pick stopped due to conflicts in:
-          $(echo "$CONFLICT_FILES" | sed 's/^/• /')
-          
-          Please resolve the conflicts using GitHub's conflict editor and then merge.
-          
-          Original PR: https://github.com/${{ github.repository }}/pull/$LAST_PR_NUMBER"
+          # קובעים את הסטטוס
+          if [ "$CONFLICT_DETECTED" = true ] && [ -n "$CONFLICT_FILES" ]; then
             echo "merge_status=conflict" >> $GITHUB_OUTPUT
             echo "conflict_files=$CONFLICT_FILES" >> $GITHUB_OUTPUT
           else
-            echo "✅ All commits applied successfully"
             echo "merge_status=success" >> $GITHUB_OUTPUT
           fi
           
