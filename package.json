@@ -19,7 +19,14 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,scss}\"",
     "migrated": "cross-env NODE_OPTIONS=\"--inspect --no-deprecation --max-old-space-size=16192\" payload migrate ",
-    "migrate": "cross-env TZ=\"Asia/Jerusalem\" NODE_OPTIONS=\"--max-old-space-size=16384\" payload migrate "
+    "migrate": "cross-env TZ=\"Asia/Jerusalem\" NODE_OPTIONS=\"--max-old-space-size=16384\" payload migrate ",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@logtail/browser": "^0.5.6",
@@ -131,6 +138,10 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
+    "@playwright/test": "^1.57.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/js-yaml": "^4.0.9",
     "@types/jspdf": "^2.0.0",
     "@types/mssql": "^9.1.7",
@@ -140,16 +151,20 @@
     "@types/react": "19.1.12",
     "@types/react-dom": "19.1.9",
     "@types/swagger-ui-react": "^5.18.0",
+    "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
     "eslint": "^9.28.0",
     "eslint-config-next": "15.1.5",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.1",
+    "happy-dom": "^20.0.11",
+    "jsdom": "^27.4.0",
     "postcss": "^8.5.2",
     "prettier": "3.5.3",
     "tailwindcss": "3.4.17",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": "^18.20.2 || >=20.9.0",
