@@ -121,19 +121,26 @@ jobs:
           echo ""
           echo "📊 File changes:"
           git diff --stat origin/develop..HEAD || echo "No changes"
-      - name: Create Pull Request via GitHub CLI
-        run: |
-          BRANCH_NAME="backmerge/main-to-develop-${{ github.run_id }}"
+                - name: Create Pull Request via GitHub CLI
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            run: |
+              BRANCH_NAME="backmerge/main-to-develop-${{ github.run_id }}"
 
-          gh pr create \
-            --head "$BRANCH_NAME" \
-            --base develop \
-            --title "Back-merge: main → develop" \
-            --body "Automatic back-merge to keep develop in sync with main.
+              PR_BODY=$(cat <<EOF
+          Automatic back-merge to keep develop in sync with main.
 
-        Triggered by commit: ${{ github.sha }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          Triggered by commit: ${{ github.sha }}
+          Actor: ${{ github.actor }}
+          EOF
+          )
+
+              gh pr create \
+                --head "$BRANCH_NAME" \
+                --base develop \
+                --title "Back-merge: main → develop" \
+                --body "$PR_BODY"
+
 
       # - name: Create Pull Request
       #   uses: peter-evans/create-pull-request@v6
