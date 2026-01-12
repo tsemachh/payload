@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   docker-build:
@@ -47,7 +48,7 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
-      
+
       
       # Step 5: Build and test
       - name: Build, Test, and Push
@@ -81,96 +82,172 @@ jobs:
   backmerge:
     needs: docker-build
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - name: Checkout full history
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Configure Git
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Debug - Show commit and event info
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          echo "=== DEBUG INFO ==="
+          echo "Commit message: '${{ github.event.head_commit.message }}'"
+          echo "Event name: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Run number: ${{ github.run_number }}"
+          echo "=================="
+          
+      - name: Configure Git user
+        run: |
+          git config user.name "${{ needs.docker-build.outputs.pusher_name }}"
+          git config user.email "${{ needs.docker-build.outputs.pusher_email }}"
 
-      - name: Create backmerge branch – cherry-pick current PR commits
+
+      - name: Create backmerge branch – cherry-pick last PR with real conflicts in PR
+        id: backmerge
         run: |
           set -e
-
-          BRANCH_NAME="backmerge/pr-${{ github.event.pull_request.number }}-to-develop-${{ github.run_id }}"
+          BRANCH_NAME="backmerge/pr-to-develop-${{ github.run_id }}"
           echo "🌿 Creating branch: $BRANCH_NAME"
-
-          # וודא שיש לנו את כל ההיסטוריה
-          git fetch origin develop
-          git fetch origin main
-
-          # יצירת branch חדש מ-develop
+          git fetch origin develop main
           git checkout -b "$BRANCH_NAME" origin/develop
-
-          # cherry-pick של כל הקומיטים מה-PR הנוכחי
-          # github.event.pull_request.commits או github.event.pull_request.head.sha
-          # כאן נניח HEAD של ה-PR
-          PR_COMMITS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
-
+          
+          LAST_PR_NUMBER=$(gh pr list --base main --state merged --limit 20 --json number,mergedAt --jq 'sort_by(.mergedAt) | reverse | .[0].number')
+          if [ -z "$LAST_PR_NUMBER" ]; then
+            echo "ℹ️ No merged PRs found recently"
+            echo "create_pr=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "📌 Back-merging PR #$LAST_PR_NUMBER into develop"
+          
+          echo "🔍 Commits in PR #$LAST_PR_NUMBER:"
+          gh pr view "$LAST_PR_NUMBER" --json commits --jq '.commits[] | "  • \(.oid[0:8]) - \(.messageHeadline)"'
+          
+          PR_COMMITS=$(gh pr view "$LAST_PR_NUMBER" --json commits --jq '.commits[].oid')
+          CONFLICT_DETECTED=false
+          CONFLICT_FILES=""
+          COMMITS_APPLIED=0
+          
           for commit in $PR_COMMITS; do
-            echo "📌 Cherry-picking commit $commit"
-            git cherry-pick "$commit" || echo "⚠️ Conflict detected – leaving it for manual resolution in PR"
+            echo "🍒 Cherry-picking $commit..."
+            
+            if git cat-file -p "$commit" | grep -q "^parent.*parent"; then
+              echo "⚠️ Skipping merge commit $commit (merge commits are not cherry-picked)"
+              continue
+            fi
+            
+            CHANGED_FILES=$(git show --name-only --pretty=format: "$commit" | grep -v '^$')
+            if echo "$CHANGED_FILES" | grep -q "^\.github/workflows/"; then
+              echo "⚠️ Skipping commit $commit (contains workflow changes that require special permissions)"
+              echo "Changed workflow files:"
+              echo "$CHANGED_FILES" | grep "^\.github/workflows/" | sed 's/^/  • /'
+              continue
+            fi
+            
+            if git cherry-pick "$commit"; then
+              echo "✅ $commit applied cleanly"
+              COMMITS_APPLIED=$((COMMITS_APPLIED + 1))
+            else
+              echo "⚠️ Conflict detected in $commit"
+              CONFLICT_DETECTED=true
+              # שומרים את רשימת הקבצים עם קונפליקטים
+              CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
+              echo "Conflicting files:"
+              echo "$CONFLICT_FILES" | sed 's/^/  • /'
+              
+              # בודקים אם יש בפועל קבצים עם קונפליקטים
+              if [ -n "$CONFLICT_FILES" ]; then
+                # יש קונפליקטים אמיתיים - מוסיפים conflict markers ועושים commit
+                echo "❌ Adding conflict files and creating commit for manual resolution"
+                git add -A  # מוסיף את כל הקבצים כולל אלה עם conflict markers
+                git commit --no-edit  # מסיים את ה-cherry-pick עם conflict markers
+                COMMITS_APPLIED=$((COMMITS_APPLIED + 1))
+                break
+              else
+                # אין קונפליקטים בפועל - מבטלים את ה-cherry-pick וממשיכים
+                echo "ℹ️ No actual conflicts found, aborting cherry-pick and continuing"
+                git cherry-pick --abort
+                CONFLICT_DETECTED=false
+                continue
+              fi
+            fi
           done
-
-          # דחיפה ל-origin
+          
+          echo "📊 Summary: Applied $COMMITS_APPLIED commits from PR #$LAST_PR_NUMBER"
+          
+          # בודקים אם יש שינויים להעלות
+          if [ "$COMMITS_APPLIED" -eq 0 ] || git diff --quiet origin/develop..HEAD; then
+            echo "ℹ️ No changes to back-merge, develop is already up to date"
+            echo "create_pr=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          if [ "$CONFLICT_DETECTED" = true ] && [ -n "$CONFLICT_FILES" ]; then
+            echo "merge_status=conflict" >> $GITHUB_OUTPUT
+            echo "conflict_files=$CONFLICT_FILES" >> $GITHUB_OUTPUT
+          else
+            echo "merge_status=success" >> $GITHUB_OUTPUT
+          fi
+          
+          git --no-pager log -3 --oneline
           git push origin "$BRANCH_NAME" --force
+          echo "create_pr=true" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
 
-
-      - name: Debug – verify changes exist
-        run: |
-          git fetch origin develop
-          echo "📌 Commits in backmerge branch not in develop:"
-          git log origin/develop..HEAD --oneline || echo "No new commits – develop already up to date"
-          echo ""
-          echo "📊 File changes:"
-          git diff --stat origin/develop..HEAD || echo "No changes"
       - name: Create Pull Request via GitHub CLI
+        if: steps.backmerge.outputs.create_pr == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BRANCH_NAME="backmerge/main-to-develop-${{ github.run_id }}"
-
-          PR_BODY=$(cat <<'EOF'
-          Automatic back-merge to keep develop in sync with main.
-
-          Triggered by commit: ${{ github.sha }}
-          Actor: ${{ github.actor }}
+          BRANCH_NAME="backmerge/pr-to-develop-${{ github.run_id }}"
+          LAST_PR_NUMBER=$(gh pr list --base main --state merged --limit 1 --json number --jq '.[0].number')
+          
+          if [[ "${{ steps.backmerge.outputs.merge_status }}" == "conflict" ]]; then
+            CONFLICT_LIST=$(echo "${{ steps.backmerge.outputs.conflict_files }}" | sed 's/^/• /' | paste -sd ',' -)
+            TITLE="⚠️ Back-merge PR #$LAST_PR_NUMBER → develop (CONFLICTS)"
+            BODY=$(cat <<EOF
+          **קונפליקטים זוהו – דורש פתרון ידני**
+          
+          הניסיון האוטומטי להביא את השינויים מ-PR #$LAST_PR_NUMBER (שמורגג ל-main) אל develop נתקל בקונפליקטים.
+          
+          הקבצים עם קונפליקטים:
+          $CONFLICT_LIST
+          
+          GitHub מציג את הקונפליקטים ישירות ב-PR – אנא השתמשו בכפתור "Resolve conflicts" לפתרון.
+          לאחר פתרון הקונפליקטים, אשרו את ה-merge.
+          
+          מקור: https://github.com/${{ github.repository }}/pull/$LAST_PR_NUMBER
+          Triggered by: ${{ github.actor }}
           EOF
           )
-
+          else
+            TITLE="Back-merge PR #$LAST_PR_NUMBER → develop"
+            BODY=$(cat <<EOF
+          Automatic back-merge of PR #$LAST_PR_NUMBER from main → develop.
+          
+          כל השינויים הוחלו בהצלחה ללא קונפליקטים.
+          
+          מקור: https://github.com/${{ github.repository }}/pull/$LAST_PR_NUMBER
+          Triggered by: ${{ github.actor }}
+          EOF
+          )
+          fi
+          
           gh pr create \
             --head "$BRANCH_NAME" \
             --base develop \
-            --title "Back-merge main → develop" \
-            --body "$PR_BODY" \
-
-
-      # - name: Create Pull Request
-      #   uses: peter-evans/create-pull-request@v6
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     title: "Back-merge: main → develop"
-      #     body: |
-      #       Automatic back-merge to keep `develop` in sync with `main`.
-
-      #       Triggered by push to `main` (commit: ${{ github.sha }}).
-      #       Actor: ${{ github.actor }}
-
-      #       This integrates hotfixes and releases from `main` into `develop`.
-      #     branch: backmerge/main-to-develop-${{ github.run_id }}
-      #     base: develop
-      #     labels: automated, back-merge
-      #     draft: false
-      #     delete-branch: true  # מנקה את ה-branch אחרי merge או סגירה
-      - name: Debug – completion
-        run: |
-          echo "✅ Workflow completed"
-          echo "If no PR was created – develop was already in sync with main."
+            --title "$TITLE" \
+            --body "$BODY" \
+          || echo "ℹ️ PR already exists"
+          
   notify-slack:
     needs: docker-build
     if: failure()
