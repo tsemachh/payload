@@ -137,18 +137,18 @@ jobs:
           for commit in $PR_COMMITS; do
             echo "🍒 Cherry-picking $commit..."
             
-            # if git cat-file -p "$commit" | grep -q "^parent.*parent"; then
-            #   echo "⚠️ Skipping merge commit $commit (merge commits are not cherry-picked)"
-            #   continue
-            # fi
-            
-            CHANGED_FILES=$(git show --name-only --pretty=format: "$commit" | grep -v '^$')
-            if echo "$CHANGED_FILES" | grep -q "^\.github/workflows/"; then
-              echo "⚠️ Skipping commit $commit (contains workflow changes that require special permissions)"
-              echo "Changed workflow files:"
-              echo "$CHANGED_FILES" | grep "^\.github/workflows/" | sed 's/^/  • /'
+            if git cat-file -p "$commit" | grep -q "^parent.*parent"; then
+              echo "⚠️ Skipping merge commit $commit (merge commits are not cherry-picked)"
               continue
             fi
+            
+            # CHANGED_FILES=$(git show --name-only --pretty=format: "$commit" | grep -v '^$')
+            # if echo "$CHANGED_FILES" | grep -q "^\.github/workflows/"; then
+            #   echo "⚠️ Skipping commit $commit (contains workflow changes that require special permissions)"
+            #   echo "Changed workflow files:"
+            #   echo "$CHANGED_FILES" | grep "^\.github/workflows/" | sed 's/^/  • /'
+            #   continue
+            # fi
             
             if git cherry-pick "$commit"; then
               echo "✅ $commit applied cleanly"
