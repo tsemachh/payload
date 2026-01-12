@@ -199,7 +199,7 @@ jobs:
           git push origin "$BRANCH_NAME" --force
           echo "create_pr=true" >> $GITHUB_OUTPUT
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.BACKMERGE_BOT_TOKEN }}
           
 
       - name: Create Pull Request via GitHub CLI
