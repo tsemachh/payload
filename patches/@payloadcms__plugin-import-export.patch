@@ -1,5 +1,38 @@
+diff --git a/dist/components/ExportSaveButton/index.js b/dist/components/ExportSaveButton/index.js
+index d97f6c2eda674ad66c7b163f4f0a82d78d8a07f6..606d5a90187424601852ff08724c4f56c75f4a14 100644
+--- a/dist/components/ExportSaveButton/index.js
++++ b/dist/components/ExportSaveButton/index.js
+@@ -58,24 +58,10 @@ export const ExportSaveButton = ()=>{
+                 }
+                 throw new Error(errorMsg);
+             }
+-            const fileStream = response.body;
+-            const reader = fileStream?.getReader();
+-            const decoder = new TextDecoder();
+-            let result = '';
+-            while(reader){
+-                const { done, value } = await reader.read();
+-                if (done) {
+-                    break;
+-                }
+-                result += decoder.decode(value, {
+-                    stream: true
+-                });
+-            }
+-            const blob = new Blob([
+-                result
+-            ], {
+-                type: 'text/plain'
+-            });
++            const responseBlob = await response.blob();
++            const blob = data.format === 'csv' ? new Blob(['\uFEFF', responseBlob], {
++                type: 'text/csv; charset=utf-8'
++            }) : responseBlob;
+             const url = URL.createObjectURL(blob);
+             const a = document.createElement('a');
+             a.href = url;
 diff --git a/dist/export/createExport.js b/dist/export/createExport.js
-index bea207fdc3aac31db13be9ede4a95fc8cf304cd6..a31f0d0c9f3998aa989f0c345464747bcd2b95d2 100644
+index bea207fdc3aac31db13be9ede4a95fc8cf304cd6..9a2aafe2b0f8f6ff88e25b4bfbc684dca1996615 100644
 --- a/dist/export/createExport.js
 +++ b/dist/export/createExport.js
 @@ -197,7 +197,15 @@ export const createExport = async (args)=>{
@@ -33,7 +66,7 @@ index bea207fdc3aac31db13be9ede4a95fc8cf304cd6..a31f0d0c9f3998aa989f0c345464747b
          }));
      }
 -    const buffer = Buffer.from(format === 'json' ? `[${outputData.join(',')}]` : outputData.join(''));
-+    const buffer = Buffer.from(format === 'json' ? `[${outputData.join(',')}]` : (isCSV ? '\uFEFF' : '') + (isCSV ? '\uFEFF' : '') + (isCSV ? '\uFEFF' : '') + outputData.join(''));
++    const buffer = Buffer.from(format === 'json' ? `[${outputData.join(',')}]` : (isCSV ? '\uFEFF' : '') + outputData.join(''));
      if (debug) {
          req.payload.logger.debug(`${format} file generation complete`);
      }

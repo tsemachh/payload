@@ -14,6 +14,13 @@ import {
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
+  // Set migration context on req
+  if (req) {
+    req.context = req.context || {}
+    req.context.from = 'migration'
+    req.context.process = 'migrateMeetingsStockValues'
+  }
+
   try {
     console.log('Starting migration to link meetings with stock values...')
     pool = await createMSSqlPool()
@@ -231,14 +238,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               let stockValueId
               try {
                 // Upsert stock value
-                stockValueId = await upsertStockValueFromImport(stockId as string, stockData, {
-                  ...req,
-                  context: {
-                    ...req.context,
-                    from: 'migration',
-                    process: 'migrateMeetingsStockValue',
-                  },
-                })
+                stockValueId = await upsertStockValueFromImport(stockId as string, stockData, req)
               } catch (e) {
                 console.error(
                   'Error with upsertStockValueFromImport:' + stockId + JSON.stringify(stockData),
@@ -269,14 +269,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   stockValue: stockValueId,
                   fullName: fullName,
                 },
-                req: {
-                  ...req,
-                  context: {
-                    ...req.context,
-                    from: 'migration',
-                    process: 'migrateMeetingsStockValues',
-                  },
-                },
+                req,
               })
 
               successCount++
@@ -286,8 +279,8 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                 )
               }
             })(),
-            12000,
-            `Timeout processing meeting ${meeting.id} after 180s`,
+            20000,
+            `Timeout processing meeting ${meeting.id} after 20s`,
           )
         } catch (error) {
           errorCount++

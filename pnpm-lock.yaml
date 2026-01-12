@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   '@payloadcms/plugin-import-export':
-    hash: ed173ee9276b6ae7a67a8dd0afae5765436b9e1b2cac297a520168a9c47c43ec
+    hash: 08faa39a7e892e0d6b800ca69cf3d609ee91a6fc2eb0cc1c20c2b77e89e04727
     path: patches/@payloadcms__plugin-import-export.patch
 
 importers:
@@ -39,7 +39,7 @@ importers:
         version: 3.69.0(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))
       '@payloadcms/plugin-import-export':
         specifier: ^3.67.0
-        version: 3.69.0(@payloadcms/ui@3.69.0(@types/react@19.1.12)(monaco-editor@0.55.1)(next@15.4.8(@babel/core@7.28.5)(@playwright/test@1.57.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.77.4))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.7.3))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+        version: 3.69.0(patch_hash=08faa39a7e892e0d6b800ca69cf3d609ee91a6fc2eb0cc1c20c2b77e89e04727)(@payloadcms/ui@3.69.0(@types/react@19.1.12)(monaco-editor@0.55.1)(next@15.4.8(@babel/core@7.28.5)(@playwright/test@1.57.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.77.4))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.7.3))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@payloadcms/richtext-lexical':
         specifier: ^3.67.0
         version: 3.69.0(@faceless-ui/modal@3.0.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(@faceless-ui/scroll-info@2.0.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(@payloadcms/next@3.69.0(@types/react@19.1.12)(graphql@16.12.0)(monaco-editor@0.55.1)(next@15.4.8(@babel/core@7.28.5)(@playwright/test@1.57.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.77.4))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.7.3))(@types/react@19.1.12)(monaco-editor@0.55.1)(next@15.4.8(@babel/core@7.28.5)(@playwright/test@1.57.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.77.4))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.7.3)(yjs@13.6.28)
@@ -9258,7 +9258,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/plugin-import-export@3.69.0(@payloadcms/ui@3.69.0(@types/react@19.1.12)(monaco-editor@0.55.1)(next@15.4.8(@babel/core@7.28.5)(@playwright/test@1.57.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.77.4))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.7.3))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+  '@payloadcms/plugin-import-export@3.69.0(patch_hash=08faa39a7e892e0d6b800ca69cf3d609ee91a6fc2eb0cc1c20c2b77e89e04727)(@payloadcms/ui@3.69.0(@types/react@19.1.12)(monaco-editor@0.55.1)(next@15.4.8(@babel/core@7.28.5)(@playwright/test@1.57.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.77.4))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.7.3))(payload@3.69.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@faceless-ui/modal': 3.0.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@payloadcms/translations': 3.69.0
