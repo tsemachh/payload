@@ -431,7 +431,81 @@ export async function upsertStockFromImport(
     // Continue processing others
   }
 }
+export async function upsertStockFromFeeds(
+  stock: Stock | null,
+  row: ImportStock,
+  req: PayloadRequest,
+  tradable: boolean,
+  origin: StockOrigin = 'TASE',
+  active: boolean | null = true,
+  comments: string = '',
+  fromMagna: boolean = false,
+  isFinancial: boolean = false,
+) {
+  // Collect all fields we intend to persist
+  const stockData: Partial<Stock> = {
+    active: active,
+    stockId: `${row.stockID}`,
+    name: row.name ?? null,
+    symbol: row.symbol ?? null,
+    type: row.type ?? null,
+    longName: row.longName ?? null,
+    tradable: tradable as boolean | null,
+    origin: origin,
+    comments: comments,
+    fromMagna: fromMagna,
+    isFinancial: isFinancial,
+    // Pass-through flags from the import row
+    isDual: row.isDual ?? undefined,
+    mainStockForDualStock: row.mainStockForDualStock ?? null,
+  }
 
+  try {
+    if (!stock) {
+      // Create new stock with all fields
+      const newStock = await req.payload.create({
+        collection: 'stocks',
+        data: stockData as Stock,
+        req,
+        context: { from: 'process' },
+      })
+      return newStock.id
+    } else {
+      // Determine if anything relevant changed
+      
+        const needsUpdate =
+          stock.stockId !== `${row.stockID}` ||
+          stock.name !== stockData.name ||
+          stock.symbol !== stockData.symbol ||
+          stock.type !== stockData.type ||
+          stock.longName !== stockData.longName
+
+
+      if (needsUpdate) {
+        await req.payload.update({
+          collection: 'stocks',
+          id: stock.id,
+          data: {
+            stockId: `${row.stockID}`,
+            name: stockData.name,
+            symbol: stockData.symbol,
+            type: stockData.type,
+            longName: stockData.longName,
+          },
+          context: { from: 'process' },
+          req,
+        })
+      }
+      return stock.id
+    }
+  } catch (error: any) {
+    console.error(
+      `Error processing stock ${stockData?.stockId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      error,
+    )
+    // Continue processing others
+  }
+}
 export async function upsertStockValueFromImport(
   stockSequence: string,
   row: ImportStock,
