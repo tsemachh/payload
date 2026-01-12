@@ -127,6 +127,30 @@ export default buildConfig({
         'Non-leader instance: task-level schedules disabled here to avoid duplicates',
       )
     }
+
+    // Ensure custom version indexes for votes and meetings
+    try {
+      const db = (payload as any).db
+      if (db?.versions) {
+        payload.logger.info('Ensuring custom version indexes...')
+
+        const votesVersions = db.versions['votes']?.collection
+        if (votesVersions) {
+          await votesVersions.createIndex({ 'version.meeting': 1, latest: 1, 'version._status': 1 })
+        }
+
+        const meetingsVersions = db.versions['meetings']?.collection
+        if (meetingsVersions) {
+          await meetingsVersions.createIndex({
+            latest: 1,
+            'version._status': 1,
+            'version.meetingDate': 1,
+          })
+        }
+      }
+    } catch (e: any) {
+      payload.logger.error('Failed to create custom version indexes', e)
+    }
   },
   jobs: {
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
