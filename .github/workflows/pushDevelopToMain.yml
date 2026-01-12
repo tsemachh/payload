@@ -89,7 +89,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.BACKMERGE_BOT_TOKEN }}
           
       - name: Debug - Show commit and event info
         run: |
@@ -205,7 +205,7 @@ jobs:
       - name: Create Pull Request via GitHub CLI
         if: steps.backmerge.outputs.create_pr == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.BACKMERGE_BOT_TOKEN }}
         run: |
           BRANCH_NAME="backmerge/pr-to-develop-${{ github.run_id }}"
           LAST_PR_NUMBER=$(gh pr list --base main --state merged --limit 1 --json number --jq '.[0].number')
