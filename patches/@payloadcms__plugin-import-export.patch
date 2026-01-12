@@ -1,8 +1,8 @@
 diff --git a/dist/components/ExportSaveButton/index.js b/dist/components/ExportSaveButton/index.js
-index d97f6c2eda674ad66c7b163f4f0a82d78d8a07f6..5889606d15654645224355524853215984621532 100644
+index d97f6c2eda674ad66c7b163f4f0a82d78d8a07f6..606d5a90187424601852ff08724c4f56c75f4a14 100644
 --- a/dist/components/ExportSaveButton/index.js
 +++ b/dist/components/ExportSaveButton/index.js
-@@ -58,21 +58,9 @@ export const ExportSaveButton = ()=>{
+@@ -58,24 +58,10 @@ export const ExportSaveButton = ()=>{
                  }
                  throw new Error(errorMsg);
              }
@@ -32,7 +32,7 @@ index d97f6c2eda674ad66c7b163f4f0a82d78d8a07f6..5889606d156546452243555248532159
              const a = document.createElement('a');
              a.href = url;
 diff --git a/dist/export/createExport.js b/dist/export/createExport.js
-index bea207fdc3aac31db13be9ede4a95fc8cf304cd6..a31f0d0c9f3998aa989f0c345464747bcd2b95d2 100644
+index bea207fdc3aac31db13be9ede4a95fc8cf304cd6..9a2aafe2b0f8f6ff88e25b4bfbc684dca1996615 100644
 --- a/dist/export/createExport.js
 +++ b/dist/export/createExport.js
 @@ -197,7 +197,15 @@ export const createExport = async (args)=>{
