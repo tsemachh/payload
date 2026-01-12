@@ -30,6 +30,13 @@ const votingResultMap: Record<string, string | null> = {
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
   let pool: sql.ConnectionPool | null = null
 
+  // Set migration context on req
+  if (req) {
+    req.context = req.context || {}
+    req.context.from = 'migration'
+    req.context.process = 'migrateVotes'
+  }
+
   try {
     console.log('Starting votes migration process...')
     pool = await createMSSqlPool()
@@ -81,6 +88,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               select: { id: true, finalized: true },
               limit: 1,
               depth: 0,
+              req,
             })
 
             const mongoMeetingId = mongoMeetingRes?.docs?.[0]?.id
@@ -285,10 +293,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
                   await payload.create({
                     collection: 'votes',
                     data: voteData as Vote,
-                    req: {
-                      ...req,
-                      context: { ...req.context, from: 'migration', process: 'migrateVotes' },
-                    },
+                    req,
                   })
                   createdFirmIds.push(company.firmid)
                   successCount++
@@ -326,7 +331,7 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
               )
             }
           }
-        }),
+        }, 60000),
       )
     }
 

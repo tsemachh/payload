@@ -825,6 +825,14 @@ export const Meetings: CollectionConfig = {
                     disableListColumn: true,
                   },
                   filterOptions: ({ data, req }) => {
+                    if (
+                      req?.context?.from === 'migration' ||
+                      req?.context?.from === 'process' ||
+                      req?.context?.process === 'migrateFullMeeting' ||
+                      req?.context?.process === 'migrateMeetingsStockValues'
+                    ) {
+                      return true
+                    }
                     const where: Where = {
                       or: [
                         {
@@ -1391,6 +1399,10 @@ export const Meetings: CollectionConfig = {
         const changeSource = req.context?.from || 'user'
         let meetingAlreadyProcessed = false
 
+        if (req.context?.from === 'migration') {
+          return
+        }
+
         req.payload.logger.info(
           { meetingId: doc.id, from: req.context?.from, operation },
           `Meetings afterChange hook started`,
@@ -1404,6 +1416,10 @@ export const Meetings: CollectionConfig = {
           req.context?.from !== 'process' &&
           req.context?.from !== 'migration'
         ) {
+          req.payload.logger.info(
+            { meetingId: doc.id },
+            `Meetings afterChange: processing notifications`,
+          )
           const companies = (doc.companies || []) as string[]
           if (companies.length === 0) return
 
@@ -1454,6 +1470,10 @@ export const Meetings: CollectionConfig = {
           operation === 'create' &&
           !['process', 'migration'].includes(req.context?.from as string)
         ) {
+          req.payload.logger.info(
+            { meetingId: doc.id },
+            `Meetings afterChange: processing dual stock`,
+          )
           const stock = await req.payload.findByID({
             collection: 'stocks',
             id: doc.stock,
@@ -1524,8 +1544,13 @@ export const Meetings: CollectionConfig = {
           req.context?.from !== 'migration' &&
           operation === 'update'
         ) {
+          req.payload.logger.info(
+            { meetingId: doc.id },
+            `Meetings afterChange: syncing dual meeting`,
+          )
           await syncDualMeeting(req.payload, doc, previousDoc)
         }
+        req.payload.logger.info({ meetingId: doc.id }, `Meetings afterChange hook finished`)
       },
       afterChangeDeleteResearchDocs,
     ],
