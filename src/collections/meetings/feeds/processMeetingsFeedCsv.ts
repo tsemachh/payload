@@ -125,12 +125,12 @@ async function processRowInner(
         const { ...dataToUpdate } = row
         delete dataToUpdate.proofIdPrev
         const prevMeetingId = prevMeeting.docs[0].id
-        dataToUpdate._status = 'draft'
         try {
           await req.payload.update({
             collection: 'meetings',
             id: prevMeetingId,
             data: dataToUpdate,
+            draft: true,
             context: { ...req.context, from: 'migration', process: 'processMeetingFeedUpdatePrev' },
             req,
           })
@@ -156,11 +156,11 @@ async function processRowInner(
 
         // Always update existing meetings with new data from the feed
         try {
-          row._status = 'draft'
           await req.payload.update({
             collection: 'meetings',
             id: meetingId,
             data: row,
+            draft: true,
             context: { ...req.context, from: 'migration', process: 'processMeetingFeed' },
             req,
           })
