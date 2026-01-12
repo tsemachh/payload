@@ -129,7 +129,7 @@ export const setStockValueOnCreateOrHoldingsChange: CollectionBeforeChangeHook =
   req,
 }) => {
   try {
-    if (req.context?.from === 'process' || req.context?.from === 'migration') {
+    if (req.context?.from === 'process') {
       return data
     }
 
