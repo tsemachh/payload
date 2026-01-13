@@ -3,6 +3,7 @@ import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 import cacheTestEndpoint from './cacheTestEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
+import { getIdOfRelationField } from '@/utils/utils'
 import {
   addTagToCompany,
   deleteTagFromCompany,
@@ -37,12 +38,18 @@ const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operati
 }
 
 const ensureUniqueSubCompanies: CollectionBeforeChangeHook = async ({ data }) => {
-  if (data.subCompanies && Array.isArray(data.subCompanies)) {
+  if (Array.isArray(data.subCompanies)) {
     const uniqueIds = [
-      ...new Set(data.subCompanies.map((v: any) => (typeof v === 'object' ? v.id : v))),
+      ...new Set(
+        data.subCompanies
+          .map((v: any) => getIdOfRelationField(v))
+          .filter(Boolean),
+      ),
     ]
+
     data.subCompanies = uniqueIds
   }
+
   return data
 }
 
