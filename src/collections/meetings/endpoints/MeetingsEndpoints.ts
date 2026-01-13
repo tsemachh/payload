@@ -792,20 +792,20 @@ async function processMeetingsData(
                 if (orig?.quantity) {
                   return sum + (orig.quantity || 0)
                 }
-                console.error(
+                req?.payload.logger.error(
                   `Company ${fundId} in stock ${orig.stockId} does not exist or is not valid in the fundsWithHolding array`,
                 )
                 return null
               }, 0)
               if (quantity == 0) {
-                console.error(
+                req?.payload.logger.error(
                   `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
                 )
                 return null
               }
             }
           } else {
-            console.error(
+            req?.payload.logger.error(
               `Company ${fundId} does not exist or is not valid in the fundsWithHolding array`,
             )
             return null
