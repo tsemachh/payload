@@ -36,6 +36,16 @@ const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operati
   return data
 }
 
+const ensureUniqueSubCompanies: CollectionBeforeChangeHook = async ({ data }) => {
+  if (data.subCompanies && Array.isArray(data.subCompanies)) {
+    const uniqueIds = [
+      ...new Set(data.subCompanies.map((v: any) => (typeof v === 'object' ? v.id : v))),
+    ]
+    data.subCompanies = uniqueIds
+  }
+  return data
+}
+
 export const Companies: CollectionConfig = {
   slug: 'companies',
   labels: {
@@ -525,7 +535,7 @@ export const Companies: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeChange: [beforeChangeCompanyId],
+    beforeChange: [beforeChangeCompanyId, ensureUniqueSubCompanies],
     afterChange: [
       async ({ doc, req, previousDoc, operation }) => {
         // Audit logging for company create/update
