@@ -3,6 +3,7 @@ import addSubAccountEndPoint from './addSubAccountEndPoint'
 import { detailsEndpoint, getVotingRecommendation } from './detailsEndpoint'
 import cacheTestEndpoint from './cacheTestEndpoint'
 import { isAdmin, isUserCompany } from '@/utils/authUtils'
+import { getIdOfRelationField } from '@/utils/utils'
 import {
   addTagToCompany,
   deleteTagFromCompany,
@@ -33,6 +34,22 @@ const beforeChangeCompanyId: CollectionBeforeChangeHook = async ({ data, operati
       data.companyId = (response?.docs[0].companyId as number) + 10
     }
   }
+  return data
+}
+
+const ensureUniqueSubCompanies: CollectionBeforeChangeHook = async ({ data }) => {
+  if (Array.isArray(data.subCompanies)) {
+    const uniqueIds = [
+      ...new Set(
+        data.subCompanies
+          .map((v: any) => getIdOfRelationField(v))
+          .filter(Boolean),
+      ),
+    ]
+
+    data.subCompanies = uniqueIds
+  }
+
   return data
 }
 
@@ -525,7 +542,7 @@ export const Companies: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeChange: [beforeChangeCompanyId],
+    beforeChange: [beforeChangeCompanyId, ensureUniqueSubCompanies],
     afterChange: [
       async ({ doc, req, previousDoc, operation }) => {
         // Audit logging for company create/update
