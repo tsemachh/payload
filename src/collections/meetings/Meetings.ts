@@ -376,6 +376,28 @@ export const Meetings: CollectionConfig = {
                   async ({ data, req, value }) => {
                     if (req.context?.from === 'migration' || req.context?.from === 'process')
                       return value
+
+                    if (data?.votesCount > data?.companies?.length) {
+                      req.payload.logger.error({
+                        meetingId: data?.id,
+                        errorType: 'critical',
+                        votesCount: data?.votesCount,
+                        companiesCount: data?.companies?.length,
+                        difference: data?.votesCount - data?.companies?.length,
+                        msg: 'Data integrity issue: votes exceed companies',
+                      })
+                    }
+
+                    if (data?.reportVotesCount > data?.votesCount) {
+                      req.payload.logger.error({
+                        meetingId: data?.id,
+                        errorType: 'critical',
+                        reportVotesCount: data?.reportVotesCount,
+                        votesCount: data?.votesCount,
+                        difference: data?.reportVotesCount - data?.votesCount,
+                        msg: 'Data integrity issue: reportedVotes exceed votes',
+                      })
+                    }
                     // Return the data needed for the component as a JSON string
                     return JSON.stringify({
                       companies: data?.companies?.length || 0,
