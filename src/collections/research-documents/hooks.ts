@@ -160,20 +160,41 @@ export const beforeValidaCompaniesFromFilename: CollectionBeforeValidateHook = a
     return data
   }
   const parsed = parseResearchFilename(filename)
-
   if (parsed.isGeneric) {
     data.companies = []
   } else {
     if (!parsed.isGeneric && parsed.companyName) {
-      const companies = await req.payload.find({
+      const parentCompany = await req.payload.find({
         collection: 'companies',
         where: {
           name: { like: parsed.companyName },
-          type: { equals: 'regular' },
-          'researchDocuments.showResearchPrivate': { equals: true },
+          type: { equals: 'parent' },
         },
+        depth: 0,
         limit: 0,
       })
+      const subCompanyIds = parentCompany.docs[0]?.subCompanies || []
+
+    const companies = await req.payload.find({
+      collection: 'companies',
+      where: {
+        and: [
+          {
+            id: {
+              in: subCompanyIds,
+            },
+          },
+          {
+            type: { equals: 'regular' },
+          },
+          {
+            'researchDocuments.showResearchPrivate': { equals: true },
+          },
+        ],
+      },
+      limit: 0,
+    })
+
       if (companies) {
         const foundCompanies = companies.docs
         data.companies = foundCompanies.map((company) => company.id)
