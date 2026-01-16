@@ -302,6 +302,7 @@ export interface Config {
     'migration-faults': MigrationFault;
     'stock-values': StockValue;
     exports: Export;
+    imports: Import;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -348,6 +349,7 @@ export interface Config {
     'migration-faults': MigrationFaultsSelect<false> | MigrationFaultsSelect<true>;
     'stock-values': StockValuesSelect<false> | StockValuesSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
+    imports: ImportsSelect<false> | ImportsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -379,6 +381,7 @@ export interface Config {
       sendCompanyMeetingNotifications: TaskSendCompanyMeetingNotifications;
       sendDailyMeetingNotifications: TaskSendDailyMeetingNotifications;
       createCollectionExport: TaskCreateCollectionExport;
+      createCollectionImport: TaskCreateCollectionImport;
       inline: {
         input: unknown;
         output: unknown;
@@ -1187,6 +1190,46 @@ export interface Export {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "imports".
+ */
+export interface Import {
+  id: string;
+  collectionSlug: 'stocks' | 'meetings' | 'holdings' | 'companies' | 'stock-migration-mapping';
+  importMode?: ('create' | 'update' | 'upsert') | null;
+  matchField?: string | null;
+  status?: ('pending' | 'completed' | 'partial' | 'failed') | null;
+  summary?: {
+    imported?: number | null;
+    updated?: number | null;
+    total?: number | null;
+    issues?: number | null;
+    issueDetails?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  creator?: string | null;
+  updator?: string | null;
+  process?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1263,7 +1306,8 @@ export interface PayloadJob {
           | 'checkCompanyNotifications'
           | 'sendCompanyMeetingNotifications'
           | 'sendDailyMeetingNotifications'
-          | 'createCollectionExport';
+          | 'createCollectionExport'
+          | 'createCollectionImport';
         taskID: string;
         input?:
           | {
@@ -1307,6 +1351,7 @@ export interface PayloadJob {
         | 'sendCompanyMeetingNotifications'
         | 'sendDailyMeetingNotifications'
         | 'createCollectionExport'
+        | 'createCollectionImport'
       )
     | null;
   queue?: string | null;
@@ -1405,10 +1450,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'stock-values';
         value: string | StockValue;
-      } | null)
-    | ({
-        relationTo: 'exports';
-        value: string | Export;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -2247,6 +2288,39 @@ export interface ExportsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "imports_select".
+ */
+export interface ImportsSelect<T extends boolean = true> {
+  collectionSlug?: T;
+  importMode?: T;
+  matchField?: T;
+  status?: T;
+  summary?:
+    | T
+    | {
+        imported?: T;
+        updated?: T;
+        total?: T;
+        issues?: T;
+        issueDetails?: T;
+      };
+  creator?: T;
+  updator?: T;
+  process?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -2468,9 +2542,70 @@ export interface TaskCreateCollectionExport {
       | number
       | boolean
       | null;
-    user?: string | null;
+    userID?: string | null;
     userCollection?: string | null;
     exportsCollection?: string | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCreateCollectionImport".
+ */
+export interface TaskCreateCollectionImport {
+  input: {
+    collectionSlug:
+      | 'admin-notifications'
+      | 'meetings'
+      | 'stocks'
+      | 'holdings'
+      | 'companies'
+      | 'users'
+      | 'stocks-feed'
+      | 'meetings-feed'
+      | 'recommendation-reasons'
+      | 'audit-logs'
+      | 'audit-log-reads'
+      | 'questions'
+      | 'company-meeting-notifications'
+      | 'votes'
+      | 'holdings-feed'
+      | 'research-documents'
+      | 'documents'
+      | 'silenced-stocks'
+      | 'stock-migration-mapping'
+      | 'migration-faults'
+      | 'stock-values'
+      | 'exports'
+      | 'imports';
+    importMode?: ('create' | 'update' | 'upsert') | null;
+    matchField?: string | null;
+    status?: ('pending' | 'completed' | 'partial' | 'failed') | null;
+    summary?: {
+      imported?: number | null;
+      updated?: number | null;
+      total?: number | null;
+      issues?: number | null;
+      issueDetails?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+    };
+    user?: string | null;
+    userCollection?: string | null;
+    importsCollection?: string | null;
+    file?: {
+      data?: string | null;
+      mimetype?: string | null;
+      name?: string | null;
+    };
+    format?: ('csv' | 'json') | null;
+    debug?: boolean | null;
   };
   output?: unknown;
 }

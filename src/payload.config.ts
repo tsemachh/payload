@@ -4,7 +4,7 @@ import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { addAuthorsFields } from '@shefing/authors-info'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
-import { buildConfig } from 'payload'
+import { buildConfig, CollectionSlug } from 'payload'
 import { fileURLToPath } from 'url'
 import { he } from '@payloadcms/translations/languages/he'
 import { nodemailerAdapter, NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
@@ -89,11 +89,15 @@ if (process.env.MONGO_USE_TX !== 'true') {
   dbArgs.transactionOptions = false
 }
 
+function collectionImportSettings(slug: string) {
+  return {
+    slug: slug as CollectionSlug,
+  }
+}
+
 export default buildConfig({
   debug: process.env.NODE_ENV === 'development',
-  serverURL:
-    process.env.PUBLIC_SERVER_URL ||
-    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''),
+  serverURL: process.env.PUBLIC_SERVER_URL || 'http://localhost:3000',
   i18n: {
     supportedLanguages: { he },
     translations: {
@@ -116,8 +120,8 @@ export default buildConfig({
     // warm up active funds cache on boot
     try {
       await preloadCompaniesCache(payload)
-    } catch (e: any) {
-      payload.logger.error('Failed to preload active funds cache', e)
+    } catch (e: unknown) {
+      payload.logger.error(e, 'Failed to preload active funds cache')
     }
     if (process.env.JOB_LEADER === 'true') {
       payload.logger.info('leader instance scheduling daily tasks')
@@ -148,8 +152,8 @@ export default buildConfig({
           })
         }
       }
-    } catch (e: any) {
-      payload.logger.error('Failed to create custom version indexes', e)
+    } catch (e: unknown) {
+      payload.logger.error(e, 'Failed to create custom version indexes')
     }
   },
   jobs: {
@@ -346,21 +350,36 @@ export default buildConfig({
   email: nodemailerAdapter(emailArgs),
   plugins: [
     importExportPlugin({
+      debug: true,
       collections: [
-        'stocks',
-        'meetings',
-        'holdings',
-        'companies',
-        'users',
-        'stock-migration-mapping',
+        collectionImportSettings('stocks'),
+        collectionImportSettings('meetings'),
+        collectionImportSettings('holdings'),
+        collectionImportSettings('companies'),
+        collectionImportSettings('stock-migration-mapping'),
       ],
-      overrideExportCollection: (collection) => {
-        collection.admin.group = 'תחזוקה'
+      overrideExportCollection: ({ collection }) => {
+        if (collection.admin) {
+          collection.admin.group = 'תחזוקה'
+          collection.admin.hidden = false
+        }
         collection.labels = { plural: 'יצוא קבצים', singular: 'יצוא קובץ' }
-        collection.upload.staticDir = path.resolve(dirname, 'uploads')
+        if (collection.upload && typeof collection.upload === 'object') {
+          collection.upload.staticDir = path.resolve(dirname, 'uploads')
+        }
         return collection
       },
-      disableJobsQueue: true,
+      overrideImportCollection: ({ collection }) => {
+        if (collection.admin) {
+          collection.admin.group = 'תחזוקה'
+          collection.admin.hidden = false
+        }
+        collection.labels = { plural: 'יבוא קבצים', singular: 'יבוא קובץ' }
+        if (collection.upload && typeof collection.upload === 'object') {
+          collection.upload.staticDir = path.resolve(dirname, 'uploads')
+        }
+        return collection
+      },
     }),
     payloadCloudPlugin(),
     DynamicFieldOverrides({
@@ -424,6 +443,8 @@ export default buildConfig({
         'holdings-feed': true,
         'meetings-feed': true,
         'stocks-feed': true,
+        imports: true,
+        exports: true,
       },
       enabled: !!process.env.GCS_BUCKET,
       bucket: process.env.GCS_BUCKET || '',
