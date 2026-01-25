@@ -92,6 +92,7 @@ if (process.env.MONGO_USE_TX !== 'true') {
 function collectionImportSettings(slug: string) {
   return {
     slug: slug as CollectionSlug,
+    import: { disableJobsQueue: false },
   }
 }
 
@@ -226,6 +227,9 @@ export default buildConfig({
       process.env.JOB_LEADER != 'true'
         ? []
         : [
+            {
+              cron: '*/1 * * * *', // Run every 5 minutes
+            },
             {
               cron: '00 19 * * *', // every day at 19:00
               limit: 10, // limit jobs to process each run
