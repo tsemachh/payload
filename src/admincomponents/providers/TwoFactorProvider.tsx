@@ -1,7 +1,8 @@
 'use client'
 
-import React, { ReactNode, useEffect, useState } from 'react'
+import React, { ReactNode, useEffect, useState, useMemo } from 'react'
 import { useAuth } from '@payloadcms/ui'
+import { usePathname } from 'next/navigation'
 import { AdminTwoFactorSetup } from '@/admincomponents/components/AdminTwoFactorSetup'
 
 interface TwoFactorProviderProps {
@@ -10,18 +11,31 @@ interface TwoFactorProviderProps {
 
 const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
   const { user, refreshCookie } = useAuth()
+  const pathname = usePathname()
   const [showSetup, setShowSetup] = useState(false)
   const [showVerification, setShowVerification] = useState(false)
   const [totpCode, setTotpCode] = useState('')
   const [verificationError, setVerificationError] = useState('')
   const [verificationSuccess, setVerificationSuccess] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
-  const [isChecking, setIsChecking] = useState(true)
+
+  // Determine if we are on an admin route
+  const isAdminPanel = useMemo(() => pathname?.startsWith('/admin'), [pathname])
+
+  // Initialize checking state - only check if we are on an admin route
+  const [isChecking, setIsChecking] = useState(() => isAdminPanel)
+  const [mountId, setMountId] = useState<string | null>(null)
   const [lastUserId, setLastUserId] = useState<string | null>(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
-  // Detect dark mode
   useEffect(() => {
+    const id = Math.random().toString(36).substring(7)
+    setMountId(id)
+    setIsMounted(true)
+    // Only log mount/unmount once
+    console.log(`[TwoFactorProvider ${id}] Mounted at ${pathname}`)
+
     const checkDarkMode = () => {
       const isDark =
         document.documentElement.classList.contains('dark') ||
@@ -50,113 +64,172 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
 
   // Safety timeout to prevent being stuck in checking state
   useEffect(() => {
+    if (!isChecking) return
+
     const timeoutId = setTimeout(() => {
       if (isChecking) {
-        console.warn('TwoFactorProvider: Timeout reached, forcing completion of check')
+        console.warn(`[TwoFactorProvider ${mountId}] Timeout reached, forcing completion of check`)
         setIsChecking(false)
       }
-    }, 5000) // 5 second timeout
+    }, 15000) // 15 second timeout
 
-    return () => clearTimeout(timeoutId)
-  }, [isChecking])
+    return () => {
+      console.log(`[TwoFactorProvider ${mountId}] Clearing timeout`)
+      clearTimeout(timeoutId)
+    }
+  }, [isChecking, mountId])
 
   useEffect(() => {
-    console.log('TwoFactorProvider useEffect triggered', {
+    console.log(`[TwoFactorProvider ${mountId}] useEffect triggered`, {
       hasUser: !!user,
       userId: user?.id,
       lastUserId,
       showSetup,
       showVerification,
+      isChecking,
+      pathname: typeof window !== 'undefined' ? window.location.pathname : 'n/a',
     })
 
-    if (!user) {
-      // Clear verification status when user logs out
-      if (lastUserId) {
-        console.log('TwoFactorProvider: User logged out, clearing 2FA session')
-        // Clear both old and new verification keys
-        localStorage.removeItem('admin-2fa-verified')
-        localStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
+    // Check if we are in the admin panel - do this check here too for safety
+    const isAdminPanel =
+      typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+    if (!isAdminPanel) {
+      if (isChecking) {
+        console.log(`[TwoFactorProvider ${mountId}] Not an admin route (in check), skipping`)
+        setIsChecking(false)
       }
-
-      // Reset all state when user logs out
-      setLastUserId(null)
-      setShowSetup(false)
-      setShowVerification(false)
-      setVerificationError('')
-      setVerificationSuccess(false)
-      setTotpCode('')
-      setIsVerifying(false)
-      setIsChecking(false)
       return
     }
 
-    // Check if user has changed (different login)
-    if (lastUserId && lastUserId !== String(user.id)) {
-      console.log('TwoFactorProvider: Different user detected, clearing previous user 2FA session')
-      // Clear both old and new verification keys for previous user
-      localStorage.removeItem('admin-2fa-verified')
-      localStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
-
-      // Reset verification states for new user
-      setShowSetup(false)
-      setShowVerification(false)
-      setVerificationError('')
-      setVerificationSuccess(false)
-      setTotpCode('')
-      setIsVerifying(false)
+    // If we've already finished checking and no 2FA is needed, don't run again unless user changes
+    if (!isChecking && !showSetup && !showVerification && lastUserId === String(user?.id)) {
+      return
     }
 
-    // Update last user ID
-    setLastUserId(String(user.id))
+    if (user === undefined) {
+      // User is still loading in useAuth
+      console.log(`[TwoFactorProvider ${mountId}] User is undefined (loading), waiting...`)
 
-    console.log('TwoFactorProvider: Checking user 2FA status', {
-      email: user.email,
-      enabled: user.twoFactorAuth?.enabled,
-      verified: user.twoFactorAuth?.verified,
-      userId: user.id,
-      previousUserId: lastUserId,
+      // If we've been waiting for a while, we might want to allow rendering
+      // but isChecking is still true, so it shows "Checking..."
+      // The safety timeout will eventually set isChecking to false.
+      return
+    }
+
+    console.log(`[TwoFactorProvider ${mountId}] User state changed:`, {
+      hasUser: !!user,
+      userId: user?.id,
     })
 
-    const has2FAEnabled = user.twoFactorAuth?.enabled
-    const has2FAVerified = user.twoFactorAuth?.verified
-    const has2FASetup = has2FAEnabled && has2FAVerified
+    try {
+      if (!user) {
+        // Clear verification status when user logs out
+        if (lastUserId) {
+          console.log(`[TwoFactorProvider ${mountId}] User logged out, clearing 2FA session`)
+          // Clear both old and new verification keys
+          try {
+            localStorage.removeItem('admin-2fa-verified')
+            localStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
+          } catch (e) {
+            console.error('Failed to clear localStorage', e)
+          }
+        }
 
-    if (has2FAEnabled && !has2FAVerified) {
-      // User has started 2FA setup but hasn't completed verification - force setup completion
-      console.log(
-        'TwoFactorProvider: User has 2FA enabled but not verified, requiring setup completion',
-      )
-      setShowSetup(true)
-      setShowVerification(false)
-    } else if (has2FASetup) {
-      // User has fully enabled and verified 2FA - check if verification needed for this session
-      const verificationKey = `admin-2fa-verified-${user.id}`
-      const alreadyVerified = localStorage.getItem(verificationKey) === 'true'
+        // Reset all state when user logs out
+        if (lastUserId !== null) setLastUserId(null)
+        if (showSetup) setShowSetup(false)
+        if (showVerification) setShowVerification(false)
+        if (verificationError) setVerificationError('')
+        if (verificationSuccess) setVerificationSuccess(false)
+        if (totpCode) setTotpCode('')
+        if (isVerifying) setIsVerifying(false)
+        return
+      }
 
-      console.log('TwoFactorProvider: 2FA verification check', {
-        verificationKey,
-        alreadyVerified,
-        localStorageValue: localStorage.getItem(verificationKey),
+      // Check if user has changed (different login)
+      if (lastUserId && lastUserId !== String(user.id)) {
+        console.log(
+          `[TwoFactorProvider ${mountId}] Different user detected, clearing previous user 2FA session`,
+        )
+        // Clear both old and new verification keys for previous user
+        try {
+          localStorage.removeItem('admin-2fa-verified')
+          localStorage.removeItem(`admin-2fa-verified-${lastUserId}`)
+        } catch (e) {
+          console.error('Failed to clear localStorage', e)
+        }
+
+        // Reset verification states for new user
+        if (showSetup) setShowSetup(false)
+        if (showVerification) setShowVerification(false)
+        if (verificationError) setVerificationError('')
+        if (verificationSuccess) setVerificationSuccess(false)
+        if (totpCode) setTotpCode('')
+        if (isVerifying) setIsVerifying(false)
+      }
+
+      // Update last user ID
+      if (lastUserId !== String(user.id)) {
+        setLastUserId(String(user.id))
+      }
+
+      console.log(`[TwoFactorProvider ${mountId}] Checking user 2FA status`, {
+        email: user.email,
+        enabled: user.twoFactorAuth?.enabled,
+        verified: user.twoFactorAuth?.verified,
+        userId: user.id,
+        previousUserId: lastUserId,
       })
 
-      if (!alreadyVerified) {
-        console.log('TwoFactorProvider: User has 2FA enabled, requiring verification')
-        setShowVerification(true)
-        setShowSetup(false)
-      } else {
-        console.log('TwoFactorProvider: User already verified in this session')
-        setShowVerification(false)
-        setShowSetup(false)
-      }
-    } else {
-      // User doesn't have 2FA enabled at all - allow them to access admin without 2FA
-      console.log('TwoFactorProvider: User does not have 2FA enabled, allowing access')
-      setShowVerification(false)
-      setShowSetup(false)
-    }
+      const has2FAEnabled = user.twoFactorAuth?.enabled
+      const has2FAVerified = user.twoFactorAuth?.verified
+      const has2FASetup = has2FAEnabled && has2FAVerified
 
-    setIsChecking(false)
-  }, [user])
+      if (has2FAEnabled && !has2FAVerified) {
+        // User has started 2FA setup but hasn't completed verification - force setup completion
+        console.log(
+          `[TwoFactorProvider ${mountId}] User has 2FA enabled but not verified, requiring setup completion`,
+        )
+        if (!showSetup) setShowSetup(true)
+        if (showVerification) setShowVerification(false)
+      } else if (has2FASetup) {
+        // User has fully enabled and verified 2FA - check if verification needed for this session
+        const verificationKey = `admin-2fa-verified-${user.id}`
+        let alreadyVerified = false
+        try {
+          alreadyVerified = localStorage.getItem(verificationKey) === 'true'
+        } catch (e) {
+          console.error('Failed to read localStorage', e)
+        }
+
+        console.log(`[TwoFactorProvider ${mountId}] 2FA verification check`, {
+          verificationKey,
+          alreadyVerified,
+        })
+
+        if (!alreadyVerified) {
+          console.log(`[TwoFactorProvider ${mountId}] User has 2FA enabled, requiring verification`)
+          if (!showVerification) setShowVerification(true)
+          if (showSetup) setShowSetup(false)
+        } else {
+          console.log(`[TwoFactorProvider ${mountId}] User already verified in this session`)
+          if (showVerification) setShowVerification(false)
+          if (showSetup) setShowSetup(false)
+        }
+      } else {
+        // User doesn't have 2FA enabled at all - allow them to access admin without 2FA
+        console.log(
+          `[TwoFactorProvider ${mountId}] User does not have 2FA enabled, allowing access`,
+        )
+        if (showVerification) setShowVerification(false)
+        if (showSetup) setShowSetup(false)
+      }
+    } catch (err) {
+      console.error(`[TwoFactorProvider ${mountId}] Error in user check:`, err)
+    } finally {
+      if (isChecking) setIsChecking(false)
+    }
+  }, [user, mountId, lastUserId, showSetup, showVerification, isChecking])
 
   const handleVerification = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -445,30 +518,37 @@ const TwoFactorProvider: React.FC<TwoFactorProviderProps> = ({ children }) => {
     )
   }
 
-  // Show loading state while checking
-  if (isChecking) {
-    console.log('TwoFactorProvider: Still checking, showing loading state')
+  if (isChecking && isAdminPanel) {
+    console.log(`[TwoFactorProvider ${mountId}] Still checking, showing loading state`, {
+      hasUser: !!user,
+      userUndefined: user === undefined,
+      showSetup,
+      showVerification,
+      pathname,
+    })
     const colors = getThemeColors()
 
     return (
       <div
         style={{
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '100vh',
           fontSize: '14px',
           color: colors.textSecondary,
           backgroundColor: isDarkMode ? '#111827' : '#ffffff',
+          gap: '20px',
         }}
       >
-        בודק מצב האימות...
+        <div>בודק מצב האימות...</div>
+        {isMounted && mountId && <div style={{ fontSize: '10px', opacity: 0.5 }}>{mountId}</div>}
       </div>
     )
   }
 
-  // If we get here, user is properly authenticated and no 2FA needed
-  //  console.log('TwoFactorProvider: Rendering children - user authenticated, no 2FA needed')
+  // If not an admin panel, or done checking, render children
   return <>{children}</>
 }
 
